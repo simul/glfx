@@ -186,6 +186,11 @@ bool& Effect::Active()
     return m_active;
 }
 
+string& Effect::Filename()
+{
+    return m_filename;
+}
+
 string& Effect::Dir()
 {
     return m_dir;
@@ -410,6 +415,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
         size_t lastBackSlash=fname.find_last_of('\\')+1;
         lastSlash=max(lastSlash, lastBackSlash);
         gEffect->Dir()=fname.substr(0, lastSlash);
+        gEffect->Filename()=fname;
 
         glfxrestart(glfxin);
         glfxset_lineno(1);
@@ -438,12 +444,14 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
     return retVal;
 }
 
-bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src )
+bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const char *filename)
 {
     bool retVal=true;
     try {
         gEffect=gEffects[effect];
         gEffect->Dir()="";
+		if(filename)
+		  gEffect->Filename()=filename;
         glfx_scan_string(src);
         glfxset_lineno(1);
         glfxparse();
@@ -521,10 +529,10 @@ const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program)
     return tmpList[program].c_str();
 }
 
-int GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
+GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 {
     if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || program==NULL || !gEffects[effect]->Active())
-        return -1;
+        return 0;
 
     string slog;
     unsigned progid;
@@ -533,15 +541,15 @@ int GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
     }
     catch(const char* err) {
         slog+=err;
-        progid=-1;
+        progid=0;
     }
     catch(const string& err) {
         slog+=err;
-        progid=-1;
+        progid=0;
     }
     catch(...) {
         slog+="Error during compilation";
-        progid=-1;
+        progid=0;
     }
 
     gEffects[effect]->Log()<<slog;

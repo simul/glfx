@@ -105,6 +105,7 @@ class Effect {
     int                         m_includes;
     bool                        m_active;
     string                      m_dir;
+	string						m_filename;
     
 public:
     ostringstream& Log();
@@ -115,6 +116,7 @@ public:
     void PopulateProgramList();
     bool& Active();
     string& Dir();
+	string& Filename();
     ~Effect();
     Effect();
 

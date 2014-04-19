@@ -75,16 +75,16 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file
 *   src    -- Source
 * Return value: Status
 **************************************************/
-GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src );
+GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src ,const char *filename=0);
 
 /**************************************************
 * glfxCompileProgram
 * Input:
 *   effect  -- GLFX effect id
 *   program -- Program name
-* Return value: GL program id if success, -1 otherwise
+* Return value: GL program id if success, 0 otherwise
 **************************************************/
-GLFXAPI int GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
+GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 
 /**************************************************
 * glfxGetProgramCount

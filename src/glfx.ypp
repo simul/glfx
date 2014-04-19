@@ -39,7 +39,7 @@
 prog : prog tok
     | { // Initialization code
     gEffect->m_sharedCode.str("");    // clear the stream
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
     gLexPassthrough=true;
 }
 ;
@@ -60,13 +60,13 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
         }
         else
             lineno=$1.lineno;
-        shaderCode<<"#line "<<lineno<<endl;
+        //shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
         shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
     }
     delete $5.vars;
     
     // Add definition and code
-    shaderCode<<"void main()"<<endl<<"#line "<<$7.lineno<<endl<<$7.strs[0];
+    shaderCode<<"void main()"<<endl;//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
     gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
 }
     | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough {
@@ -88,9 +88,9 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
     includeStr[size-1]=0;
     
     gEffect->m_includes++;
-    gEffect->m_sharedCode<<"#line 1 "<<gEffect->m_includes<<endl;
+ //   gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
     gEffect->m_sharedCode<<includeStr<<endl;
-    gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" 0"<<endl;
+   // gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
     
     fclose(includeF);
     delete[] includeStr;
@@ -104,13 +104,13 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
     if($3.strs[0].size()>0)
         gEffect->m_samplers[$3.strs[0]]=new Sampler(*samp);
     for(vector<YYSTYPE::samplerVar>::const_iterator it=$7.texNames->begin(); it!=$7.texNames->end(); ++it) {
-        gEffect->m_sharedCode<<"#line "<<$1.lineno<<endl;
+        //gEffect->m_sharedCode<<"#line "<<$1.lineno<<" "<<gEffect->Filename().c_str()<<endl;
         gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
         gEffect->m_samplers[it->name]=new Sampler(*samp);
     }
     delete samp;
     delete $7.texNames;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
 ;
 
@@ -121,7 +121,7 @@ lex_fx : { /* Switch lex to fx scanning */
 
 lex_passthrough : { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
 ;
 
@@ -360,7 +360,7 @@ shader_layout_list : shader_layout_list COMMA layout {
 
 layout : STORAGEQ read_parenthesis {
     ostringstream layoutDef;
-    layoutDef<<"#line "<<$1.lineno<<endl;
+    //layoutDef<<"#line "<<$1.lineno<<endl;
     layoutDef<<"layout"<<$2.strs[0]<<' '<<$1.strs[0]<<';'<<endl;
     $$.strs[0]=layoutDef.str();
 }
@@ -368,7 +368,7 @@ layout : STORAGEQ read_parenthesis {
 
 layout : GL_FRAGDEPTH read_parenthesis {
     ostringstream layoutDef;
-    layoutDef<<"#line "<<$1.lineno<<endl;
+    //layoutDef<<"#line "<<$1.lineno<<endl;
     layoutDef<<"layout"<<$2.strs[0]<<' '<<"out float "<<$1.strs[0]<<';'<<endl;
     $$.strs[0]=layoutDef.str();
 }

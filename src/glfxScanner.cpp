@@ -1419,7 +1419,7 @@ char *glfxtext;
  */
 #include <unistd.h>
 #endif
-
+    
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
@@ -1648,7 +1648,7 @@ yy_find_action:
 
 		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
 			{
-			int yyl;
+			yy_size_t yyl;
 			for ( yyl = 0; yyl < glfxleng; ++yyl )
 				if ( glfxtext[yyl] == '\n' )
 					   
@@ -2616,7 +2616,7 @@ YY_BUFFER_STATE glfx_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_le
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;

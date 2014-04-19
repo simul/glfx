@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Bison implementation for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.7.12-4996"
+#define YYBISON_VERSION "2.7"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -119,10 +119,7 @@
 # define YYERROR_VERBOSE 0
 #endif
 
-/* In a future release of Bison, this section will be replaced
-   by #include "glfxLALRParser.hpp".  */
-#ifndef YY_GLFX_GLFXLALRPARSER_HPP_INCLUDED
-# define YY_GLFX_GLFXLALRPARSER_HPP_INCLUDED
+
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -185,12 +182,12 @@ int glfxparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_GLFX_GLFXLALRPARSER_HPP_INCLUDED  */
+
 
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 194 "glfxLALRParser.cpp"
+#line 191 "glfxLALRParser.cpp"
 
 #ifdef short
 # undef short
@@ -251,21 +248,12 @@ typedef short int yytype_int16;
 # endif
 #endif
 
-#ifndef __attribute__
-/* This feature is available in gcc versions 2.5 and later.  */
-# if (! defined __GNUC__ || __GNUC__ < 2 \
-      || (__GNUC__ == 2 && __GNUC_MINOR__ < 5))
-#  define __attribute__(Spec) /* empty */
-# endif
-#endif
-
 /* Suppress unused-variable warnings by "using" E.  */
 #if ! defined lint || defined __GNUC__
 # define YYUSE(E) ((void) (E))
 #else
 # define YYUSE(E) /* empty */
 #endif
-
 
 /* Identity function, used to suppress warnings about constant conditions.  */
 #ifndef lint
@@ -775,7 +763,11 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 # else
   YYUSE (yyoutput);
 # endif
-  YYUSE (yytype);
+  switch (yytype)
+    {
+      default:
+        break;
+    }
 }
 
 
@@ -1165,7 +1157,12 @@ yydestruct (yymsg, yytype, yyvaluep)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
-  YYUSE (yytype);
+  switch (yytype)
+    {
+
+      default:
+        break;
+    }
 }
 
 
@@ -1449,17 +1446,17 @@ yyreduce:
   switch (yyn)
     {
         case 3:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 40 "glfx.ypp"
     { // Initialization code
     gEffect->m_sharedCode.str("");    // clear the stream
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
     gLexPassthrough=true;
 }
     break;
 
   case 4:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 47 "glfx.ypp"
     {
     gEffect->m_interfaces[(yyvsp[(3) - (6)]).strs[0]]=Effect::InterfaceDcl((yyvsp[(4) - (6)]).strs[0], (yyvsp[(1) - (6)]).lineno);
@@ -1467,7 +1464,7 @@ yyreduce:
     break;
 
   case 5:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 50 "glfx.ypp"
     {
     ostringstream shaderCode;
@@ -1482,19 +1479,19 @@ yyreduce:
         }
         else
             lineno=(yyvsp[(1) - (8)]).lineno;
-        shaderCode<<"#line "<<lineno<<endl;
+        //shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
         shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
     }
     delete (yyvsp[(5) - (8)]).vars;
     
     // Add definition and code
-    shaderCode<<"void main()"<<endl<<"#line "<<(yyvsp[(7) - (8)]).lineno<<endl<<(yyvsp[(7) - (8)]).strs[0];
+    shaderCode<<"void main()"<<endl;//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
     gEffect->m_shaders[(yyvsp[(3) - (8)]).strs[0]]=shaderCode.str();
 }
     break;
 
   case 6:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 72 "glfx.ypp"
     {
     (yyvsp[(5) - (8)]).prog->m_separable=(yyvsp[(1) - (8)]).boolean;
@@ -1503,7 +1500,7 @@ yyreduce:
     break;
 
   case 7:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 76 "glfx.ypp"
     {
     FILE* includeF;
@@ -1520,9 +1517,9 @@ yyreduce:
     includeStr[size-1]=0;
     
     gEffect->m_includes++;
-    gEffect->m_sharedCode<<"#line 1 "<<gEffect->m_includes<<endl;
+    gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
     gEffect->m_sharedCode<<includeStr<<endl;
-    gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (1)]).lineno+1<<" 0"<<endl;
+    gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (1)]).lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
     
     fclose(includeF);
     delete[] includeStr;
@@ -1530,7 +1527,7 @@ yyreduce:
     break;
 
   case 8:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 98 "glfx.ypp"
     {
     Sampler* samp=(yyvsp[(5) - (9)]).samp;
@@ -1541,18 +1538,18 @@ yyreduce:
     if((yyvsp[(3) - (9)]).strs[0].size()>0)
         gEffect->m_samplers[(yyvsp[(3) - (9)]).strs[0]]=new Sampler(*samp);
     for(vector<YYSTYPE::samplerVar>::const_iterator it=(yyvsp[(7) - (9)]).texNames->begin(); it!=(yyvsp[(7) - (9)]).texNames->end(); ++it) {
-        gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (9)]).lineno<<endl;
+        gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (9)]).lineno<<" "<<gEffect->Filename().c_str()<<endl;
         gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
         gEffect->m_samplers[it->name]=new Sampler(*samp);
     }
     delete samp;
     delete (yyvsp[(7) - (9)]).texNames;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
     break;
 
   case 9:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 117 "glfx.ypp"
     { /* Switch lex to fx scanning */
     gLexPassthrough=false;
@@ -1560,16 +1557,16 @@ yyreduce:
     break;
 
   case 10:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 122 "glfx.ypp"
     { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<endl;
+    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
     break;
 
   case 11:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 128 "glfx.ypp"
     { /* Read next block */
     (yyval).lineno=glfxget_lineno();
@@ -1578,7 +1575,7 @@ yyreduce:
     break;
 
   case 12:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 134 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -1586,7 +1583,7 @@ yyreduce:
     break;
 
   case 13:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 137 "glfx.ypp"
     {
     (yyval).strs[0]="";
@@ -1594,7 +1591,7 @@ yyreduce:
     break;
 
   case 14:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 142 "glfx.ypp"
     {
     (yyval).texNames=(yyvsp[(1) - (3)]).texNames;
@@ -1607,7 +1604,7 @@ yyreduce:
     break;
 
   case 15:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 150 "glfx.ypp"
     {
     (yyval).texNames=new vector<YYSTYPE::samplerVar>;
@@ -1619,7 +1616,7 @@ yyreduce:
     break;
 
   case 16:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 159 "glfx.ypp"
     {
     ostringstream prepend;
@@ -1638,7 +1635,7 @@ yyreduce:
     break;
 
   case 17:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 176 "glfx.ypp"
     {
     (yyval).samp=(yyvsp[(1) - (3)]).samp;
@@ -1657,7 +1654,7 @@ yyreduce:
     break;
 
   case 18:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 190 "glfx.ypp"
     {
     (yyval).samp=new Sampler();
@@ -1676,7 +1673,7 @@ yyreduce:
     break;
 
   case 19:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 206 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
@@ -1686,7 +1683,7 @@ yyreduce:
     break;
 
   case 20:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 211 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
@@ -1696,7 +1693,7 @@ yyreduce:
     break;
 
   case 21:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 216 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
@@ -1706,7 +1703,7 @@ yyreduce:
     break;
 
   case 22:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 223 "glfx.ypp"
     {
     (yyval).vars=(yyvsp[(1) - (3)]).vars;
@@ -1721,7 +1718,7 @@ yyreduce:
     break;
 
   case 23:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 233 "glfx.ypp"
     {
     YYSTYPE::variable var;
@@ -1735,7 +1732,7 @@ yyreduce:
     break;
 
   case 24:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 242 "glfx.ypp"
     {
     (yyval).vars = new vector<YYSTYPE::variable>;
@@ -1743,7 +1740,7 @@ yyreduce:
     break;
 
   case 25:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 247 "glfx.ypp"
     {
     ostringstream prepend;
@@ -1766,7 +1763,7 @@ yyreduce:
     break;
 
   case 26:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 267 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -1774,7 +1771,7 @@ yyreduce:
     break;
 
   case 27:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 270 "glfx.ypp"
     { /* None */
     (yyval).strs[0]="";
@@ -1782,7 +1779,7 @@ yyreduce:
     break;
 
   case 28:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 275 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
@@ -1792,7 +1789,7 @@ yyreduce:
     break;
 
   case 29:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 282 "glfx.ypp"
     {
     (yyval).strs[0]="[]";
@@ -1800,7 +1797,7 @@ yyreduce:
     break;
 
   case 30:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 285 "glfx.ypp"
     {
     (yyval).strs[0]="";
@@ -1808,7 +1805,7 @@ yyreduce:
     break;
 
   case 31:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 290 "glfx.ypp"
     {
     (yyval).num=(yyvsp[(2) - (2)]).num;
@@ -1817,7 +1814,7 @@ yyreduce:
     break;
 
   case 32:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 294 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
@@ -1826,7 +1823,7 @@ yyreduce:
     break;
 
   case 33:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 298 "glfx.ypp"
     {
     (yyval).rType=REGISTER_NONE;
@@ -1834,7 +1831,7 @@ yyreduce:
     break;
 
   case 34:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 303 "glfx.ypp"
     {
     (yyval).prog = new Program(*((yyvsp[(1) - (1)]).shaders));
@@ -1843,7 +1840,7 @@ yyreduce:
     break;
 
   case 35:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 309 "glfx.ypp"
     {
     (yyval).shaders=(yyvsp[(1) - (2)]).shaders;
@@ -1853,7 +1850,7 @@ yyreduce:
     break;
 
   case 36:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 314 "glfx.ypp"
     {
     (yyval).shaders=new map<ShaderType, Program::Shader>;
@@ -1863,7 +1860,7 @@ yyreduce:
     break;
 
   case 37:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 321 "glfx.ypp"
     {
     // Assemble the shader
@@ -1889,7 +1886,7 @@ yyreduce:
     break;
 
   case 38:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 344 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
@@ -1897,7 +1894,7 @@ yyreduce:
     break;
 
   case 39:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 347 "glfx.ypp"
     {
     (yyval).strs[0]="";
@@ -1905,7 +1902,7 @@ yyreduce:
     break;
 
   case 40:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 352 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
@@ -1914,7 +1911,7 @@ yyreduce:
     break;
 
   case 41:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 356 "glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -1922,7 +1919,7 @@ yyreduce:
     break;
 
   case 42:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 361 "glfx.ypp"
     {
     ostringstream layoutDef;
@@ -1933,7 +1930,7 @@ yyreduce:
     break;
 
   case 43:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 369 "glfx.ypp"
     {
     ostringstream layoutDef;
@@ -1944,7 +1941,7 @@ yyreduce:
     break;
 
   case 44:
-/* Line 1787 of yacc.c  */
+/* Line 1792 of yacc.c  */
 #line 377 "glfx.ypp"
     { /* read parenthesis */
     (yyval).strs[0]=glfxreadblock('(', ')');
@@ -1952,8 +1949,8 @@ yyreduce:
     break;
 
 
-/* Line 1787 of yacc.c  */
-#line 1957 "glfxLALRParser.cpp"
+/* Line 1792 of yacc.c  */
+#line 1954 "glfxLALRParser.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2184,7 +2181,7 @@ yyreturn:
 }
 
 
-/* Line 2050 of yacc.c  */
+/* Line 2055 of yacc.c  */
 #line 382 "glfx.ypp"
 
 
