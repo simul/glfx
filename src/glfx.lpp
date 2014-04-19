@@ -66,6 +66,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
                                                     glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
                                                     return INCLUDE;
                                                 }
+^"#ifdef".*"#endif"[\t ]*\n                     if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
 "patch"|"centroid"                              if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}
 "vs"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VS; return SHADER_TYPE;}
 "tc"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TC; return SHADER_TYPE;}

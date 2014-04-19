@@ -1517,9 +1517,9 @@ yyreduce:
     includeStr[size-1]=0;
     
     gEffect->m_includes++;
-    gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
+ //   gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
     gEffect->m_sharedCode<<includeStr<<endl;
-    gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (1)]).lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
+   // gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
     
     fclose(includeF);
     delete[] includeStr;
@@ -1538,13 +1538,13 @@ yyreduce:
     if((yyvsp[(3) - (9)]).strs[0].size()>0)
         gEffect->m_samplers[(yyvsp[(3) - (9)]).strs[0]]=new Sampler(*samp);
     for(vector<YYSTYPE::samplerVar>::const_iterator it=(yyvsp[(7) - (9)]).texNames->begin(); it!=(yyvsp[(7) - (9)]).texNames->end(); ++it) {
-        gEffect->m_sharedCode<<"#line "<<(yyvsp[(1) - (9)]).lineno<<" "<<gEffect->Filename().c_str()<<endl;
+        //gEffect->m_sharedCode<<"#line "<<$1.lineno<<" "<<gEffect->Filename().c_str()<<endl;
         gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
         gEffect->m_samplers[it->name]=new Sampler(*samp);
     }
     delete samp;
     delete (yyvsp[(7) - (9)]).texNames;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
     break;
 
@@ -1561,7 +1561,7 @@ yyreduce:
 #line 122 "glfx.ypp"
     { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
-    gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
+    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
     break;
 
@@ -1923,7 +1923,7 @@ yyreduce:
 #line 361 "glfx.ypp"
     {
     ostringstream layoutDef;
-    layoutDef<<"#line "<<(yyvsp[(1) - (2)]).lineno<<endl;
+    //layoutDef<<"#line "<<$1.lineno<<endl;
     layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
     (yyval).strs[0]=layoutDef.str();
 }
@@ -1934,7 +1934,7 @@ yyreduce:
 #line 369 "glfx.ypp"
     {
     ostringstream layoutDef;
-    layoutDef<<"#line "<<(yyvsp[(1) - (2)]).lineno<<endl;
+    //layoutDef<<"#line "<<$1.lineno<<endl;
     layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<"out float "<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
     (yyval).strs[0]=layoutDef.str();
 }
