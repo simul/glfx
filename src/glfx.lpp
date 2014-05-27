@@ -1,3 +1,10 @@
+/*
+Flex and Bison files have three sections:
+
+the first is sort of "control" information,
+the second is the actual token/grammar definitions,
+the last is C code to be copied verbatim to the output.
+*/
 %option yylineno
 %option noyywrap
 %option fast
@@ -53,47 +60,46 @@ STR_BLCK \"[^"\n]*\"
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 %%
-"program"                                       glfxlval.boolean=false; return PROGRAM;
-"stages"                                        glfxlval.boolean=true; return PROGRAM;
-"shader"                                        glfxlval.lineno=yylineno; return SHADER;
-"interface"                                     glfxlval.lineno=yylineno; return INTERFACE;
-"sampler"                                       glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return SAMPLER;
-^"#include"[\t ]+{STR_BLCK}[\t ]*\n             {
-                                                    string tmp(yytext);
-                                                    size_t firstLoc=tmp.find('"')+1;
-                                                    size_t secondLoc=tmp.find('"', firstLoc);
-                                                    glfxlval.strs[0]=tmp.substr(firstLoc, secondLoc-firstLoc);
-                                                    glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
-                                                    return INCLUDE;
-                                                }
-^"#ifdef".*"#endif"[\t ]*\n                     if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-"patch"|"centroid"                              if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}
-"vs"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VS; return SHADER_TYPE;}
-"tc"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TC; return SHADER_TYPE;}
-"te"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TE; return SHADER_TYPE;}
-"gs"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GS; return SHADER_TYPE;}
-"fs"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FS; return SHADER_TYPE;}
-"cs"                                            if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=CS; return SHADER_TYPE;}
-{NUM_BLCK}                                      if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=atoi(yytext); return NUM;}
-{FLOAT_BLCK}                                    if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
-"in"|"out"                                      if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
-"gl_FragDepth"                                  if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
-"true"                                          if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=1; return NUM;}
-"false"                                         if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=0; return NUM;}
-{ID_BLCK}                                       if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return IDENTIFIER;}
-"("                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LP;}
-")"                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RP;}
-"{"                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LB;}
-"}"                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RB;}
-"["[\t ]*"]"                                    if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EMPTY_ARRAY_BRACKETS;}
-","                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COMMA;}
-"="                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
-";"                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
-":"                                             if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
-\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n               if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
-\/\*[^*]*\*(([^*/][^*]*)*\*)*\/                 if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
-[\t\n ]                                         if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-.                                               if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
+"program"							glfxlval.boolean=false; return PROGRAM;
+"stages"							glfxlval.boolean=true; return PROGRAM;
+"shader"							glfxlval.lineno=yylineno; return SHADER;
+"interface"							glfxlval.lineno=yylineno; return INTERFACE;
+"sampler"							glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return SAMPLER;
+^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
+									    string tmp(yytext);
+									    size_t firstLoc=tmp.find('"')+1;
+									    size_t secondLoc=tmp.find('"', firstLoc);
+									    glfxlval.strs[0]=tmp.substr(firstLoc, secondLoc-firstLoc);
+									    glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
+									    return INCLUDE;
+									}
+"patch"|"centroid"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}
+"vs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VS; return SHADER_TYPE;}
+"tc"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TC; return SHADER_TYPE;}
+"te"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TE; return SHADER_TYPE;}
+"gs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GS; return SHADER_TYPE;}
+"fs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FS; return SHADER_TYPE;}
+"cs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=CS; return SHADER_TYPE;}
+{NUM_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=atoi(yytext); return NUM;}
+{FLOAT_BLCK}						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
+"in"|"out"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
+"gl_FragDepth"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
+"true"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=1; return NUM;}
+"false"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=0; return NUM;}
+{ID_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return IDENTIFIER;}
+"("									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LP;}
+")"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RP;}
+"{"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LB;}
+"}"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RB;}
+"["[\t ]*"]"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EMPTY_ARRAY_BRACKETS;}
+","									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COMMA;}
+"="									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
+";"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
+":"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
+\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
+\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
+[\t\n ]								if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+.									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
 %%
 
 void errLex(const char* tok)

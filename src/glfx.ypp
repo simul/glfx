@@ -66,7 +66,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
     delete $5.vars;
     
     // Add definition and code
-    shaderCode<<"void main()"<<endl;//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
+    shaderCode<<"void main()"<<endl<<$7.strs[0];
     gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
 }
     | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough {
