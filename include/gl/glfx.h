@@ -60,6 +60,15 @@ extern "C" {
 GLFXAPI int GLFX_APIENTRY glfxGenEffect();
 
 /**************************************************
+* glfxParseEffectFromFileSIMUL
+* Input:
+*   effect  -- GLFX effect id
+*   src    -- File contents with includes inlined
+*   filenamesUtf8    -- File name list
+* Return value: Status
+**************************************************/
+GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filenamesUtf8);
+/**************************************************
 * glfxCreateEffectFromFile
 * Input:
 *   effect  -- GLFX effect id

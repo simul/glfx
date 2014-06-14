@@ -23,6 +23,7 @@
 
     // No unistd.h (for flex)
     #define YY_NO_UNISTD_H
+	#define YYERROR_VERBOSE
     
     #endif
     #include "glfxScanner.h"
@@ -66,7 +67,7 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
     delete $5.vars;
     
     // Add definition and code
-    shaderCode<<"void main()"<<endl;//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
+    shaderCode<<"void main()"<<endl<<$7.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
     gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
 }
     | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough {
@@ -390,7 +391,7 @@ void errSyn()
 {
     ostringstream errMsg;
 
-    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error";
+    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text();
     throw errMsg.str();
 }
 

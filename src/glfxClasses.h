@@ -100,6 +100,7 @@ class Effect {
         InterfaceDcl() {}
     };
     map<string, InterfaceDcl>   m_interfaces;
+	vector<string>				m_filenames;
     ostringstream               m_sharedCode;
     ostringstream               m_log;
     int                         m_includes;
@@ -113,6 +114,8 @@ public:
     unsigned BuildProgram(const string& prog) const;
     unsigned CreateSampler(const string& sampler) const;
     const vector<string>& GetProgramList() const;
+	const vector<string>& GetFilenameList() const;
+	void SetFilenameList(const char **);
     void PopulateProgramList();
     bool& Active();
     string& Dir();
