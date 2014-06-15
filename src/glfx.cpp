@@ -684,18 +684,17 @@ int GLFX_APIENTRY glfxGenerateSampler(int effect, const char* sampler)
 {
     if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || sampler==NULL || !gEffects[effect]->Active())
         return -1;
-
     string slog;
     unsigned sampId;
-    try {
+    try
+	{
         sampId=gEffects[effect]->CreateSampler(sampler);
     }
-    catch(const char* err) {
+    catch(const char* err)
+	{
         slog+=err;
         sampId=-1;
     }
-
     gEffects[effect]->Log()<<slog;
-
     return sampId;
 }
