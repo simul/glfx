@@ -635,21 +635,25 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 
     string slog;
     unsigned progid;
-    try {
-        progid=gEffects[effect]->BuildProgram(program, slog);
-    }
-    catch(const char* err) {
-        slog+=err;
-        progid=0;
-    }
-    catch(const string& err) {
-        slog+=err;
-        progid=0;
-    }
-    catch(...) {
-        slog+="Error during compilation";
-        progid=0;
-    }
+	try
+	{
+		progid=gEffects[effect]->BuildProgram(program, slog);
+	}
+	catch(const char* err)
+	{
+		slog+=err;
+		progid=0;
+	}
+	catch(const string& err)
+	{
+		slog+=err;
+		progid=0;
+	}
+	catch(...)
+	{
+		slog+="Error during compilation";
+		progid=0;
+	}
 	
 	// now rewrite log to use filenames.
 	string newlog;
