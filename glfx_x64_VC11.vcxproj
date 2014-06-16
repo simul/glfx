@@ -73,6 +73,15 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./glfxLALRParser.cpp</Outputs>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="test\shaders\geometry_pass.glsl" />
+    <None Include="test\shaders\lighting.glsl" />
+    <None Include="test\shaders\light_pass.glsl" />
+    <None Include="test\shaders\missing_prefix.glsl" />
+    <None Include="test\shaders\missing_shader.glsl" />
+    <None Include="test\shaders\null_technique.glsl" />
+    <None Include="test\shaders\simple_technique.glsl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3C16E3F9-BA50-45A0-A7FF-C985C7721BEB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -130,6 +139,18 @@
     <Import Project="..\..\SimulLib_VC11.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>

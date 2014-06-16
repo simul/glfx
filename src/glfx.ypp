@@ -45,82 +45,92 @@ prog : prog tok
 }
 ;
 
-tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough {
+tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
+{
     gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 }
-    | SHADER lex_fx IDENTIFIER LP param_list RP read_block lex_passthrough {
-    ostringstream shaderCode;
-    // Add shader parameters
-    for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it) {
-        string type(it->type);
-        map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
-        int lineno;
-        if(varType!=gEffect->m_interfaces.end()) {
-            type+=varType->second.id;
-            lineno=varType->second.atLine;
-        }
-        else
-            lineno=$1.lineno;
-        //shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
-        shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
-    }
-    delete $5.vars;
+    | SHADER lex_fx IDENTIFIER LP param_list RP read_block lex_passthrough
+	{
+		ostringstream shaderCode;
+		// Add shader parameters
+		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
+		{
+			string type(it->type);
+			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
+			int lineno;
+			if(varType!=gEffect->m_interfaces.end())
+			{
+				type+=varType->second.id;
+				lineno=varType->second.atLine;
+			}
+			else
+				lineno=$1.lineno;
+			//shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
+			shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
+		}
+		delete $5.vars;
     
-    // Add definition and code
-    shaderCode<<"void main()"<<endl<<$7.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
-    gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
-}
-    | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough {
-    $5.prog->m_separable=$1.boolean;
-    gEffect->m_programs[$3.strs[0]]=$5.prog;
-}
-    | INCLUDE {
-    FILE* includeF;
-    string fName(gEffect->Dir());
-    fName+=$1.strs[0];
-    fopen_s(&includeF, fName.c_str(), "rb");
-    if(!includeF)
-        errSem("Cannot open include file", $1.lineno);
-    fseek(includeF, 0, SEEK_END);
-    int size=ftell(includeF)+1;
-    unsigned char* includeStr=new unsigned char[size];
-    rewind(includeF);
-    fread(includeStr, 1, size, includeF);
-    includeStr[size-1]=0;
+		// Add definition and code
+		shaderCode<<"void main()"<<endl<<$7.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
+		gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
+	}
+    | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough
+	{
+		$5.prog->m_separable=$1.boolean;
+		gEffect->m_programs[$3.strs[0]]=$5.prog;
+	}
+    | INCLUDE
+	{
+		FILE* includeF;
+		string fName(gEffect->Dir());
+		fName+=$1.strs[0];
+		fopen_s(&includeF, fName.c_str(), "rb");
+		if(!includeF)
+			errSem("Cannot open include file", $1.lineno);
+		fseek(includeF, 0, SEEK_END);
+		int size=ftell(includeF)+1;
+		unsigned char* includeStr=new unsigned char[size];
+		rewind(includeF);
+		fread(includeStr, 1, size, includeF);
+		includeStr[size-1]=0;
     
-    gEffect->m_includes++;
- //   gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
-    gEffect->m_sharedCode<<includeStr<<endl;
-   // gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
+		gEffect->m_includes++;
+	 //   gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
+		gEffect->m_sharedCode<<includeStr<<endl;
+	   // gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
     
-    fclose(includeF);
-    delete[] includeStr;
-}
-    | SAMPLER lex_fx samplerClass LB samplerParamList RB samplerVars SC lex_passthrough {
-    Sampler* samp=$5.samp;
-    samp->SetParam("Type", $1.strs[0]);
-    string dcl=samp->Descriptor();
-    if(dcl.size() == 0)
-        errSem("No sampler declaration can be generated", $1.lineno);
-    if($3.strs[0].size()>0)
-        gEffect->m_samplers[$3.strs[0]]=new Sampler(*samp);
-    for(vector<YYSTYPE::samplerVar>::const_iterator it=$7.texNames->begin(); it!=$7.texNames->end(); ++it) {
-        //gEffect->m_sharedCode<<"#line "<<$1.lineno<<" "<<gEffect->Filename().c_str()<<endl;
-        gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
-        gEffect->m_samplers[it->name]=new Sampler(*samp);
-    }
-    delete samp;
-    delete $7.texNames;
-    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
-}
+		fclose(includeF);
+		delete[] includeStr;
+	}
+    | SAMPLER lex_fx samplerClass LB samplerParamList RB samplerVars SC lex_passthrough
+	{
+		Sampler* samp=$5.samp;
+		samp->SetParam("Type", $1.strs[0]);
+		string dcl=samp->Descriptor();
+		if(dcl.size() == 0)
+			errSem("No sampler declaration can be generated", $1.lineno);
+		if($3.strs[0].size()>0)
+			gEffect->m_samplers[$3.strs[0]]=new Sampler(*samp);
+		for(vector<YYSTYPE::samplerVar>::const_iterator it=$7.texNames->begin(); it!=$7.texNames->end(); ++it)
+		{
+			//gEffect->m_sharedCode<<"#line "<<$1.lineno<<" "<<gEffect->Filename().c_str()<<endl;
+			gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
+			gEffect->m_samplers[it->name]=new Sampler(*samp);
+		}
+		delete samp;
+		delete $7.texNames;
+		//gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
+	}
 ;
 
-lex_fx : { /* Switch lex to fx scanning */
+lex_fx :
+{ /* Switch lex to fx scanning */
     gLexPassthrough=false;
 }
 ;
 
-lex_passthrough : { /* Switch lex to passthrough mode */
+lex_passthrough :
+{ /* Switch lex to passthrough mode */
     gLexPassthrough=true;
     //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
