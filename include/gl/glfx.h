@@ -112,6 +112,14 @@ GLFXAPI int GLFX_APIENTRY glfxGetProgramCount(int effect);
 GLFXAPI void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize);
 
 /**************************************************
+* glfxGetProgramIndex
+* Input:
+*   effect  -- GLFX effect id
+*   name -- name of program
+**************************************************/
+GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
+
+/**************************************************
 * glfxGenerateSampler
 * Input:
 *   effect  -- GLFX effect id
@@ -148,6 +156,14 @@ GLFXAPI void GLFX_APIENTRY glfxDeleteEffect(int effect);
 *   program -- Index of program
 **************************************************/
 GLFXAPI const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program);
+
+/**************************************************
+* glfxGetProgramIndex
+* Input:
+*   effect  -- GLFX effect id
+*   name -- name of program
+**************************************************/
+GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
 
 /**************************************************
 * glfxGetEffectLog

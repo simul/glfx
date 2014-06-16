@@ -628,6 +628,17 @@ const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program)
     return tmpList[program].c_str();
 }
 
+size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
+{
+    const vector<string>& tmpList = gEffects[effect]->GetProgramList();
+    for(int i=0;i<tmpList.size();i++)
+	{
+		if(strcmp(tmpList[i].c_str(),name)==0)
+	        return i;
+	}
+    return tmpList.size();
+}
+
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 {
     if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || program==NULL || !gEffects[effect]->Active())
