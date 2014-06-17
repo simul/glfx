@@ -54,6 +54,13 @@
   <ItemGroup>
     <None Include="src\glfx.lpp" />
     <None Include="src\glfx.ypp" />
+    <None Include="test\shaders\geometry_pass.glsl" />
+    <None Include="test\shaders\lighting.glsl" />
+    <None Include="test\shaders\light_pass.glsl" />
+    <None Include="test\shaders\missing_prefix.glsl" />
+    <None Include="test\shaders\missing_shader.glsl" />
+    <None Include="test\shaders\null_technique.glsl" />
+    <None Include="test\shaders\simple_technique.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3C16E3F9-BA50-45A0-A7FF-C985C7721BEB}</ProjectGuid>
