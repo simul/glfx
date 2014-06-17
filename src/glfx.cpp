@@ -143,7 +143,7 @@ unsigned Program::CompileAndLink(string& log) const
     log=sLog.str();
 
     if(!res)
-        throw "Errors in shader compilation";
+        return 0;
 
     return programId;
 }
@@ -271,7 +271,7 @@ unsigned Effect::BuildProgram(const string& prog, string& log) const
 {
     map<string,Program*>::const_iterator it=m_programs.find(prog);
     if(it==m_programs.end())
-        throw "Program not found";
+        return 0;
     
     unsigned ret=it->second->CompileAndLink(log);
 	return ret;
@@ -665,7 +665,10 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 		slog+="Error during compilation";
 		progid=0;
 	}
-	
+	if(!progid)
+	{
+		slog+="Program not built.";
+	}
 	// now rewrite log to use filenames.
 	string newlog;
 	if(slog.find("No errors")>=slog.length())
