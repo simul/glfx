@@ -52,8 +52,46 @@
     <ClInclude Include="src\glfxScanner.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\glfx.lpp" />
-    <None Include="src\glfx.ypp" />
+    <CustomBuild Include="src\glfx.lpp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
+      </AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
+      </AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./glfxScanner.cpp</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="src\glfx.ypp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./glfxLALRParser.cpp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
     <None Include="test\shaders\light_pass.glsl" />
