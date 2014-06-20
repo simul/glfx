@@ -631,7 +631,7 @@ const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program)
 size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
 {
     const vector<string>& tmpList = gEffects[effect]->GetProgramList();
-    for(int i=0;i<tmpList.size();i++)
+    for(int i=0;i<(int)tmpList.size();i++)
 	{
 		if(strcmp(tmpList[i].c_str(),name)==0)
 	        return i;
