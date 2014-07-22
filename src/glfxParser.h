@@ -33,13 +33,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 using namespace std;
 using namespace glfxParser;
-
+/// Values that represent SamplerParam.
 enum SamplerParam {
     SAMPLER_PARAM_STRING,
     SAMPLER_PARAM_INT,
     SAMPLER_PARAM_FLOAT
 };
-
+/// Values that represent RegisterParamType.
 enum RegisterParamType {
     REGISTER_NONE,
     REGISTER_INT,
@@ -94,7 +94,7 @@ int fopen_s(FILE** pFile, const char *filename, const char *mode);
 
 #define YYSTYPE glfxstype
 
-#if 0
+#if 1
 #define YYDEBUG 1
 extern int glfxdebug;
 #endif

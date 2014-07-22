@@ -37,7 +37,7 @@ int glfxlex();
 namespace glfxParser {
 
 using namespace std;
-
+/// Values that represent ShaderType.
 enum ShaderType {
     VS,
     TC,
