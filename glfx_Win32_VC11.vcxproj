@@ -80,13 +80,13 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./glfxLALRParser.cpp</Outputs>
     </CustomBuild>
