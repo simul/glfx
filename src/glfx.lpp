@@ -44,6 +44,7 @@ the last is C code to be copied verbatim to the output.
 
     #include "glfxParser.h"
     #include "glfxClasses.h"
+    #include "glfxEffect.h"
 
     // tokens from parser generator
     #include "glfxLALRParser.hpp"

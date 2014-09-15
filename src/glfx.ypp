@@ -27,6 +27,7 @@
     
     #endif
     #include "glfxScanner.h"
+    #include "glfxEffect.h"
 
     static void errSyn();
     static void errSem(const string& str, int line=-1);
