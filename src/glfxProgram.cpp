@@ -26,7 +26,8 @@ Program::Program(const map<ShaderType,Shader>& shaders)
     map<ShaderType,Shader>::const_iterator it;
     
     ShaderType types[NUM_OF_SHADER_TYPES]={VS,TC,TE,GS,FS,CS};
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++) {
+    for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	{
         it=shaders.find(types[i]);
         if(it!=shaders.end())
             m_shaders[i]=it->second;
