@@ -267,7 +267,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
         return false;
     }
     try {
-        //glfxdebug=1;
+        glfxdebug=1;
         gEffect=gEffects[effect];
         
         string fname(file);
