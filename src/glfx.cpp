@@ -45,15 +45,18 @@ typedef int errno_t;
 #include "gl/glfx.h"
 #include "glfxClasses.h"
 #include "glfxParser.h"
+#include "glfxEffect.h"
 
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
 #include "glfxScanner.h"
+#include "glfxProgram.h"
 
 using namespace std;
 
-namespace glfxParser {
+namespace glfxParser
+{
 
 #ifndef _MSC_VER
 
@@ -82,249 +85,7 @@ int fdopen_s(FILE** pFile, int fildes, const char *mode)
 Effect *gEffect=NULL;
 bool gLexPassthrough=true;
 
-Program::Program(const map<ShaderType,Shader>& shaders)
-{
-    map<ShaderType,Shader>::const_iterator it;
-    
-    ShaderType types[NUM_OF_SHADER_TYPES]={VS,TC,TE,GS,FS,CS};
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++) {
-        it=shaders.find(types[i]);
-        if(it!=shaders.end())
-            m_shaders[i]=it->second;
-    }
 
-    m_separable=false;
-}
-
-unsigned Program::CompileAndLink(string& log) const
-{
-    vector<GLuint> shaders;
-    ostringstream sLog;
-    
-    GLuint programId=glCreateProgram();
-    
-    GLint res=1;
-    GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
-                                            GL_TESS_CONTROL_SHADER,
-                                            GL_TESS_EVALUATION_SHADER,
-                                            GL_GEOMETRY_SHADER,
-                                            GL_FRAGMENT_SHADER,
-                                            GL_COMPUTE_SHADER};
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++) {
-        if(m_shaders[i].src.size()>0) {
-            shaders.push_back(glCreateShader(shaderTypes[i]));
-            res&=CompileShader(shaders.back(), m_shaders[i], sLog);
-            glAttachShader(programId, shaders.back());
-        }
-    }
-    
-    if(m_separable)
-        glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
-
-    glLinkProgram(programId);
-	
-    for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it) {
-        glDetachShader(programId, *it);
-        glDeleteShader(*it);
-    }
-    
-    GLint tmp;
-    glGetProgramiv(programId, GL_LINK_STATUS, &tmp);
-    res&=tmp;
-    
-    sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
-    
-    glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &tmp);
-    char* infoLog = new char[tmp];
-    glGetProgramInfoLog(programId, tmp, &tmp, infoLog);
-    sLog<<"Linkage details:"<<endl<<infoLog<<endl;
-    delete[] infoLog;
-    
-    log=sLog.str();
-
-    if(!res)
-        return 0;
-
-    return programId;
-}
-
-int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstream& sLog ) const
-{
-    const char* strSrc=shaderSrc.src.c_str();
-    glShaderSource(shader, 1, &strSrc, NULL);
-    glCompileShader(shader);
-    
-    GLint tmp,res;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &tmp);
-    res=tmp;
-    
-    sLog<<"Status: "<<shaderSrc.name<<" shader compiled with"<<(tmp ? "out" : "")<<" errors"<<endl;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
-
-    char* infoLog=new char[tmp];
-    glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
-    sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
-    delete[] infoLog;
-
-    return res;
-}
-
-Effect::Effect()
-    : m_includes(0)
-    , m_active(true)
-{}
-
-Effect::~Effect()
-{
-    for(map<string,Program*>::iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-        delete it->second;
-    for(map<string,Sampler*>::iterator it=m_samplers.begin(); it!=m_samplers.end(); ++it)
-        delete it->second;
-}
-
-bool& Effect::Active()
-{
-    return m_active;
-}
-
-string& Effect::Filename()
-{
-    return m_filename;
-}
-
-string& Effect::Dir()
-{
-    return m_dir;
-}
-
-static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
-{
-	bool is_error=true;
-	int errpos=(int)line.find("ERROR");
-	if(errpos<0)
-		errpos=(int)line.find("error");
-	if(errpos<0)
-	{
-		errpos=(int)line.find("WARNING");
-		is_error=false;
-	}
-	if(errpos<0)
-	{
-		errpos=(int)line.find("warning");
-		is_error=false;
-	}
-	if(errpos>=0)
-	{
-		int first_colon		=(int)line.find(":");
-		int second_colon	=(int)line.find(":",first_colon+1);
-		int third_colon		=(int)line.find(":",second_colon+1);
-		int first_bracket	=(int)line.find("(");
-		int second_bracket	=(int)line.find(")",first_bracket+1);
-		int numberstart,numberlen=0;
-	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
-		if(third_colon>=0&&second_colon>=0)
-		{
-			numberstart	=first_colon+1;
-			numberlen	=second_colon-first_colon-1;
-		}
-	//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
-		else if((third_colon<0||numberlen>6)&&second_bracket>=0)
-		{
-			if(first_colon<first_bracket)
-			{
-				numberstart	=first_colon+1;
-				numberlen	=first_bracket-first_colon-1;
-			}
-			else
-			{
-				numberstart=0;
-				numberlen=first_bracket;
-			}
-		}
-		else
-			return "";
-		std::string filenumber_str=line.substr(numberstart,numberlen);
-		std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
-		if(third_colon>=0)
-		{
-			third_colon-=numberstart+numberlen;
-			err_msg.replace(0,1,"(");
-		}
-		const char *err_warn	=is_error?"error":"warning";
-		if(third_colon>=0)
-		{
-			std::string rep="): ";
-			rep+=err_warn;
-			rep+=" C7555: ";
-			err_msg.replace(third_colon,1,rep);
-		}
-		int filenumber=atoi(filenumber_str.c_str());
-		string filename=sourceFilesUtf8[filenumber];
-		std::string err_line	=filename+err_msg;
-		//base::stringFormat("%s(%d): %s G1000: %s",filename.c_str(),line,err_warn,err_msg.c_str());
-			//(n.filename+"(")+n.line+"): "+err_warn+" G1000: "+err_msg;
-		return err_line;
-	}
-	return "";
-}
-unsigned Effect::BuildProgram(const string& prog, string& log) const
-{
-    map<string,Program*>::const_iterator it=m_programs.find(prog);
-    if(it==m_programs.end())
-        return 0;
-    
-    unsigned ret=it->second->CompileAndLink(log);
-	return ret;
-}
-
-unsigned Effect::BuildProgram(const string& prog) const
-{
-    string trash;
-    return BuildProgram(prog, trash);
-}
-
-ostringstream& Effect::Log()
-{
-    return m_log;
-}
-
-unsigned Effect::CreateSampler(const string& sampler) const
-{
-    map<string,Sampler*>::const_iterator it=m_samplers.find(sampler);
-    if(it==m_samplers.end())
-        throw "Sampler not found";
-
-    return it->second->CreateSamplerObject();
-}
-
-const vector<string>& Effect::GetProgramList() const
-{
-    return m_programNames;
-}
-
-const vector<string>& Effect::GetFilenameList() const
-{
-    return m_filenames;
-}
-
-
-void Effect::SetFilenameList(const char **filenamesUtf8)
-{
-	m_filenames.clear();
-   const char **f=filenamesUtf8;
-	while(*f!=NULL)
-	{
-		m_filenames.push_back(*f);
-		f++;
-	}
-}
-
-void Effect::PopulateProgramList()
-{
-    m_programNames.clear();
-    for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-        m_programNames.push_back(it->first);
-}
 
 Sampler::Sampler()
 {
@@ -506,7 +267,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
         return false;
     }
     try {
-        //glfxdebug=1;
+        glfxdebug=1;
         gEffect=gEffects[effect];
         
         string fname(file);
@@ -639,6 +400,77 @@ size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
     return tmpList.size();
 }
 
+
+static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
+{
+	bool is_error=true;
+	int errpos=(int)line.find("ERROR");
+	if(errpos<0)
+		errpos=(int)line.find("error");
+	if(errpos<0)
+	{
+		errpos=(int)line.find("WARNING");
+		is_error=false;
+	}
+	if(errpos<0)
+	{
+		errpos=(int)line.find("warning");
+		is_error=false;
+	}
+	if(errpos>=0)
+	{
+		int first_colon		=(int)line.find(":");
+		int second_colon	=(int)line.find(":",first_colon+1);
+		int third_colon		=(int)line.find(":",second_colon+1);
+		int first_bracket	=(int)line.find("(");
+		int second_bracket	=(int)line.find(")",first_bracket+1);
+		int numberstart,numberlen=0;
+	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
+		if(third_colon>=0&&second_colon>=0)
+		{
+			numberstart	=first_colon+1;
+			numberlen	=second_colon-first_colon-1;
+		}
+	//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
+		else if((third_colon<0||numberlen>6)&&second_bracket>=0)
+		{
+			if(first_colon<first_bracket)
+			{
+				numberstart	=first_colon+1;
+				numberlen	=first_bracket-first_colon-1;
+			}
+			else
+			{
+				numberstart=0;
+				numberlen=first_bracket;
+			}
+		}
+		else
+			return "";
+		std::string filenumber_str=line.substr(numberstart,numberlen);
+		std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
+		if(third_colon>=0)
+		{
+			third_colon-=numberstart+numberlen;
+			err_msg.replace(0,1,"(");
+		}
+		const char *err_warn	=is_error?"error":"warning";
+		if(third_colon>=0)
+		{
+			std::string rep="): ";
+			rep+=err_warn;
+			rep+=" C7555: ";
+			err_msg.replace(third_colon,1,rep);
+		}
+		int filenumber=atoi(filenumber_str.c_str());
+		string filename=sourceFilesUtf8[filenumber];
+		std::string err_line	=filename+err_msg;
+		//base::stringFormat("%s(%d): %s G1000: %s",filename.c_str(),line,err_warn,err_msg.c_str());
+			//(n.filename+"(")+n.line+"): "+err_warn+" G1000: "+err_msg;
+		return err_line;
+	}
+	return "";
+}
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 {
     if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || program==NULL || !gEffects[effect]->Active())

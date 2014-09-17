@@ -10,7 +10,7 @@ the last is C code to be copied verbatim to the output.
 %option fast
 %option ecs
 %option prefix="glfx"
-%option outfile="glfxScanner.cpp" header-file="glfxScanner.h"
+%option outfile="src/glfxScanner.cpp" header-file="src/glfxScanner.h"
 
 %{
     #ifdef _MSC_VER
@@ -44,6 +44,7 @@ the last is C code to be copied verbatim to the output.
 
     #include "glfxParser.h"
     #include "glfxClasses.h"
+    #include "glfxEffect.h"
 
     // tokens from parser generator
     #include "glfxLALRParser.hpp"
@@ -59,6 +60,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 STR_BLCK \"[^"\n]*\"
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
+// The %% means that we are done with the CONTROL section, and now move onto the token definitions
 %%
 "program"							glfxlval.boolean=false; return PROGRAM;
 "stages"							glfxlval.boolean=true; return PROGRAM;
