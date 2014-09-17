@@ -1,5 +1,5 @@
 %name-prefix "glfx"
-%output "glfxLALRParser.cpp"
+%output "src/glfxLALRParser.cpp"
 
 %{
     #include <iostream>

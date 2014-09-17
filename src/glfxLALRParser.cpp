@@ -105,7 +105,7 @@
 	#pragma optimize("",off)
 
 /* Line 371 of yacc.c  */
-#line 109 "glfxLALRParser.cpp"
+#line 109 "src/glfxLALRParser.cpp"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -191,7 +191,7 @@ int glfxparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 195 "glfxLALRParser.cpp"
+#line 195 "src/glfxLALRParser.cpp"
 
 #ifdef short
 # undef short
@@ -1962,7 +1962,7 @@ yyreduce:
 
 
 /* Line 1792 of yacc.c  */
-#line 1966 "glfxLALRParser.cpp"
+#line 1966 "src/glfxLALRParser.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

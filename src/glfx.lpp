@@ -10,7 +10,7 @@ the last is C code to be copied verbatim to the output.
 %option fast
 %option ecs
 %option prefix="glfx"
-%option outfile="glfxScanner.cpp" header-file="glfxScanner.h"
+%option outfile="src/glfxScanner.cpp" header-file="src/glfxScanner.h"
 
 %{
     #ifdef _MSC_VER
