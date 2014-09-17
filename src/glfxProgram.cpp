@@ -50,8 +50,10 @@ unsigned Program::CompileAndLink(string& log) const
                                             GL_GEOMETRY_SHADER,
                                             GL_FRAGMENT_SHADER,
                                             GL_COMPUTE_SHADER};
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++) {
-        if(m_shaders[i].src.size()>0) {
+    for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	{
+        if(m_shaders[i].src.size()>0)
+		{
             shaders.push_back(glCreateShader(shaderTypes[i]));
             res&=CompileShader(shaders.back(), m_shaders[i], sLog);
             glAttachShader(programId, shaders.back());

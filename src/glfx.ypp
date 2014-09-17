@@ -31,6 +31,8 @@
 
     static void errSyn();
     static void errSem(const string& str, int line=-1);
+
+	#pragma optimize("",off)
 %}
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
@@ -333,9 +335,14 @@ shaders_list : shaders_list shader_def {
 shader_def : SHADER_TYPE LP NUM RP EQUALS IDENTIFIER LP RP shader_layout SC {
     // Assemble the shader
     ostringstream theShader;
-    
+
     theShader<<"#version "<<$3.num<<endl;
     theShader<<$9.strs[0];
+	glfxParser::ShaderType shaderType=$1.sType;
+	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
+	if(shaderType==CS)
+		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+
     theShader<<gEffect->m_sharedCode.str();
     map<string, string>::const_iterator it=gEffect->m_shaders.find($6.strs[0]);
     if(it==gEffect->m_shaders.end()) {
