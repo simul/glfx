@@ -2,9 +2,9 @@
 #define glfxHEADER_H 1
 #define glfxIN_HEADER 1
 
-#line 6 "glfxScanner.h"
+#line 6 "src/glfxScanner.h"
 
-#line 8 "glfxScanner.h"
+#line 8 "src/glfxScanner.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -314,9 +314,9 @@ extern int glfxlex (void);
 #undef YY_DECL
 #endif
 
-#line 103 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 107 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
-#line 321 "glfxScanner.h"
+#line 321 "src/glfxScanner.h"
 #undef glfxIN_HEADER
 #endif /* glfxHEADER_H */
