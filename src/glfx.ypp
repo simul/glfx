@@ -1,6 +1,6 @@
 %name-prefix "glfx"
 %output "src/glfxLALRParser.cpp"
-
+%defines "src/glfxLALRParser.hpp"
 %{
     #include <iostream>
     #include <map>
@@ -31,12 +31,13 @@
 
     static void errSyn();
     static void errSem(const string& str, int line=-1);
-
+	std::string currentCsLayout;
 	#pragma optimize("",off)
 %}
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
+%token  LAYOUT
 
 %%
 
@@ -48,15 +49,15 @@ prog : prog tok
 }
 ;
 
-tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
-{
-    gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
-}
-    | SHADER lex_fx IDENTIFIER LP param_list RP read_block lex_passthrough
+	tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
+	{
+		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
+	}
+    | shader_and_layout  IDENTIFIER LP param_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
 		// Add shader parameters
-		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
+		for(vector<YYSTYPE::variable>::const_iterator it=$4.vars->begin();it!=$4.vars->end();++it)
 		{
 			string type(it->type);
 			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
@@ -71,11 +72,11 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
 			//shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
 			shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
 		}
-		delete $5.vars;
-    
+		delete $4.vars;
+		std::string shaderName=$3.strs[0];
 		// Add definition and code
-		shaderCode<<"void main()"<<endl<<$7.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
-		gEffect->m_shaders[$3.strs[0]]=shaderCode.str();
+		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
+		gEffect->m_shaders[shaderName]=shaderCode.str();
 	}
     | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough
 	{
@@ -125,7 +126,18 @@ tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
 		//gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 	}
 ;
-
+shader_and_layout: SHADER lex_fx cslayout
+	{
+		 $$.strs[0]=$1.strs[0];
+	 };
+	cslayout: LAYOUT LP RP
+	{
+		  $$.strs[0]=currentCsLayout=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	}
+	 | {
+   currentCsLayout= "";
+}
+	
 lex_fx :
 { /* Switch lex to fx scanning */
     gLexPassthrough=false;

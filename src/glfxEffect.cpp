@@ -55,6 +55,7 @@ string& Effect::Dir()
 {
     return m_dir;
 }
+
 unsigned Effect::BuildProgram(const string& prog, string& log) const
 {
     map<string,Program*>::const_iterator it=m_programs.find(prog);
