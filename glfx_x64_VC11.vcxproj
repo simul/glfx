@@ -52,7 +52,7 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_flex.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </AdditionalInputs>
@@ -72,7 +72,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./glfxLALRParser.cpp</Outputs>
     </CustomBuild>

@@ -32,12 +32,15 @@
     static void errSyn();
     static void errSem(const string& str, int line=-1);
 	std::string currentCsLayout;
+	int last_recorded_linenum	=0;
+	int global_linenum			=0;
+	int filenum					=0;
 	#pragma optimize("",off)
 %}
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
-%token  LAYOUT
+%token  LAYOUT LINE
 
 %%
 
@@ -46,14 +49,19 @@ prog : prog tok
     gEffect->m_sharedCode.str("");    // clear the stream
     //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
     gLexPassthrough=true;
-}
-;
-
+	};
 	tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 	}
-    | shader_and_layout  IDENTIFIER LP param_list RP read_block lex_passthrough
+	| LINE lex_fx NUM NUM lex_passthrough
+	{
+		last_recorded_linenum	=$3.num;
+		global_linenum			=glfxget_lineno();
+		filenum					=$4.num;
+		gEffect->m_sharedCode<<"#line "<<last_recorded_linenum<<" "<<filenum<<endl;
+	}
+    | shader_and_layout IDENTIFIER LP param_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
 		// Add shader parameters
@@ -75,6 +83,7 @@ prog : prog tok
 		delete $4.vars;
 		std::string shaderName=$3.strs[0];
 		// Add definition and code
+		shaderCode<<"#line "<<last_recorded_linenum+(glfxlval.lineno-global_linenum)<<" "<<filenum<<endl;
 		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 	}
@@ -128,16 +137,32 @@ prog : prog tok
 ;
 shader_and_layout: SHADER lex_fx cslayout
 	{
-		 $$.strs[0]=$1.strs[0];
+		std::string str1=$1.strs[0];
+		std::string str2=$2.strs[0];
+		std::string str3=$3.strs[0];
+		 $$.strs[0]=str1;
 	 };
-	cslayout: LAYOUT LP RP
+	cslayout: LAYOUT layout_params
 	{
-		  $$.strs[0]=currentCsLayout=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		currentCsLayout="";
+		currentCsLayout+=$1.strs[0];
+		currentCsLayout+=$2.strs[0];
 	}
 	 | {
    currentCsLayout= "";
-}
-	
+};
+
+layout_params:LP NUM COMMA NUM COMMA NUM RP
+{
+	std::string ret="(";
+	ret+=$2.strs[0];
+	ret+=",";
+	ret+=$4.strs[0];
+	ret+=",";
+	ret+=$6.strs[0];
+	ret+=")";
+	$$.strs[0]=ret;
+};
 lex_fx :
 { /* Switch lex to fx scanning */
     gLexPassthrough=false;
@@ -147,7 +172,6 @@ lex_fx :
 lex_passthrough :
 { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
-    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
 }
 ;
 

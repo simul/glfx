@@ -63,12 +63,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions*/
 %%
-"CS_LAYOUT"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else { return LAYOUT;}
+CS_LAYOUT							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext;return LAYOUT;}
 "program"							glfxlval.boolean=false; return PROGRAM;
 "stages"							glfxlval.boolean=true; return PROGRAM;
 "shader"							glfxlval.lineno=yylineno; return SHADER;
 "interface"							glfxlval.lineno=yylineno; return INTERFACE;
 "sampler"							glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return SAMPLER;
+^"#line"							glfxlval.lineno=yylineno;  return LINE;
 ^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
 									    string tmp(yytext);
 									    size_t firstLoc=tmp.find('"')+1;
@@ -84,7 +85,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 "gs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GS; return SHADER_TYPE;}
 "fs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FS; return SHADER_TYPE;}
 "cs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=CS; return SHADER_TYPE;}
-{NUM_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=atoi(yytext); return NUM;}
+{NUM_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; glfxlval.num=atoi(yytext); return NUM;}
 {FLOAT_BLCK}						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
 "in"|"out"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
 "gl_FragDepth"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
