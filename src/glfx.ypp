@@ -29,15 +29,18 @@
     #include "glfxScanner.h"
     #include "glfxEffect.h"
 
-    static void errSyn();
+    static void errSyn(const char *e);
     static void errSem(const string& str, int line=-1);
+	static int last_linenumber=0;
+	static int current_filenumber=0;
+	static int global_linenumber=0;
 	std::string currentCsLayout;
 	#pragma optimize("",off)
 %}
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
-%token  LAYOUT
+%token  LAYOUT LINE
 
 %%
 
@@ -53,7 +56,14 @@ prog : prog tok
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 	}
-    | shader_and_layout  IDENTIFIER LP param_list RP read_block lex_passthrough
+	| LINE lex_fx NUM NUM lex_passthrough
+	{
+		last_linenumber=$3.num;
+		current_filenumber=$4.num;
+		global_linenumber=$1.lineno;
+		gEffect->m_sharedCode<<$1.strs[0]<<" "<<$3.num<<" "<<$4.num<<endl;
+	}
+    | shader_and_layout IDENTIFIER LP param_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
 		// Add shader parameters
@@ -75,6 +85,8 @@ prog : prog tok
 		delete $4.vars;
 		std::string shaderName=$3.strs[0];
 		// Add definition and code
+		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 	}
@@ -127,14 +139,22 @@ prog : prog tok
 	}
 ;
 shader_and_layout: SHADER lex_fx cslayout
-	{
-		 $$.strs[0]=$1.strs[0];
-	 };
-	cslayout: LAYOUT LP RP
-	{
-		  $$.strs[0]=currentCsLayout=$1.strs[0]+$2.strs[0]+$3.strs[0];
-	}
-	 | {
+{
+	string s1=$1.strs[0];
+	$$.strs[0]=s1;
+};
+cslayout: LAYOUT LP NUM COMMA NUM COMMA NUM RP
+{
+	currentCsLayout=$1.strs[0];
+	currentCsLayout+="(";
+	currentCsLayout+=$3.strs[0];
+	currentCsLayout+=",";
+	currentCsLayout+=$5.strs[0];
+	currentCsLayout+=",";
+	currentCsLayout+=$7.strs[0];
+	currentCsLayout+=")";
+}
+| {
    currentCsLayout= "";
 }
 	
@@ -412,16 +432,16 @@ read_parenthesis : { /* read parenthesis */
 
 %%
 
-void glfxerror(const char*)
+void glfxerror(const char* e)
 {
-    errSyn();
+    errSyn(e);
 }
 
-void errSyn()
+void errSyn(const char* e)
 {
     ostringstream errMsg;
 
-    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text();
+    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text()<<" "<<e;
     throw errMsg.str();
 }
 

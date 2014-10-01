@@ -400,7 +400,7 @@ size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
     return tmpList.size();
 }
 
-
+#pragma optimize("",off)
 static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
 {
 	bool is_error=true;
@@ -426,7 +426,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 		int second_bracket	=(int)line.find(")",first_bracket+1);
 		int numberstart,numberlen=0;
 	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
-		if(third_colon>=0&&second_colon>=0)
+		if(third_colon>=0&&second_colon>=0&&(second_colon-first_colon)<5)
 		{
 			numberstart	=first_colon+1;
 			numberlen	=second_colon-first_colon-1;
@@ -446,28 +446,32 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 			}
 		}
 		else
-			return "";
-		std::string filenumber_str=line.substr(numberstart,numberlen);
-		std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
-		if(third_colon>=0)
 		{
-			third_colon-=numberstart+numberlen;
-			err_msg.replace(0,1,"(");
+			numberstart=0;
+			numberlen=first_bracket;
 		}
-		const char *err_warn	=is_error?"error":"warning";
-		if(third_colon>=0)
+		if(numberlen>0)
 		{
-			std::string rep="): ";
-			rep+=err_warn;
-			rep+=" C7555: ";
-			err_msg.replace(third_colon,1,rep);
+			std::string filenumber_str=line.substr(numberstart,numberlen);
+			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
+			if(third_colon>=0)
+			{
+				third_colon-=numberstart+numberlen;
+				err_msg.replace(0,1,"(");
+			}
+			const char *err_warn	=is_error?"error":"warning";
+			if(third_colon>=0)
+			{
+				std::string rep="): ";
+				rep+=err_warn;
+				rep+=" C7555: ";
+				err_msg.replace(third_colon,1,rep);
+			}
+			int filenumber=atoi(filenumber_str.c_str());
+			string filename=sourceFilesUtf8[filenumber];
+			std::string err_line	=filename+err_msg;
+			return err_line;
 		}
-		int filenumber=atoi(filenumber_str.c_str());
-		string filename=sourceFilesUtf8[filenumber];
-		std::string err_line	=filename+err_msg;
-		//base::stringFormat("%s(%d): %s G1000: %s",filename.c_str(),line,err_warn,err_msg.c_str());
-			//(n.filename+"(")+n.line+"): "+err_warn+" G1000: "+err_msg;
-		return err_line;
 	}
 	return "";
 }
@@ -515,8 +519,8 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
 			{
 				newlog+=error_line+"\n";
 			}
-			pos=next;
-			next=(int)slog.find('\n',pos+1);
+			pos=next+1;
+			next=(int)slog.find('\n',pos);
 		}
 		slog=newlog;
 	}

@@ -67,7 +67,8 @@ extern int glfxdebug;
      SAMPLER = 276,
      FLOAT = 277,
      EMPTY_ARRAY_BRACKETS = 278,
-     LAYOUT = 279
+     LAYOUT = 279,
+     LINE = 280
    };
 #endif
 
