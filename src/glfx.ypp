@@ -29,8 +29,11 @@
     #include "glfxScanner.h"
     #include "glfxEffect.h"
 
-    static void errSyn();
+    static void errSyn(const char *e);
     static void errSem(const string& str, int line=-1);
+	static int last_linenumber=0;
+	static int current_filenumber=0;
+	static int global_linenumber=0;
 	std::string currentCsLayout;
 	int last_recorded_linenum	=0;
 	int global_linenum			=0;
@@ -56,10 +59,10 @@ prog : prog tok
 	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
-		last_recorded_linenum	=$3.num;
-		global_linenum			=glfxget_lineno();
-		filenum					=$4.num;
-		gEffect->m_sharedCode<<"#line "<<last_recorded_linenum<<" "<<filenum<<endl;
+		last_linenumber=$3.num;
+		current_filenumber=$4.num;
+		global_linenumber=$1.lineno;
+		gEffect->m_sharedCode<<$1.strs[0]<<" "<<$3.num<<" "<<$4.num<<endl;
 	}
     | shader_and_layout IDENTIFIER LP param_list RP read_block lex_passthrough
 	{
@@ -83,7 +86,8 @@ prog : prog tok
 		delete $4.vars;
 		std::string shaderName=$3.strs[0];
 		// Add definition and code
-		shaderCode<<"#line "<<last_recorded_linenum+(glfxlval.lineno-global_linenum)<<" "<<filenum<<endl;
+		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 	}
@@ -137,10 +141,8 @@ prog : prog tok
 ;
 shader_and_layout: SHADER lex_fx cslayout
 	{
-		std::string str1=$1.strs[0];
-		std::string str2=$2.strs[0];
-		std::string str3=$3.strs[0];
-		 $$.strs[0]=str1;
+	string s1=$1.strs[0];
+	$$.strs[0]=s1;
 	 };
 	cslayout: LAYOUT layout_params
 	{
@@ -436,16 +438,16 @@ read_parenthesis : { /* read parenthesis */
 
 %%
 
-void glfxerror(const char*)
+void glfxerror(const char* e)
 {
-    errSyn();
+    errSyn(e);
 }
 
-void errSyn()
+void errSyn(const char* e)
 {
     ostringstream errMsg;
 
-    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text();
+    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text()<<" "<<e;
     throw errMsg.str();
 }
 
