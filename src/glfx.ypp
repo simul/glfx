@@ -67,6 +67,7 @@ prog : prog tok
     | shader_and_layout IDENTIFIER LP param_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
+		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
 		for(vector<YYSTYPE::variable>::const_iterator it=$4.vars->begin();it!=$4.vars->end();++it)
 		{
@@ -80,13 +81,13 @@ prog : prog tok
 			}
 			else
 				lineno=$1.lineno;
-			//shaderCode<<"#line "<<lineno<<" "<<gEffect->Filename().c_str()<<endl;
+		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
+			shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 			shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
 		}
 		delete $4.vars;
 		std::string shaderName=$3.strs[0];
 		// Add definition and code
-		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
