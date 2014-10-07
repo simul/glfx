@@ -253,6 +253,7 @@ bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,cons
 		gEffects[effect]->SetFilenameList(filenamesUtf8);
 		return true;
 	}
+	gEffects[effect]->SetFilenameList(filenamesUtf8);
 	return false;
 }
 

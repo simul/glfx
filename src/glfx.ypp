@@ -91,8 +91,11 @@ prog : prog tok
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
+		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
+		
+		gEffect->m_sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
 	}
-    | PROGRAM lex_fx IDENTIFIER LB prog_def RB SC lex_passthrough
+    | PROGRAM lex_fx IDENTIFIER LB prog_def RB lex_passthrough
 	{
 		$5.prog->m_separable=$1.boolean;
 		gEffect->m_programs[$3.strs[0]]=$5.prog;
