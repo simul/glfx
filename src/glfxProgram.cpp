@@ -21,6 +21,11 @@ typedef int errno_t;
 #include "glfxScanner.h"
 #include "glfxProgram.h"
 
+Technique::Technique(const map<std::string, Program>& passes)
+	:m_passes(passes)
+{
+}
+
 Program::Program(const map<ShaderType,Shader>& shaders)
 {
     map<ShaderType,Shader>::const_iterator it;
@@ -34,6 +39,25 @@ Program::Program(const map<ShaderType,Shader>& shaders)
     }
 
     m_separable=false;
+}
+
+Program::Program()
+{
+}
+
+Program::Program(const Program& prog)
+{
+	operator=(prog);
+}
+
+const Program& Program::operator=(const Program& prog)
+{
+	for (int i = 0; i<NUM_OF_SHADER_TYPES; i++)
+	{
+		m_shaders[i] = prog.m_shaders[i];
+	}
+	m_separable = prog.m_separable;
+	return *this;
 }
 
 unsigned Program::CompileAndLink(string& log) const

@@ -93,7 +93,8 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 *   program -- Program name
 * Return value: GL program id if success, 0 otherwise
 **************************************************/
-GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
+//GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
+GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
 
 /**************************************************
 * glfxGetProgramCount
@@ -118,6 +119,17 @@ GLFXAPI void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* nam
 *   name -- name of program
 **************************************************/
 GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
+
+//! Get the number of techniques in the effect
+GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect);
+//! Get the name of the technique at the given index.
+GLFXAPI const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum);
+//! Get the number of passes in the technique
+GLFXAPI size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name);
+//! Get the name of the pass at the given index.
+GLFXAPI const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name,int pass_num);
+//! Compile the pass and return its GLSL program identifier.
+GLFXAPI GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name);
 
 /**************************************************
 * glfxGenerateSampler

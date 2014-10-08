@@ -401,6 +401,48 @@ size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
     return tmpList.size();
 }
 
+size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
+{
+	return (int)gEffects[effect]->GetTechniqueList().size();
+}
+
+const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
+{
+	const vector<string>& tmpList = gEffects[effect]->GetTechniqueList();
+	if (technum > (int)tmpList.size())
+		return "";
+	return tmpList[technum].c_str();
+}
+
+size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
+{
+	 Technique *tech=gEffects[effect]->GetTechniqueByName(tech_name);
+	if (!tech)
+		return 0;
+	return tech->GetPasses().size();
+}
+
+const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int pass_num)
+{
+	 Technique *tech = gEffects[effect]->GetTechniqueByName(tech_name);
+	if (!tech)
+		return 0;
+	std::map<string, Program>::const_iterator i = tech->GetPasses().begin();
+	for (int j = 0; j < pass_num; j++,i++)
+	{
+	}
+	return i->first.c_str();
+}
+
+GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name)
+{
+	 Technique *tech = gEffects[effect]->GetTechniqueByName(tech_name);
+	if (!tech)
+		return 0;
+	const Program &p = tech->GetPasses()[string(pass_name)];
+	return glfxCompileProgram(effect, tech_name, pass_name);
+}
+
 #pragma optimize("",off)
 static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
 {
@@ -476,16 +518,20 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 	}
 	return "";
 }
-GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program)
+
+GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
 {
-    if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || program==NULL || !gEffects[effect]->Active())
+	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL || !gEffects[effect]->Active())
         return 0;
 
     string slog;
     unsigned progid;
 	try
 	{
-		progid=gEffects[effect]->BuildProgram(program, slog);
+		string technique_str;
+		if (technique)
+			technique_str = technique;
+		progid = gEffects[effect]->BuildProgram(technique_str, pass, slog);
 	}
 	catch(const char* err)
 	{

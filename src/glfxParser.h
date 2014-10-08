@@ -33,62 +33,74 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 using namespace std;
 using namespace glfxParser;
+
 /// Values that represent SamplerParam.
-enum SamplerParam {
+enum SamplerParam
+{
     SAMPLER_PARAM_STRING,
     SAMPLER_PARAM_INT,
     SAMPLER_PARAM_FLOAT
 };
+
 /// Values that represent RegisterParamType.
-enum RegisterParamType {
+enum RegisterParamType
+{
     REGISTER_NONE,
     REGISTER_INT,
     REGISTER_NAME
 };
 
-struct glfxstype {
+//! This is the struct that the parser uses to store data about document elements.
+struct glfxstype
+{
     glfxstype() {}
 
-    struct variable {
+    struct variable
+	{
         string  prepend;
         string  type;
         string  identifier;
     };
 
-    struct samplerVar {
+    struct samplerVar
+	{
         string  binding;
         string  name;
     };
 
-    union {
+    union
+	{
         int num;
         unsigned unum;
         int lineno;
         float fnum;
         bool boolean;
+		Technique *tech;
         Program* prog;
-        Sampler* samp;
+		Sampler* samp; 
+		map<string, Program>* passes;
         map<ShaderType, Program::Shader>* shaders;
         vector<variable>* vars;
         vector<samplerVar>* texNames;
     };
     
-    union {
+    union
+	{
         SamplerParam samplerParamType;
         ShaderType sType;
         RegisterParamType rType;
     };
-
     // Carrying these around is bad luck, or more like bad performance. But whatever...
     string strs[3];
 };
 
-namespace glfxParser {
-extern bool gLexPassthrough;
+namespace glfxParser
+{
+	extern bool gLexPassthrough;
 
-#ifdef LINUX
-int fopen_s(FILE** pFile, const char *filename, const char *mode);
-#endif
+	#ifdef LINUX
+	int fopen_s(FILE** pFile, const char *filename, const char *mode);
+	#endif
 
 }
 

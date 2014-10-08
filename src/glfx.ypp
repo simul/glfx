@@ -43,7 +43,7 @@
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
-%token  LAYOUT LINE
+%token  LAYOUT LINE TECHNIQUE PASS GROUP
 
 %%
 
@@ -99,6 +99,10 @@ prog : prog tok
 	{
 		$5.prog->m_separable=$1.boolean;
 		gEffect->m_programs[$3.strs[0]]=$5.prog;
+	}
+	| TECHNIQUE lex_fx IDENTIFIER LB tech_def RB lex_passthrough
+	{
+		gEffect->m_techniques[$3.strs[0]] = $5.tech;
 	}
     | INCLUDE
 	{
@@ -328,116 +332,171 @@ storage : STORAGET {
 }
 ;
 
-param : STORAGEQ IDENTIFIER IDENTIFIER {
-    $$.strs[0]=$1.strs[0];
-    $$.strs[1]=$2.strs[0];
-    $$.strs[2]=$3.strs[0];
+param : STORAGEQ IDENTIFIER IDENTIFIER
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[1]=$2.strs[0];
+		$$.strs[2]=$3.strs[0];
+	}
+;
+
+arrayBrackets : EMPTY_ARRAY_BRACKETS
+	{
+		$$.strs[0]="[]";
+	}
+    |
+	{
+		$$.strs[0]="";
+	}
+;
+
+location : COLON NUM
+	{
+		$$.num=$2.num;
+		$$.rType=REGISTER_INT;
+	}
+    | COLON IDENTIFIER
+	{
+		$$.strs[0]=$2.strs[0];
+		$$.rType=REGISTER_NAME;
+	}
+    |
+	{
+		$$.rType=REGISTER_NONE;
+	}
+;
+
+tech_def : pass_list
+{
+	Technique *t = new Technique(*($1.passes));
+	$$.tech = t;
+	delete $1.passes;
+};
+
+pass_list: pass_list pass_def
+{
+	$$.passes = $1.passes;
+	string name = $2.strs[0];
+	Program *p = $2.prog;
+	if (p)
+	{
+		(*$$.passes)[name] = *(p);
+	}
+	delete $2.prog;
+}
+| pass_def
+{
+	map < string, Program > *m=new map < string, Program >;
+	$$.passes = m;
+	string name = $1.strs[0];
+	Program *p = $1.prog;
+	if (p)
+	{
+		Program &newp = (*m)[name];
+		newp= *p;
+	}
+	delete p;
 }
 ;
 
-arrayBrackets : EMPTY_ARRAY_BRACKETS {
-    $$.strs[0]="[]";
+pass_def: PASS IDENTIFIER LB prog_def RB
+{
+	$4.prog->m_separable = $1.boolean;
+	$$.prog = $4.prog;
+	$$.strs[0] = $2.strs[0];
 }
-    | {
-    $$.strs[0]="";
-}
+
+prog_def : shaders_list
+	{
+		$$.prog = new Program(*($1.shaders));
+		delete $1.shaders;
+	}
+	;
+
+shaders_list : shaders_list shader_def
+	{
+		$$.shaders=$1.shaders;
+		(*$$.shaders)[$2.sType].src=$2.strs[0];
+		(*$$.shaders)[$2.sType].name=$2.strs[1];
+	}
+	| shader_def
+	{
+		$$.shaders=new map<ShaderType, Program::Shader>;
+		(*$$.shaders)[$1.sType].src=$1.strs[0];
+		(*$$.shaders)[$1.sType].name=$1.strs[1];
+	}
+	;
+
+shader_def : SHADER_TYPE LP NUM RP EQUALS IDENTIFIER LP RP shader_layout SC
+	{
+		// Assemble the shader
+		ostringstream theShader;
+		theShader<<"#version "<<$3.num<<endl;
+		theShader<<$9.strs[0];
+		glfxParser::ShaderType shaderType=$1.sType;
+		// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
+		if(shaderType==CS)
+			theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<gEffect->m_sharedCode.str();
+		map<string, string>::const_iterator it=gEffect->m_shaders.find($6.strs[0]);
+		if(it==gEffect->m_shaders.end())
+		{
+			ostringstream errMsg;
+			errMsg<<"Unable to find referenced shader \""<<$6.strs[0]<<'\"';
+			errSem(errMsg.str(), $6.lineno);
+		}
+		// Currently in case of error it never returns (throw)
+		// TODO: Handle continuation in case of error
+		theShader<<it->second;
+		$$.strs[0]=theShader.str();
+		$$.strs[1]=$6.strs[0];
+		$$.sType=$1.sType;
+	}
 ;
 
-location : COLON NUM {
-    $$.num=$2.num;
-    $$.rType=REGISTER_INT;
-}
-    | COLON IDENTIFIER {
-    $$.strs[0]=$2.strs[0];
-    $$.rType=REGISTER_NAME;
-}
-    | {
-    $$.rType=REGISTER_NONE;
-}
+shader_layout : COLON shader_layout_list
+	{
+		$$.strs[0]=$2.strs[0];
+	}
+    |
+	{
+		$$.strs[0]="";
+	}
 ;
 
-prog_def : shaders_list {
-    $$.prog = new Program(*($1.shaders));
-    delete $1.shaders;
-}
+shader_layout_list : shader_layout_list COMMA layout
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.strs[0]+=$3.strs[0];
+	}
+    | layout
+	{
+		$$.strs[0]=$1.strs[0];
+	}
 ;
 
-shaders_list : shaders_list shader_def {
-    $$.shaders=$1.shaders;
-    (*$$.shaders)[$2.sType].src=$2.strs[0];
-    (*$$.shaders)[$2.sType].name=$2.strs[1];
-}
-    | shader_def {
-    $$.shaders=new map<ShaderType, Program::Shader>;
-    (*$$.shaders)[$1.sType].src=$1.strs[0];
-    (*$$.shaders)[$1.sType].name=$1.strs[1];
-}
+layout : STORAGEQ read_parenthesis
+	{
+		ostringstream layoutDef;
+		//layoutDef<<"#line "<<$1.lineno<<endl;
+		layoutDef<<"layout"<<$2.strs[0]<<' '<<$1.strs[0]<<';'<<endl;
+		$$.strs[0]=layoutDef.str();
+	}
 ;
 
-shader_def : SHADER_TYPE LP NUM RP EQUALS IDENTIFIER LP RP shader_layout SC {
-    // Assemble the shader
-    ostringstream theShader;
-
-    theShader<<"#version "<<$3.num<<endl;
-    theShader<<$9.strs[0];
-	glfxParser::ShaderType shaderType=$1.sType;
-	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
-	if(shaderType==CS)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
-
-    theShader<<gEffect->m_sharedCode.str();
-    map<string, string>::const_iterator it=gEffect->m_shaders.find($6.strs[0]);
-    if(it==gEffect->m_shaders.end()) {
-        ostringstream errMsg;
-        errMsg<<"Unable to find referenced shader \""<<$6.strs[0]<<'\"';
-        errSem(errMsg.str(), $6.lineno);
-    }
-    
-    // Currently in case of error it never returns (throw)
-    // TODO: Handle continuation in case of error
-    theShader<<it->second;
-    $$.strs[0]=theShader.str();
-    $$.strs[1]=$6.strs[0];
-    $$.sType=$1.sType;
-}
+layout : GL_FRAGDEPTH read_parenthesis
+	{
+		ostringstream layoutDef;
+		//layoutDef<<"#line "<<$1.lineno<<endl;
+		layoutDef<<"layout"<<$2.strs[0]<<' '<<"out float "<<$1.strs[0]<<';'<<endl;
+		$$.strs[0]=layoutDef.str();
+	}
 ;
 
-shader_layout : COLON shader_layout_list {
-    $$.strs[0]=$2.strs[0];
-}
-    | {
-    $$.strs[0]="";
-}
-;
-
-shader_layout_list : shader_layout_list COMMA layout {
-    $$.strs[0]=$1.strs[0];
-    $$.strs[0]+=$3.strs[0];
-}
-    | layout {
-    $$.strs[0]=$1.strs[0];
-}
-;
-
-layout : STORAGEQ read_parenthesis {
-    ostringstream layoutDef;
-    //layoutDef<<"#line "<<$1.lineno<<endl;
-    layoutDef<<"layout"<<$2.strs[0]<<' '<<$1.strs[0]<<';'<<endl;
-    $$.strs[0]=layoutDef.str();
-}
-;
-
-layout : GL_FRAGDEPTH read_parenthesis {
-    ostringstream layoutDef;
-    //layoutDef<<"#line "<<$1.lineno<<endl;
-    layoutDef<<"layout"<<$2.strs[0]<<' '<<"out float "<<$1.strs[0]<<';'<<endl;
-    $$.strs[0]=layoutDef.str();
-}
-;
-
-read_parenthesis : { /* read parenthesis */
-    $$.strs[0]=glfxreadblock('(', ')');
-}
+read_parenthesis :
+	{ /* read parenthesis */
+		$$.strs[0]=glfxreadblock('(', ')');
+	}
 ;
 
 %%

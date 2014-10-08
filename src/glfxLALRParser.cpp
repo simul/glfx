@@ -169,7 +169,10 @@ extern int glfxdebug;
      FLOAT = 277,
      EMPTY_ARRAY_BRACKETS = 278,
      LAYOUT = 279,
-     LINE = 280
+     LINE = 280,
+     TECHNIQUE = 281,
+     PASS = 282,
+     GROUP = 283
    };
 #endif
 
@@ -202,7 +205,7 @@ int glfxparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 206 "src/glfxLALRParser.cpp"
+#line 209 "src/glfxLALRParser.cpp"
 
 #ifdef short
 # undef short
@@ -422,20 +425,20 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  2
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   101
+#define YYLAST   120
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  26
+#define YYNTOKENS  29
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  27
+#define YYNNTS  30
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  49
+#define YYNRULES  54
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  103
+#define YYNSTATES  118
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   280
+#define YYMAXUTOK   283
 
 #define YYTRANSLATE(YYX)						\
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -471,7 +474,7 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25
+      25,    26,    27,    28
 };
 
 #if YYDEBUG
@@ -479,43 +482,47 @@ static const yytype_uint8 yytranslate[] =
    YYRHS.  */
 static const yytype_uint8 yyprhs[] =
 {
-       0,     0,     3,     6,     7,    14,    20,    28,    36,    38,
-      48,    52,    55,    56,    64,    65,    66,    67,    69,    70,
-      74,    76,    79,    83,    86,    90,    94,    98,   102,   104,
-     105,   110,   112,   113,   117,   119,   120,   123,   126,   127,
-     129,   132,   134,   145,   148,   149,   153,   155,   158,   161
+       0,     0,     3,     6,     7,    14,    20,    28,    36,    44,
+      46,    56,    60,    63,    64,    72,    73,    74,    75,    77,
+      78,    82,    84,    87,    91,    94,    98,   102,   106,   110,
+     112,   113,   118,   120,   121,   125,   127,   128,   131,   134,
+     135,   137,   140,   142,   148,   150,   153,   155,   166,   169,
+     170,   174,   176,   179,   182
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
 static const yytype_int8 yyrhs[] =
 {
-      27,     0,    -1,    27,    28,    -1,    -1,     5,    32,     6,
-      34,    15,    33,    -1,    25,    32,    19,    19,    33,    -1,
-      29,     6,    11,    40,    12,    34,    33,    -1,     4,    32,
-       6,    13,    46,    14,    33,    -1,    20,    -1,    21,    32,
-      35,    13,    38,    14,    36,    15,    33,    -1,     3,    32,
-      30,    -1,    24,    31,    -1,    -1,    11,    19,    16,    19,
-      16,    19,    12,    -1,    -1,    -1,    -1,     6,    -1,    -1,
-      36,    16,    37,    -1,    37,    -1,     6,    45,    -1,    38,
-      39,    15,    -1,    39,    15,    -1,     6,    18,     6,    -1,
-       6,    18,    22,    -1,     6,    18,    19,    -1,    40,    16,
-      41,    -1,    41,    -1,    -1,    42,    43,    44,    45,    -1,
-       9,    -1,    -1,     7,     6,     6,    -1,    23,    -1,    -1,
-      17,    19,    -1,    17,     6,    -1,    -1,    47,    -1,    47,
-      48,    -1,    48,    -1,    10,    11,    19,    12,    18,     6,
-      11,    12,    49,    15,    -1,    17,    50,    -1,    -1,    50,
-      16,    51,    -1,    51,    -1,     7,    52,    -1,     8,    52,
-      -1,    -1
+      30,     0,    -1,    30,    31,    -1,    -1,     5,    35,     6,
+      37,    15,    36,    -1,    25,    35,    19,    19,    36,    -1,
+      32,     6,    11,    43,    12,    37,    36,    -1,     4,    35,
+       6,    13,    52,    14,    36,    -1,    26,    35,     6,    13,
+      49,    14,    36,    -1,    20,    -1,    21,    35,    38,    13,
+      41,    14,    39,    15,    36,    -1,     3,    35,    33,    -1,
+      24,    34,    -1,    -1,    11,    19,    16,    19,    16,    19,
+      12,    -1,    -1,    -1,    -1,     6,    -1,    -1,    39,    16,
+      40,    -1,    40,    -1,     6,    48,    -1,    41,    42,    15,
+      -1,    42,    15,    -1,     6,    18,     6,    -1,     6,    18,
+      22,    -1,     6,    18,    19,    -1,    43,    16,    44,    -1,
+      44,    -1,    -1,    45,    46,    47,    48,    -1,     9,    -1,
+      -1,     7,     6,     6,    -1,    23,    -1,    -1,    17,    19,
+      -1,    17,     6,    -1,    -1,    50,    -1,    50,    51,    -1,
+      51,    -1,    27,     6,    13,    52,    14,    -1,    53,    -1,
+      53,    54,    -1,    54,    -1,    10,    11,    19,    12,    18,
+       6,    11,    12,    55,    15,    -1,    17,    56,    -1,    -1,
+      56,    16,    57,    -1,    57,    -1,     7,    58,    -1,     8,
+      58,    -1,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    50,    50,    51,    56,    60,    67,    98,   103,   126,
-     146,   151,   157,   161,   173,   179,   184,   190,   193,   198,
-     206,   215,   232,   246,   262,   267,   272,   279,   289,   298,
-     303,   323,   326,   331,   338,   341,   346,   350,   354,   359,
-     365,   370,   377,   405,   408,   413,   417,   422,   430,   438
+       0,    50,    50,    51,    56,    60,    67,    98,   103,   107,
+     130,   150,   155,   161,   165,   177,   183,   188,   194,   197,
+     202,   210,   219,   236,   250,   266,   271,   276,   283,   293,
+     302,   307,   327,   330,   335,   343,   348,   353,   358,   364,
+     369,   376,   387,   402,   409,   416,   422,   430,   457,   462,
+     467,   472,   478,   487,   497
 };
 #endif
 
@@ -528,11 +535,12 @@ static const char *const yytname[] =
   "IDENTIFIER", "STORAGEQ", "GL_FRAGDEPTH", "STORAGET", "SHADER_TYPE",
   "LP", "RP", "LB", "RB", "SC", "COMMA", "COLON", "EQUALS", "NUM",
   "INCLUDE", "SAMPLER", "FLOAT", "EMPTY_ARRAY_BRACKETS", "LAYOUT", "LINE",
-  "$accept", "prog", "tok", "shader_and_layout", "cslayout",
-  "layout_params", "lex_fx", "lex_passthrough", "read_block",
-  "samplerClass", "samplerVars", "samplerVar", "samplerParamList",
-  "samplerParam", "param_list", "fullparam", "storage", "param",
-  "arrayBrackets", "location", "prog_def", "shaders_list", "shader_def",
+  "TECHNIQUE", "PASS", "GROUP", "$accept", "prog", "tok",
+  "shader_and_layout", "cslayout", "layout_params", "lex_fx",
+  "lex_passthrough", "read_block", "samplerClass", "samplerVars",
+  "samplerVar", "samplerParamList", "samplerParam", "param_list",
+  "fullparam", "storage", "param", "arrayBrackets", "location", "tech_def",
+  "pass_list", "pass_def", "prog_def", "shaders_list", "shader_def",
   "shader_layout", "shader_layout_list", "layout", "read_parenthesis", YY_NULL
 };
 #endif
@@ -544,28 +552,30 @@ static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
-     275,   276,   277,   278,   279,   280
+     275,   276,   277,   278,   279,   280,   281,   282,   283
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    26,    27,    27,    28,    28,    28,    28,    28,    28,
-      29,    30,    30,    31,    32,    33,    34,    35,    35,    36,
-      36,    37,    38,    38,    39,    39,    39,    40,    40,    40,
-      41,    42,    42,    43,    44,    44,    45,    45,    45,    46,
-      47,    47,    48,    49,    49,    50,    50,    51,    51,    52
+       0,    29,    30,    30,    31,    31,    31,    31,    31,    31,
+      31,    32,    33,    33,    34,    35,    36,    37,    38,    38,
+      39,    39,    40,    41,    41,    42,    42,    42,    43,    43,
+      43,    44,    45,    45,    46,    47,    47,    48,    48,    48,
+      49,    50,    50,    51,    52,    53,    53,    54,    55,    55,
+      56,    56,    57,    57,    58
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     2,     0,     6,     5,     7,     7,     1,     9,
-       3,     2,     0,     7,     0,     0,     0,     1,     0,     3,
-       1,     2,     3,     2,     3,     3,     3,     3,     1,     0,
-       4,     1,     0,     3,     1,     0,     2,     2,     0,     1,
-       2,     1,    10,     2,     0,     3,     1,     2,     2,     0
+       0,     2,     2,     0,     6,     5,     7,     7,     7,     1,
+       9,     3,     2,     0,     7,     0,     0,     0,     1,     0,
+       3,     1,     2,     3,     2,     3,     3,     3,     3,     1,
+       0,     4,     1,     0,     3,     1,     0,     2,     2,     0,
+       1,     2,     1,     5,     1,     2,     1,    10,     2,     0,
+       3,     1,     2,     2,     0
 };
 
 /* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
@@ -573,108 +583,115 @@ static const yytype_uint8 yyr2[] =
    means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       3,     0,     1,    14,    14,    14,     8,    14,    14,     2,
-       0,    12,     0,     0,    18,     0,     0,     0,    10,     0,
-      16,    17,     0,     0,    29,     0,    11,     0,     0,     0,
-      15,    31,     0,    28,     0,     0,     0,     0,    39,    41,
-      15,     0,     0,     0,     5,    16,    32,     0,    35,     0,
-       0,    15,    40,     4,     0,     0,     0,    23,    15,    27,
-       0,    34,    38,     0,     0,     7,    24,    26,    25,    38,
-       0,    20,    22,     6,    33,     0,    30,     0,     0,    21,
-      15,     0,    37,    36,     0,     0,     9,    19,    13,     0,
-       0,    44,     0,     0,    49,    49,    43,    46,    42,    47,
-      48,     0,    45
+       3,     0,     1,    15,    15,    15,     9,    15,    15,    15,
+       2,     0,    13,     0,     0,    19,     0,     0,     0,     0,
+      11,     0,    17,    18,     0,     0,     0,    30,     0,    12,
+       0,     0,     0,    16,     0,    32,     0,    29,     0,     0,
+       0,     0,    44,    46,    16,     0,     0,     0,     5,     0,
+       0,    40,    42,    17,    33,     0,    36,     0,     0,    16,
+      45,     4,     0,     0,     0,    24,     0,    16,    41,    16,
+      28,     0,    35,    39,     0,     0,     7,    25,    27,    26,
+      39,     0,    21,    23,     0,     8,     6,    34,     0,    31,
+       0,     0,    22,    16,     0,     0,    38,    37,     0,     0,
+      10,    20,    43,    14,     0,     0,    49,     0,     0,    54,
+      54,    48,    51,    47,    52,    53,     0,    50
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     1,     9,    10,    18,    26,    11,    44,    28,    22,
-      70,    71,    42,    43,    32,    33,    34,    48,    62,    76,
-      37,    38,    39,    93,    96,    97,    99
+      -1,     1,    10,    11,    20,    29,    12,    48,    31,    24,
+      81,    82,    46,    47,    36,    37,    38,    56,    73,    89,
+      50,    51,    52,    41,    42,    43,   108,   111,   112,   114
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -41
+#define YYPACT_NINF -45
 static const yytype_int8 yypact[] =
 {
-     -41,     1,   -41,   -41,   -41,   -41,   -41,   -41,   -41,   -41,
-      14,    -1,    24,    26,    27,    15,    25,    28,   -41,    29,
-     -41,   -41,    30,    16,    22,    18,   -41,    31,    23,    38,
-     -41,   -41,    -2,   -41,    39,    32,    34,    33,    31,   -41,
-     -41,    35,     3,    36,   -41,   -41,    40,    44,    37,    42,
-      43,   -41,   -41,   -41,    -3,    46,    41,   -41,   -41,   -41,
-      48,   -41,    47,    49,    45,   -41,   -41,   -41,   -41,    47,
-      -8,   -41,   -41,   -41,   -41,    -4,   -41,    50,    52,   -41,
-     -41,    46,   -41,   -41,    51,    53,   -41,   -41,   -41,    55,
-      56,    54,     5,    57,   -41,   -41,    58,   -41,   -41,   -41,
-     -41,     5,   -41
+     -45,     1,   -45,   -45,   -45,   -45,   -45,   -45,   -45,   -45,
+     -45,     6,   -16,     7,    11,    14,    20,    32,    30,    31,
+     -45,    17,   -45,   -45,    27,    25,    33,     0,    26,   -45,
+      37,    28,    42,   -45,    23,   -45,     2,   -45,    44,    36,
+      43,    39,    37,   -45,   -45,    38,    -4,    40,   -45,    51,
+      45,    23,   -45,   -45,    49,    54,    41,    46,    47,   -45,
+     -45,   -45,    -3,    55,    48,   -45,    56,   -45,   -45,   -45,
+     -45,    61,   -45,    53,    52,    50,   -45,   -45,   -45,   -45,
+      53,    19,   -45,   -45,    37,   -45,   -45,   -45,     5,   -45,
+      57,    59,   -45,   -45,    55,    58,   -45,   -45,    62,    65,
+     -45,   -45,   -45,   -45,    64,    66,    63,    29,    67,   -45,
+     -45,    68,   -45,   -45,   -45,   -45,    29,   -45
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -41,   -41,   -41,   -41,   -41,   -41,    20,   -40,    10,   -41,
-     -41,   -23,   -41,    59,   -41,    21,   -41,   -41,   -41,     4,
-     -41,   -41,    60,   -41,   -41,   -26,   -19
+     -45,   -45,   -45,   -45,   -45,   -45,    24,   -44,    34,   -45,
+     -45,   -21,   -45,    35,   -45,    60,   -45,   -45,   -45,    -1,
+     -45,   -45,    69,     4,   -45,    70,   -45,   -45,   -33,   -25
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
    positive, shift that token.  If negative, reduce the rule which
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
-#define YYTABLE_NINF -33
+#define YYTABLE_NINF -34
 static const yytype_int8 yytable[] =
 {
-      53,     2,    82,    66,     3,     4,     5,    80,    81,    41,
-      45,    65,    94,    95,    46,    83,    67,    55,    73,    68,
-      16,     6,     7,    17,    12,    13,     8,    14,    15,   -32,
-      19,    31,    20,    21,    23,    30,    24,    35,    40,    25,
-      86,    36,    27,    29,    41,    50,    47,    51,    49,    31,
-      60,    57,    69,    54,    74,    58,    72,    78,    87,    89,
-      61,    63,    64,    88,    75,    77,    90,    59,    91,    84,
-      85,    92,    98,    79,   101,   102,   100,     0,     0,     0,
+      61,     2,    45,    77,     3,     4,     5,   -33,    19,    35,
+      63,    96,    18,    21,    53,    76,    78,    22,    54,    79,
+      23,     6,     7,    85,    97,    86,     8,     9,    13,    14,
+      30,    15,    16,    17,    93,    94,   109,   110,    26,    25,
+      32,    27,    28,    44,    33,    39,    34,    40,    45,   100,
+      49,    55,    57,    59,    58,    65,    62,    66,    35,    67,
+      71,    80,    91,    83,    72,    74,    75,    87,    90,    84,
+      88,   104,   102,   101,   103,   105,    98,    99,   106,    92,
+     107,    64,   113,   117,   116,   115,     0,    69,    95,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    52,     0,
-       0,    56
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,    60,     0,    70,     0,     0,     0,     0,     0,
+      68
 };
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-41)))
+  (!!((Yystate) == (-45)))
 
 #define yytable_value_is_error(Yytable_value) \
   YYID (0)
 
 static const yytype_int8 yycheck[] =
 {
-      40,     0,     6,     6,     3,     4,     5,    15,    16,     6,
-      12,    51,     7,     8,    16,    19,    19,    14,    58,    22,
-       6,    20,    21,    24,     4,     5,    25,     7,     8,     7,
-       6,     9,     6,     6,    19,    19,    11,    19,    15,    11,
-      80,    10,    13,    13,     6,    11,     7,    14,    16,     9,
-       6,    15,     6,    18,     6,    45,    15,    12,    81,     6,
-      23,    19,    19,    12,    17,    16,    11,    46,    12,    19,
-      18,    17,    15,    69,    16,   101,    95,    -1,    -1,    -1,
+      44,     0,     6,     6,     3,     4,     5,     7,    24,     9,
+      14,     6,     6,     6,    12,    59,    19,     6,    16,    22,
+       6,    20,    21,    67,    19,    69,    25,    26,     4,     5,
+      13,     7,     8,     9,    15,    16,     7,     8,     6,    19,
+      13,    11,    11,    15,    19,    19,    13,    10,     6,    93,
+      27,     7,    16,    14,    11,    15,    18,     6,     9,    14,
+       6,     6,    12,    15,    23,    19,    19,     6,    16,    13,
+      17,     6,    14,    94,    12,    11,    19,    18,    12,    80,
+      17,    46,    15,   116,    16,   110,    -1,    53,    84,    -1,
       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    38,    -1,
-      -1,    42
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    42,    -1,    54,    -1,    -1,    -1,    -1,    -1,
+      51
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    27,     0,     3,     4,     5,    20,    21,    25,    28,
-      29,    32,    32,    32,    32,    32,     6,    24,    30,     6,
-       6,     6,    35,    19,    11,    11,    31,    13,    34,    13,
-      19,     9,    40,    41,    42,    19,    10,    46,    47,    48,
-      15,     6,    38,    39,    33,    12,    16,     7,    43,    16,
-      11,    14,    48,    33,    18,    14,    39,    15,    34,    41,
-       6,    23,    44,    19,    19,    33,     6,    19,    22,     6,
-      36,    37,    15,    33,     6,    17,    45,    16,    12,    45,
-      15,    16,     6,    19,    19,    18,    33,    37,    12,     6,
-      11,    12,    17,    49,     7,     8,    50,    51,    15,    52,
-      52,    16,    51
+       0,    30,     0,     3,     4,     5,    20,    21,    25,    26,
+      31,    32,    35,    35,    35,    35,    35,    35,     6,    24,
+      33,     6,     6,     6,    38,    19,     6,    11,    11,    34,
+      13,    37,    13,    19,    13,     9,    43,    44,    45,    19,
+      10,    52,    53,    54,    15,     6,    41,    42,    36,    27,
+      49,    50,    51,    12,    16,     7,    46,    16,    11,    14,
+      54,    36,    18,    14,    42,    15,     6,    14,    51,    37,
+      44,     6,    23,    47,    19,    19,    36,     6,    19,    22,
+       6,    39,    40,    15,    13,    36,    36,     6,    17,    48,
+      16,    12,    48,    15,    16,    52,     6,    19,    19,    18,
+      36,    40,    14,    12,     6,    11,    12,    17,    55,     7,
+       8,    56,    57,    15,    58,    58,    16,    57
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1551,6 +1568,14 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 104 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
+		gEffect->m_techniques[(yyvsp[(3) - (7)]).strs[0]] = (yyvsp[(5) - (7)]).tech;
+	}
+    break;
+
+  case 9:
+/* Line 1792 of yacc.c  */
+#line 108 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
 		FILE* includeF;
 		string fName(gEffect->Dir());
 		fName+=(yyvsp[(1) - (1)]).strs[0];
@@ -1574,9 +1599,9 @@ yyreduce:
 	}
     break;
 
-  case 9:
+  case 10:
 /* Line 1792 of yacc.c  */
-#line 127 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 131 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		Sampler* samp=(yyvsp[(5) - (9)]).samp;
 		samp->SetParam("Type", (yyvsp[(1) - (9)]).strs[0]);
@@ -1597,18 +1622,18 @@ yyreduce:
 	}
     break;
 
-  case 10:
+  case 11:
 /* Line 1792 of yacc.c  */
-#line 147 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 151 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	string s1=(yyvsp[(1) - (3)]).strs[0];
 	(yyval).strs[0]=s1;
 	 }
     break;
 
-  case 11:
+  case 12:
 /* Line 1792 of yacc.c  */
-#line 152 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 156 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		currentCsLayout="";
 		currentCsLayout+=(yyvsp[(1) - (2)]).strs[0];
@@ -1616,17 +1641,17 @@ yyreduce:
 	}
     break;
 
-  case 12:
+  case 13:
 /* Line 1792 of yacc.c  */
-#line 157 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 161 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
    currentCsLayout= "";
 }
     break;
 
-  case 13:
+  case 14:
 /* Line 1792 of yacc.c  */
-#line 162 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 166 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	std::string ret="(";
 	ret+=(yyvsp[(2) - (7)]).strs[0];
@@ -1639,50 +1664,50 @@ yyreduce:
 }
     break;
 
-  case 14:
+  case 15:
 /* Line 1792 of yacc.c  */
-#line 173 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 177 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Switch lex to fx scanning */
     gLexPassthrough=false;
 }
     break;
 
-  case 15:
+  case 16:
 /* Line 1792 of yacc.c  */
-#line 179 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 183 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
 }
     break;
 
-  case 16:
+  case 17:
 /* Line 1792 of yacc.c  */
-#line 184 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 188 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Read next block */
     (yyval).lineno=glfxget_lineno();
     (yyval).strs[0]=glfxreadblock('{', '}');
 }
     break;
 
-  case 17:
+  case 18:
 /* Line 1792 of yacc.c  */
-#line 190 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 194 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
     break;
 
-  case 18:
+  case 19:
 /* Line 1792 of yacc.c  */
-#line 193 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 197 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]="";
 }
     break;
 
-  case 19:
+  case 20:
 /* Line 1792 of yacc.c  */
-#line 198 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 202 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).texNames=(yyvsp[(1) - (3)]).texNames;
     
@@ -1693,9 +1718,9 @@ yyreduce:
 }
     break;
 
-  case 20:
+  case 21:
 /* Line 1792 of yacc.c  */
-#line 206 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 210 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).texNames=new vector<YYSTYPE::samplerVar>;
     YYSTYPE::samplerVar sv;
@@ -1705,9 +1730,9 @@ yyreduce:
 }
     break;
 
-  case 21:
+  case 22:
 /* Line 1792 of yacc.c  */
-#line 215 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 219 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     ostringstream prepend;
     switch((yyvsp[(2) - (2)]).rType) {
@@ -1724,9 +1749,9 @@ yyreduce:
 }
     break;
 
-  case 22:
+  case 23:
 /* Line 1792 of yacc.c  */
-#line 232 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 236 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).samp=(yyvsp[(1) - (3)]).samp;
     switch((yyvsp[(2) - (3)]).samplerParamType) {
@@ -1743,9 +1768,9 @@ yyreduce:
 }
     break;
 
-  case 23:
+  case 24:
 /* Line 1792 of yacc.c  */
-#line 246 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 250 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).samp=new Sampler();
     switch((yyvsp[(1) - (2)]).samplerParamType) {
@@ -1762,9 +1787,9 @@ yyreduce:
 }
     break;
 
-  case 24:
+  case 25:
 /* Line 1792 of yacc.c  */
-#line 262 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 266 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
     (yyval).strs[1]=(yyvsp[(3) - (3)]).strs[0];
@@ -1772,9 +1797,9 @@ yyreduce:
 }
     break;
 
-  case 25:
+  case 26:
 /* Line 1792 of yacc.c  */
-#line 267 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 271 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
     (yyval).fnum=(yyvsp[(3) - (3)]).fnum;
@@ -1782,9 +1807,9 @@ yyreduce:
 }
     break;
 
-  case 26:
+  case 27:
 /* Line 1792 of yacc.c  */
-#line 272 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 276 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
     (yyval).num=(yyvsp[(3) - (3)]).num;
@@ -1792,9 +1817,9 @@ yyreduce:
 }
     break;
 
-  case 27:
+  case 28:
 /* Line 1792 of yacc.c  */
-#line 279 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 283 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).vars=(yyvsp[(1) - (3)]).vars;
 
@@ -1807,9 +1832,9 @@ yyreduce:
 }
     break;
 
-  case 28:
+  case 29:
 /* Line 1792 of yacc.c  */
-#line 289 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 293 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     YYSTYPE::variable var;
     var.prepend=(yyvsp[(1) - (1)]).strs[0];
@@ -1821,17 +1846,17 @@ yyreduce:
 }
     break;
 
-  case 29:
+  case 30:
 /* Line 1792 of yacc.c  */
-#line 298 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 302 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).vars = new vector<YYSTYPE::variable>;
 }
     break;
 
-  case 30:
+  case 31:
 /* Line 1792 of yacc.c  */
-#line 303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 307 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     ostringstream prepend;
 
@@ -1852,200 +1877,250 @@ yyreduce:
 }
     break;
 
-  case 31:
-/* Line 1792 of yacc.c  */
-#line 323 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
-    {
-    (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
-}
-    break;
-
   case 32:
 /* Line 1792 of yacc.c  */
-#line 326 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
-    { /* None */
-    (yyval).strs[0]="";
+#line 327 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+    (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
     break;
 
   case 33:
 /* Line 1792 of yacc.c  */
-#line 331 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
-    {
-    (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
-    (yyval).strs[1]=(yyvsp[(2) - (3)]).strs[0];
-    (yyval).strs[2]=(yyvsp[(3) - (3)]).strs[0];
+#line 330 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    { /* None */
+    (yyval).strs[0]="";
 }
     break;
 
   case 34:
 /* Line 1792 of yacc.c  */
-#line 338 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 336 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]="[]";
-}
+		(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
+		(yyval).strs[1]=(yyvsp[(2) - (3)]).strs[0];
+		(yyval).strs[2]=(yyvsp[(3) - (3)]).strs[0];
+	}
     break;
 
   case 35:
 /* Line 1792 of yacc.c  */
-#line 341 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 344 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]="";
-}
+		(yyval).strs[0]="[]";
+	}
     break;
 
   case 36:
 /* Line 1792 of yacc.c  */
-#line 346 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 348 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).num=(yyvsp[(2) - (2)]).num;
-    (yyval).rType=REGISTER_INT;
-}
+		(yyval).strs[0]="";
+	}
     break;
 
   case 37:
 /* Line 1792 of yacc.c  */
-#line 350 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 354 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
-    (yyval).rType=REGISTER_NAME;
-}
+		(yyval).num=(yyvsp[(2) - (2)]).num;
+		(yyval).rType=REGISTER_INT;
+	}
     break;
 
   case 38:
 /* Line 1792 of yacc.c  */
-#line 354 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 359 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).rType=REGISTER_NONE;
-}
+		(yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
+		(yyval).rType=REGISTER_NAME;
+	}
     break;
 
   case 39:
 /* Line 1792 of yacc.c  */
-#line 359 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 364 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).prog = new Program(*((yyvsp[(1) - (1)]).shaders));
-    delete (yyvsp[(1) - (1)]).shaders;
-}
+		(yyval).rType=REGISTER_NONE;
+	}
     break;
 
   case 40:
 /* Line 1792 of yacc.c  */
-#line 365 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 370 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).shaders=(yyvsp[(1) - (2)]).shaders;
-    (*(yyval).shaders)[(yyvsp[(2) - (2)]).sType].src=(yyvsp[(2) - (2)]).strs[0];
-    (*(yyval).shaders)[(yyvsp[(2) - (2)]).sType].name=(yyvsp[(2) - (2)]).strs[1];
+	Technique *t = new Technique(*((yyvsp[(1) - (1)]).passes));
+	(yyval).tech = t;
+	delete (yyvsp[(1) - (1)]).passes;
 }
     break;
 
   case 41:
 /* Line 1792 of yacc.c  */
-#line 370 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 377 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).shaders=new map<ShaderType, Program::Shader>;
-    (*(yyval).shaders)[(yyvsp[(1) - (1)]).sType].src=(yyvsp[(1) - (1)]).strs[0];
-    (*(yyval).shaders)[(yyvsp[(1) - (1)]).sType].name=(yyvsp[(1) - (1)]).strs[1];
+	(yyval).passes = (yyvsp[(1) - (2)]).passes;
+	string name = (yyvsp[(2) - (2)]).strs[0];
+	Program *p = (yyvsp[(2) - (2)]).prog;
+	if (p)
+	{
+		(*(yyval).passes)[name] = *(p);
+	}
+	delete (yyvsp[(2) - (2)]).prog;
 }
     break;
 
   case 42:
 /* Line 1792 of yacc.c  */
-#line 377 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 388 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    // Assemble the shader
-    ostringstream theShader;
-
-    theShader<<"#version "<<(yyvsp[(3) - (10)]).num<<endl;
-    theShader<<(yyvsp[(9) - (10)]).strs[0];
-	glfxParser::ShaderType shaderType=(yyvsp[(1) - (10)]).sType;
-	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
-	if(shaderType==CS)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
-
-    theShader<<gEffect->m_sharedCode.str();
-    map<string, string>::const_iterator it=gEffect->m_shaders.find((yyvsp[(6) - (10)]).strs[0]);
-    if(it==gEffect->m_shaders.end()) {
-        ostringstream errMsg;
-        errMsg<<"Unable to find referenced shader \""<<(yyvsp[(6) - (10)]).strs[0]<<'\"';
-        errSem(errMsg.str(), (yyvsp[(6) - (10)]).lineno);
-    }
-    
-    // Currently in case of error it never returns (throw)
-    // TODO: Handle continuation in case of error
-    theShader<<it->second;
-    (yyval).strs[0]=theShader.str();
-    (yyval).strs[1]=(yyvsp[(6) - (10)]).strs[0];
-    (yyval).sType=(yyvsp[(1) - (10)]).sType;
+	map < string, Program > *m=new map < string, Program >;
+	(yyval).passes = m;
+	string name = (yyvsp[(1) - (1)]).strs[0];
+	Program *p = (yyvsp[(1) - (1)]).prog;
+	if (p)
+	{
+		Program &newp = (*m)[name];
+		newp= *p;
+	}
+	delete p;
 }
     break;
 
   case 43:
 /* Line 1792 of yacc.c  */
-#line 405 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 403 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
+	(yyvsp[(4) - (5)]).prog->m_separable = (yyvsp[(1) - (5)]).boolean;
+	(yyval).prog = (yyvsp[(4) - (5)]).prog;
+	(yyval).strs[0] = (yyvsp[(2) - (5)]).strs[0];
 }
     break;
 
   case 44:
 /* Line 1792 of yacc.c  */
-#line 408 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 410 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]="";
-}
+		(yyval).prog = new Program(*((yyvsp[(1) - (1)]).shaders));
+		delete (yyvsp[(1) - (1)]).shaders;
+	}
     break;
 
   case 45:
 /* Line 1792 of yacc.c  */
-#line 413 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 417 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
-    (yyval).strs[0]+=(yyvsp[(3) - (3)]).strs[0];
-}
+		(yyval).shaders=(yyvsp[(1) - (2)]).shaders;
+		(*(yyval).shaders)[(yyvsp[(2) - (2)]).sType].src=(yyvsp[(2) - (2)]).strs[0];
+		(*(yyval).shaders)[(yyvsp[(2) - (2)]).sType].name=(yyvsp[(2) - (2)]).strs[1];
+	}
     break;
 
   case 46:
 /* Line 1792 of yacc.c  */
-#line 417 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 423 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    (yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
-}
+		(yyval).shaders=new map<ShaderType, Program::Shader>;
+		(*(yyval).shaders)[(yyvsp[(1) - (1)]).sType].src=(yyvsp[(1) - (1)]).strs[0];
+		(*(yyval).shaders)[(yyvsp[(1) - (1)]).sType].name=(yyvsp[(1) - (1)]).strs[1];
+	}
     break;
 
   case 47:
 /* Line 1792 of yacc.c  */
-#line 422 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 431 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    ostringstream layoutDef;
-    //layoutDef<<"#line "<<$1.lineno<<endl;
-    layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
-    (yyval).strs[0]=layoutDef.str();
-}
+		// Assemble the shader
+		ostringstream theShader;
+		theShader<<"#version "<<(yyvsp[(3) - (10)]).num<<endl;
+		theShader<<(yyvsp[(9) - (10)]).strs[0];
+		glfxParser::ShaderType shaderType=(yyvsp[(1) - (10)]).sType;
+		// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
+		if(shaderType==CS)
+			theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<gEffect->m_sharedCode.str();
+		map<string, string>::const_iterator it=gEffect->m_shaders.find((yyvsp[(6) - (10)]).strs[0]);
+		if(it==gEffect->m_shaders.end())
+		{
+			ostringstream errMsg;
+			errMsg<<"Unable to find referenced shader \""<<(yyvsp[(6) - (10)]).strs[0]<<'\"';
+			errSem(errMsg.str(), (yyvsp[(6) - (10)]).lineno);
+		}
+		// Currently in case of error it never returns (throw)
+		// TODO: Handle continuation in case of error
+		theShader<<it->second;
+		(yyval).strs[0]=theShader.str();
+		(yyval).strs[1]=(yyvsp[(6) - (10)]).strs[0];
+		(yyval).sType=(yyvsp[(1) - (10)]).sType;
+	}
     break;
 
   case 48:
 /* Line 1792 of yacc.c  */
-#line 430 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 458 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-    ostringstream layoutDef;
-    //layoutDef<<"#line "<<$1.lineno<<endl;
-    layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<"out float "<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
-    (yyval).strs[0]=layoutDef.str();
-}
+		(yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
+	}
     break;
 
   case 49:
 /* Line 1792 of yacc.c  */
-#line 438 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 462 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+		(yyval).strs[0]="";
+	}
+    break;
+
+  case 50:
+/* Line 1792 of yacc.c  */
+#line 468 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+		(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
+		(yyval).strs[0]+=(yyvsp[(3) - (3)]).strs[0];
+	}
+    break;
+
+  case 51:
+/* Line 1792 of yacc.c  */
+#line 473 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
+	}
+    break;
+
+  case 52:
+/* Line 1792 of yacc.c  */
+#line 479 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+		ostringstream layoutDef;
+		//layoutDef<<"#line "<<$1.lineno<<endl;
+		layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
+		(yyval).strs[0]=layoutDef.str();
+	}
+    break;
+
+  case 53:
+/* Line 1792 of yacc.c  */
+#line 488 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+    {
+		ostringstream layoutDef;
+		//layoutDef<<"#line "<<$1.lineno<<endl;
+		layoutDef<<"layout"<<(yyvsp[(2) - (2)]).strs[0]<<' '<<"out float "<<(yyvsp[(1) - (2)]).strs[0]<<';'<<endl;
+		(yyval).strs[0]=layoutDef.str();
+	}
+    break;
+
+  case 54:
+/* Line 1792 of yacc.c  */
+#line 497 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* read parenthesis */
-    (yyval).strs[0]=glfxreadblock('(', ')');
-}
+		(yyval).strs[0]=glfxreadblock('(', ')');
+	}
     break;
 
 
 /* Line 1792 of yacc.c  */
-#line 2049 "src/glfxLALRParser.cpp"
+#line 2124 "src/glfxLALRParser.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2277,7 +2352,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 443 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 502 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
 
 
 void glfxerror(const char* e)

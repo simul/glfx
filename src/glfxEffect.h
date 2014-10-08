@@ -7,9 +7,12 @@ namespace glfxParser
 	{
 		map<string, Program*>   m_programs;
 		vector<string>          m_programNames;
+		map<string, Technique*> m_techniques;
+		vector<string>          m_techniqueNames;
 		map<string, Sampler*>   m_samplers;
 		map<string, string>     m_shaders;
-		struct InterfaceDcl {
+		struct InterfaceDcl
+		{
 			string id;
 			int atLine;
 
@@ -27,11 +30,13 @@ namespace glfxParser
     
 	public:
 		ostringstream& Log();
-		unsigned BuildProgram(const string& prog, string& log) const;
-		unsigned BuildProgram(const string& prog) const;
+		unsigned BuildProgram(const string& tech, const string& pass, string& log) const;
+		//unsigned BuildProgram(const string& prog) const;
 		unsigned CreateSampler(const string& sampler) const;
 		const vector<string>& GetProgramList() const;
+		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
+		 Technique *GetTechniqueByName(const char *name) ;
 		void SetFilenameList(const char **);
 		void PopulateProgramList();
 		bool& Active();

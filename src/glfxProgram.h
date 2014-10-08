@@ -3,6 +3,7 @@
 
 namespace glfxParser
 {
+	//! A Program in glsl is equivalent to a Pass in hlsl.
 	class Program
 	{
 	public:
@@ -13,6 +14,9 @@ namespace glfxParser
 		};
 
 		Program(const map<ShaderType, Shader>& shaders);
+		Program();
+		Program(const Program& prog);
+		const Program &operator=(const Program &);
 		unsigned CompileAndLink(string& log) const;
         
 	private:
@@ -20,7 +24,18 @@ namespace glfxParser
 
 		Shader  m_shaders[NUM_OF_SHADER_TYPES];
 		bool    m_separable;
-
+		friend int ::glfxparse();
+	};
+	class Technique
+	{
+	public:
+		Technique(const map<std::string, Program>& passes);
+		 map<string, Program>   &GetPasses() 
+		{
+			return m_passes;
+		}
+	private:
+		map<string, Program>   m_passes;
 		friend int ::glfxparse();
 	};
 }

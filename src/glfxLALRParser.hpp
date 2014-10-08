@@ -68,7 +68,10 @@ extern int glfxdebug;
      FLOAT = 277,
      EMPTY_ARRAY_BRACKETS = 278,
      LAYOUT = 279,
-     LINE = 280
+     LINE = 280,
+     TECHNIQUE = 281,
+     PASS = 282,
+     GROUP = 283
    };
 #endif
 

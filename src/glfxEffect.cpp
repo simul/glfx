@@ -56,22 +56,35 @@ string& Effect::Dir()
     return m_dir;
 }
 
-unsigned Effect::BuildProgram(const string& prog, string& log) const
+unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log) const
 {
-    map<string,Program*>::const_iterator it=m_programs.find(prog);
-    if(it==m_programs.end())
-        return 0;
-    
-    unsigned ret=it->second->CompileAndLink(log);
-	return ret;
-}
+	if (tech.length() == 0)
+	{
+		map<string, Program*>::const_iterator it = m_programs.find(pass);
+		if (it == m_programs.end())
+			return 0;
 
+		unsigned ret = it->second->CompileAndLink(log);
+		return ret;
+	}
+	else
+	{
+		map<string, Technique*>::const_iterator it = m_techniques.find(tech);
+		if (it == m_techniques.end())
+			return 0;
+		Technique *tech = it->second;
+		map<string, Program>::const_iterator jt=tech->GetPasses().find(pass);
+		unsigned ret = jt->second.CompileAndLink(log);
+		return ret;
+	}
+}
+/*
 unsigned Effect::BuildProgram(const string& prog) const
 {
     string trash;
     return BuildProgram(prog, trash);
 }
-
+*/
 ostringstream& Effect::Log()
 {
     return m_log;
@@ -89,6 +102,16 @@ unsigned Effect::CreateSampler(const string& sampler) const
 const vector<string>& Effect::GetProgramList() const
 {
     return m_programNames;
+}
+
+const vector<string>& Effect::GetTechniqueList() const
+{
+	return m_techniqueNames;
+}
+
+ Technique *Effect::GetTechniqueByName(const char *name) 
+{
+	return (m_techniques.find(string(name)))->second;
 }
 
 const vector<string>& Effect::GetFilenameList() const
@@ -112,5 +135,8 @@ void Effect::PopulateProgramList()
 {
     m_programNames.clear();
     for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-        m_programNames.push_back(it->first);
+		m_programNames.push_back(it->first);
+	m_techniqueNames.clear();
+	for (map<string, Technique*>::const_iterator it = m_techniques.begin(); it != m_techniques.end(); ++it)
+		m_techniqueNames.push_back(it->first);
 }
