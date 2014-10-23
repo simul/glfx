@@ -41,9 +41,9 @@
 	#pragma optimize("",off)
 %}
 
-%token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE
+%token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE SHADER_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
-%token  LAYOUT LINE TECHNIQUE PASS GROUP
+%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING
 
 %%
 
@@ -179,6 +179,15 @@ lex_fx :
 }
 ;
 
+number_or_filename : NUM
+					 {
+						 $$.num=$1.num;
+						 $$.strs[0]=$1.strs[0];
+					 }
+					 | QUOTED_STRING
+					 {
+						 $$.strs[0]=$1.strs[0];
+					 };
 lex_passthrough :
 { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
@@ -426,43 +435,99 @@ shaders_list : shaders_list shader_def
 		(*$$.shaders)[$1.sType].name=$1.strs[1];
 	}
 	;
-
-shader_def : SHADER_TYPE LP NUM RP EQUALS IDENTIFIER LP RP shader_layout SC
+	
+shader_def : shader_lvalue shader_rvalue SC
+{
+	// Assemble the shader
+	ostringstream theShader;
+	theShader<<"#version "<<$1.num<<endl;
+	theShader<<$2.strs[1];
+	glfxParser::ShaderType shaderType=$1.sType;
+	glfxParser::ShaderCommand shaderCommand=$1.sCommand;
+	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
+	if(shaderType==COMPUTE_SHADER)
+		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+	if(shaderType<NUM_OF_SHADER_TYPES&&$2.num>0)
 	{
-		// Assemble the shader
-		ostringstream theShader;
-		theShader<<"#version "<<$3.num<<endl;
-		theShader<<$9.strs[0];
-		glfxParser::ShaderType shaderType=$1.sType;
-		// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
-		if(shaderType==CS)
-			theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
-		theShader<<gEffect->m_sharedCode.str();
-		map<string, string>::const_iterator it=gEffect->m_shaders.find($6.strs[0]);
-		if(it==gEffect->m_shaders.end())
+		string shaderName=($2.strs[0]);
+		if(_stricmp(shaderName.c_str(),"NULL")!=0)
 		{
-			ostringstream errMsg;
-			errMsg<<"Unable to find referenced shader \""<<$6.strs[0]<<'\"';
-			errSem(errMsg.str(), $6.lineno);
+			theShader<<gEffect->m_sharedCode.str();
+			map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
+			if(it==gEffect->m_shaders.end())
+			{
+				ostringstream errMsg;
+				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
+				errSem(errMsg.str(), $2.lineno);
+			}
+			// Currently in case of error it never returns (throw)
+			// TODO: Handle continuation in case of error
+			theShader<<it->second;
 		}
-		// Currently in case of error it never returns (throw)
-		// TODO: Handle continuation in case of error
-		theShader<<it->second;
+		$$.strs[1]=shaderName;
 		$$.strs[0]=theShader.str();
-		$$.strs[1]=$6.strs[0];
-		$$.sType=$1.sType;
 	}
-;
-
+	else if(shaderCommand<NumShaderCommands)
+	{
+		$$.strs[0]=$1.strs[1];
+		$$.strs[1]=$1.strs[0];
+	}
+	$$.sType=$1.sType;
+};
+//shader_def : SHADER_COMMAND LP IDENTIFIER RP shader_layout SC
+shader_lvalue : SHADER_TYPE LP NUM RP
+{
+	$$.num=$3.num;
+	$$.sType=$1.sType;
+}
+| SHADER_COMMAND LP IDENTIFIER RP
+{
+	ostringstream theShader;
+	$$.num=$3.num;
+	$$.sCommand=$1.sCommand;
+	glfxParser::ShaderCommand shaderCommand=$1.sCommand;
+	if(shaderCommand==COMPUTE_SHADER)
+		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+	if(shaderCommand<NumShaderCommands)
+	{
+		string shaderName=($3.strs[0]);
+		if(_stricmp(shaderName.c_str(),"NULL")!=0)
+		{
+			theShader<<gEffect->m_sharedCode.str();
+			map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
+			if(it==gEffect->m_shaders.end())
+			{
+				ostringstream errMsg;
+				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
+				errSem(errMsg.str(), $3.lineno);
+			}
+			// Currently in case of error it never returns (throw)
+			// TODO: Handle continuation in case of error
+			theShader<<it->second;
+		}
+		$$.strs[0]=shaderName;
+		$$.strs[1]=theShader.str();
+	}
+};
+shader_rvalue : EQUALS IDENTIFIER LP RP shader_layout
+{
+	$$.lineno=$2.lineno;
+	$$.strs[0]=$2.strs[0];
+	$$.strs[1]=$5.strs[0];
+	$$.num=2;
+}
+|
+{
+	$$.num=0;
+};
 shader_layout : COLON shader_layout_list
-	{
-		$$.strs[0]=$2.strs[0];
-	}
-    |
-	{
-		$$.strs[0]="";
-	}
-;
+{
+	$$.strs[0]=$2.strs[0];
+}
+|
+{
+	$$.strs[0]="";
+};
 
 shader_layout_list : shader_layout_list COMMA layout
 	{

@@ -88,6 +88,7 @@ struct glfxstype
 	{
         SamplerParam samplerParamType;
         ShaderType sType;
+		ShaderCommand sCommand;
         RegisterParamType rType;
     };
     // Carrying these around is bad luck, or more like bad performance. But whatever...

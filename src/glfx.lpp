@@ -82,12 +82,26 @@ CS_LAYOUT							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlva
 									    return INCLUDE;
 									}
 "patch"|"centroid"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}
-"vs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VS; return SHADER_TYPE;}
-"tc"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TC; return SHADER_TYPE;}
-"te"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TE; return SHADER_TYPE;}
-"gs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GS; return SHADER_TYPE;}
-"fs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FS; return SHADER_TYPE;}
-"cs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=CS; return SHADER_TYPE;}
+"vs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
+"tc"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
+"te"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
+"gs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
+"fs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
+"cs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
+
+"SetVertexShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetVertexShader; return SHADER_COMMAND;}
+"SetHullShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetHullShader; return SHADER_COMMAND;}
+"SetDomainShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDomainShader; return SHADER_COMMAND;}
+"SetGeometryShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetGeometryShader; return SHADER_COMMAND;}
+"SetPixelShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
+"SetFragmentShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
+"SetComputeShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetComputeShader; return SHADER_COMMAND;}
+
+"SetRasterizerState"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SHADER_COMMAND;}
+"SetDepthStencilState"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SHADER_COMMAND;}
+"SetBlendState"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SHADER_COMMAND;}
+
+{STR_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return QUOTED_STRING;}
 {NUM_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=atoi(yytext); glfxlval.strs[0]=yytext; return NUM;}
 {FLOAT_BLCK}						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
 "in"|"out"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}

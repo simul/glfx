@@ -40,13 +40,27 @@ namespace glfxParser
 	/// Values that represent ShaderType.
 	enum ShaderType
 	{
-		VS,
-		TC,
-		TE,
-		GS,
-		FS,
-		CS,
+		VERTEX_SHADER,
+		TESSELATION_CONTROL_SHADER,		//= Hull shader
+		TESSELATION_EVALUATION_SHADER,	//= Domain Shader
+		GEOMETRY_SHADER,
+		FRAGMENT_SHADER,
+		COMPUTE_SHADER,
 		NUM_OF_SHADER_TYPES
+	};
+	enum ShaderCommand
+	{
+		SetVertexShader
+		,SetHullShader
+		,SetDomainShader
+		,SetGeometryShader
+		,SetFragmentShader
+		,SetComputeShader
+		,NumShaderTypes
+		,SetRasterizerState
+		,SetDepthStencilState
+		,SetBlendState
+		,NumShaderCommands
 	};
 }
 #include "glfxProgram.h"
