@@ -56,11 +56,21 @@ NUM_BLCK 0|([1-9][0-9]*)
 				prepro_lval.str=yytext;
 				return IFDEF;
 			}
+^"#"else {
+				BEGIN PREPRO;
+				prepro_lval.str=yytext;
+				return ELSE;
+			}
+^"#"endif {
+				BEGIN PREPRO;
+				prepro_lval.str=yytext;
+				return ENDIF;
+			}
 <PREPRO>{ID_BLCK}	{
 						prepro_lval.str=yytext;
 						return IDENTIFIER;
 					}
-<PREPRO>\n	{
+<PREPRO>$	{
 				BEGIN INITIAL;
 			}
 
@@ -74,7 +84,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 						BEGIN DEFINING2;
 						return IDENTIFIER;
 					}
-<DEFINING2>\n {
+<DEFINING2>$ {
 				BEGIN INITIAL;
 			}
 <DEFINING2>[^\n]+ {
@@ -88,7 +98,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 						//yytext();
 						return MACRO_DEFINITION;
 					}
-<DEFINING>\n {
+<DEFINING>$ {
 				BEGIN INITIAL;
 			}
 ^"#"[ \t]*include[ \t]*[\"<] {
@@ -114,16 +124,20 @@ NUM_BLCK 0|([1-9][0-9]*)
 				yyterminate();
 		}
 ^. {
-	preproOutput<<yytext;// fprintf(yyout, "%4d %s", yylineno, yytext);
+	if(inActiveBlock())
+		preproOutput<<yytext;// fprintf(yyout, "%4d %s", yylineno, yytext);
 	}
 ^\n {
-	preproOutput<<yytext;//fprintf(yyout, "%4d %s", yylineno++, yytext);
+	if(inActiveBlock())
+		preproOutput<<yytext;//fprintf(yyout, "%4d %s", yylineno++, yytext);
 	}
 \n {
-	preproOutput<<yytext;//ECHO; yylineno++;
+	if(inActiveBlock())
+		preproOutput<<yytext;//ECHO; yylineno++;
 	}
 . {
-	preproOutput<<yytext;//ECHO;
+	if(inActiveBlock())
+		preproOutput<<yytext;//ECHO;
 	}
 %%
 void Preprocess(int argc, char **argv)

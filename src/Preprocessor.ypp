@@ -16,11 +16,25 @@
 	#include <stdio.h>
 	#include <iostream>		// For std::cout and cerr
     #include <sstream>		// For std::ostringstream
+    #include <vector>		// For std::vector
 	#include "Preprocessor.h"
 	extern void prepro_error(const char *s);
 	#include "PreprocessLexer.h"
 	#define YYSTYPE PreprocessorType
 	using namespace std;
+	// We use a stack of booleans to handle #if #else #endif.
+	// At the top of the stack is a value that is TRUE is we are in an active block, and FALSE otherwise.
+	// So: ifdef, if, and ifndef all add either TRUE or FALSE to the stack.
+	// else switches the value at the top of the stack
+	// and endif pops the stack.
+	vector<bool> activeBlockStack;
+	vector<string> blockTestStack;
+	bool inActiveBlock()
+	{
+		if(!activeBlockStack.size())
+			return true;
+		return activeBlockStack.back();
+	}
 %}
 /* declare tokens */
 %token NUMBER
@@ -37,11 +51,15 @@ prepr : IFNDEF IDENTIFIER
 	{
 		string str=$1.str;
 		string id=$2.str;
+		activeBlockStack.push_back(true);
+		blockTestStack.push_back((str+" ")+id);
 	}
 	| IFDEF IDENTIFIER
 	{
 		string str=$1.str;
 		string id=$2.str;
+		activeBlockStack.push_back(true);
+		blockTestStack.push_back((str+" ")+id);
 	}
 	| DEFINE IDENTIFIER optional_definition
 	{
@@ -52,10 +70,16 @@ prepr : IFNDEF IDENTIFIER
 	| ELSE
 	{
 		string str=$1.str;
+		bool current=activeBlockStack.back();
+		activeBlockStack.pop_back();
+		activeBlockStack.push_back(!current);
+		blockTestStack.back()+=" #else";
 	}
 	| ENDIF
 	{
 		string str=$1.str;
+		activeBlockStack.pop_back();
+		blockTestStack.pop_back();
 	};
 
 optional_definition : MACRO_DEFINITION

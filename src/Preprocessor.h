@@ -18,5 +18,7 @@ extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName)
 extern void (*prepro_close)(FILE *f);
 extern std::ostringstream preproOutput;
 extern void preprocess(const char *file);
+// Are we in an active  #if #endif block?
+extern bool inActiveBlock();
 
 #endif
