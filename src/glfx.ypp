@@ -456,9 +456,11 @@ shader_def : shader_lvalue shader_rvalue SC
 			map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
 			if(it==gEffect->m_shaders.end())
 			{
+				int ylineno=$2.lineno;
+				int true_linenumber=ylineno+(last_linenumber-global_linenumber);
 				ostringstream errMsg;
 				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-				errSem(errMsg.str(), $2.lineno);
+				errSem(errMsg.str(), true_linenumber);
 			}
 			// Currently in case of error it never returns (throw)
 			// TODO: Handle continuation in case of error
@@ -515,7 +517,6 @@ shader_rvalue : EQUALS IDENTIFIER LP RP shader_layout
 	$$.lineno=$2.lineno;
 	$$.strs[0]=$2.strs[0];
 	$$.strs[1]=$5.strs[0];
-	$$.num=2;
 }
 |
 {

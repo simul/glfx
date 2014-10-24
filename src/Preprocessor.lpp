@@ -1,8 +1,8 @@
 %option yylineno
 %option noyywrap
 %option prefix="prepro_"
-%option outfile="PreprocessLexer.cpp" header-file="PreprocessLexer.h"
-%x IFILE PREPRO DEFINING DEFINING2
+%option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
+%x IFILE PREPRO DEFINING DEFINING2 IF_STATEMENT
 
 %{
     #ifdef _MSC_VER
@@ -18,8 +18,11 @@
 	#endif
 	#include <sstream>			// for ostringstream
 	#include <iostream>			// for cerr and cout
+	#include <map>				// for map
+	#include <vector>			// for std::vector
 	#include "Preprocessor.h"
 	#include "PreprocessParser.h"
+	using namespace std;
 	int chars = 0;
 	int words = 0;
 	int lines = 0;
@@ -37,15 +40,71 @@
 	int newfile(const char *fn);
 	int popfile(void);
 	extern void prepro_error(const char *s);
-	FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName)=NULL;
+	FILE* (*prepro_open)(const char *filename_utf8,string &fullPathName)=NULL;
 	void (*prepro_close)(FILE *f)=NULL;
-	std::ostringstream preproOutput;
+	ostringstream preproOutput;
+	// Because many languages don't recognize filenames in the #line directive, e.g. #line 15 mycode.h,
+	// we must create a list of filenames
+	// that will correspond to file numbers, e.g. #line 15 1, where filenamesUtf8[1]=="mycode.h"
+	map<string,int> filenamesUtf8;
+	static int last_filenumber=0;
+	void WriteLineNumber(int l)
+	{
+		if(inActiveBlock())
+		{
+			preproOutput<<"#line "<<l<<" "<<filenamesUtf8[currentFilename]<<std::endl;
+		}
+	}
+	void WriteLineNumber()
+	{
+		WriteLineNumber(yylineno);
+	}
+	struct MacroDefinition
+	{
+		std::string definition;
+		std::vector<std::string> parameters;
+	};
+	typedef map<string,MacroDefinition*> MacroMap;
+	MacroMap macros;
+	bool IsDefined(std::string name)
+	{
+		MacroMap::iterator i=macros.find(name);
+		return (i!=macros.end());
+	}
+	void DefineMacro(std::string name,std::string definition)
+	{
+		macros[name]=new MacroDefinition;
+	}
+	void UndefineMacro(std::string name)
+	{
+		MacroMap::iterator i=macros.find(name);
+		if(i!=macros.end())
+		{
+			delete i->second;
+			macros.erase(i);
+		}
+	}
+	void ClearMacros()
+	{
+		while(macros.size())
+		{
+			MacroMap::iterator i=macros.begin();
+			delete i->second;
+			macros.erase(i);
+		}
+		currentBuffer=NULL;
+	}
 %}
 
 ID_BLCK [a-zA-Z\.:][a-zA-Z0-9_\.:]*
 NUM_BLCK 0|([1-9][0-9]*)
 
 %%
+^"#"if {
+				BEGIN IF_STATEMENT;
+				prepro_lval.str=yytext;
+				return IF;
+			}
 ^"#"ifndef {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
@@ -61,18 +120,26 @@ NUM_BLCK 0|([1-9][0-9]*)
 				prepro_lval.str=yytext;
 				return ELSE;
 			}
-^"#"endif {
+^"#endif" {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
 				return ENDIF;
 			}
+<IF_STATEMENT>[^\n>]+ {
+						/*handle up to the end of line*/
+						{
+							int c;
+							while((c = yyinput()) && c != '\n') ;
+						}
+						yylineno++;
+						BEGIN INITIAL;
+						prepro_lval.str=yytext;
+						return IF_CONDITION;
+					}
 <PREPRO>{ID_BLCK}	{
 						prepro_lval.str=yytext;
 						return IDENTIFIER;
 					}
-<PREPRO>$	{
-				BEGIN INITIAL;
-			}
 
 ^"#"define {
 				prepro_lval.str=yytext;
@@ -84,9 +151,6 @@ NUM_BLCK 0|([1-9][0-9]*)
 						BEGIN DEFINING2;
 						return IDENTIFIER;
 					}
-<DEFINING2>$ {
-				BEGIN INITIAL;
-			}
 <DEFINING2>[^\n]+ {
 						/*handle up to end of line*/
 				/*		{
@@ -98,9 +162,6 @@ NUM_BLCK 0|([1-9][0-9]*)
 						//yytext();
 						return MACRO_DEFINITION;
 					}
-<DEFINING>$ {
-				BEGIN INITIAL;
-			}
 ^"#"[ \t]*include[ \t]*[\"<] {
 								BEGIN IFILE; /*match #include statement up through the quote or <*/
 								}
@@ -112,16 +173,34 @@ NUM_BLCK 0|([1-9][0-9]*)
 						}
 						yylineno++;
 						if(!newfile(yytext))
+						{
+							ClearMacros();
 							yyterminate(); /* no such file */
+						}
 						BEGIN INITIAL;
 					}
 <IFILE>.|\n {
 				fprintf(stderr, "%4d bad include line\n", yylineno);
+				ClearMacros();
 				yyterminate();
 			}
-<<EOF>> {
+<PREPRO,DEFINING,DEFINING2>\n	{
+				BEGIN INITIAL;
+			}
+<DEFINING,DEFINING2,PREPRO><<EOF>> {
+			BEGIN INITIAL;
 			if(!popfile())
+			{
+				ClearMacros();
 				yyterminate();
+			}
+		}
+<INITIAL><<EOF>> {
+			if(!popfile())
+			{
+				ClearMacros();
+				yyterminate();
+			}
 		}
 ^. {
 	if(inActiveBlock())
@@ -169,11 +248,19 @@ int newfile(const char *fn)
 	/* set up current entry */
 	bs->bs				=yy_create_buffer(f, YY_BUF_SIZE);
 	bs->file			=f;
-	bs->filename		=fn;
 	yy_switch_to_buffer(bs->bs);
 	currentBuffer		=bs;
 	yylineno			=1;
 	currentFilename		=fullPathName;
+	if(filenamesUtf8.find(fullPathName)==filenamesUtf8.end())
+	{
+		// Record the file number:
+		filenamesUtf8[fullPathName]=last_filenumber;
+		last_filenumber++;
+	}
+	bs->filename		=filenamesUtf8.find(fullPathName)->first.c_str();
+	WriteLineNumber(yylineno);
+	preproOutput<<"#line 1 "<<filenamesUtf8[currentFilename]<<std::endl;
 	return 1;
 }
 
@@ -194,18 +281,41 @@ int popfile()
 	if(!prevbs)
 	{
 		delete bs;
+		ClearMacros();
 		return 0;
 	}
-	delete bs;
 	yy_switch_to_buffer(prevbs->bs);
 	currentBuffer		=prevbs;
 	yylineno			=currentBuffer->lineno;
 	currentFilename		=currentBuffer->filename;
+	WriteLineNumber(yylineno-2);
+	delete bs;
 	return 1;
 }
 
-void preprocess(const char *filenameUtf8)
+vector<string> GetPreprocessorFilenamesUtf8()
 {
+	vector<string> newvec;
+	for(map<string,int>::iterator i=filenamesUtf8.begin();i!=filenamesUtf8.end();i++)
+	{
+		if(i->second>=newvec.size())
+			newvec.resize(i->second+1);
+		newvec[i->second]=i->first;
+	}
+	return newvec;
+}
+void preprocess(const char *filenameUtf8, map<string, string> defines)
+{
+	ClearParserState();
+	preproOutput.str("");
+	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
+	{
+		preproOutput << "#define " << i->first << " " << i->second << std::endl;
+		DefineMacro(i->first, i->second);
+	}
+	preproOutput.str("");
+	filenamesUtf8.clear();
+	last_filenumber=0;
 	newfile(filenameUtf8);
 	//	prepro__scan_string(newsrc.c_str());
 	prepro_parse();

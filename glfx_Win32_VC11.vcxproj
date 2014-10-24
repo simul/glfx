@@ -110,21 +110,21 @@
   <ItemGroup>
     <CustomBuild Include="src\Preprocessor.lpp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/PreprocessLexer.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">win_flex.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">win_flex.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">win_flex.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">win_flex.exe "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/PreprocessLexer.cpp</Outputs>
     </CustomBuild>
     <CustomBuild Include="src\Preprocessor.ypp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">win_bison.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">win_bison.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">win_bison.exe "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">win_bison.exe "%(FullPath)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/PreprocessParser.cpp</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/PreprocessParser.cpp</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/PreprocessParser.cpp</Outputs>

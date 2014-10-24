@@ -36,8 +36,8 @@ namespace glfxParser
 		const vector<string>& GetProgramList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
-		 Technique *GetTechniqueByName(const char *name) ;
-		void SetFilenameList(const char **);
+		Technique *GetTechniqueByName(const char *name) ;
+		void SetFilenameList(const vector<string> &filenamesUtf8);
 		void PopulateProgramList();
 		bool& Active();
 		string& Dir();

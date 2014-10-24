@@ -108,6 +108,114 @@ Effect *gEffect=NULL;
 bool gLexPassthrough=true;
 
 
+#pragma optimize("",off)
+static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
+{
+	bool is_error=true;
+	int errpos=(int)line.find("ERROR");
+	if(errpos<0)
+		errpos=(int)line.find("error");
+	if(errpos<0)
+	{
+		errpos=(int)line.find("WARNING");
+		is_error=false;
+	}
+	if(errpos<0)
+	{
+		errpos=(int)line.find("warning");
+		is_error=false;
+	}
+	if(errpos>=0)
+	{
+		int first_colon		=(int)line.find(":");
+		int second_colon	=(int)line.find(":",first_colon+1);
+		int third_colon		=(int)line.find(":",second_colon+1);
+		int first_bracket	=(int)line.find("(");
+		int second_bracket	=(int)line.find(")",first_bracket+1);
+		int numberstart,numberlen=0;
+	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
+		if(third_colon>=0&&second_colon>=0&&(second_colon-first_colon)<5)
+		{
+			numberstart	=first_colon+1;
+			numberlen	=second_colon-first_colon-1;
+		}
+	//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
+		else if((third_colon<0||numberlen>6)&&second_bracket>=0)
+		{
+			if(first_colon<first_bracket)
+			{
+				numberstart	=first_colon+1;
+				numberlen	=first_bracket-first_colon-1;
+			}
+			else
+			{
+				numberstart=0;
+				numberlen=first_bracket;
+			}
+		}
+		else
+		{
+			numberstart=0;
+			numberlen=first_bracket;
+		}
+		if(numberlen>0)
+		{
+			std::string filenumber_str=line.substr(numberstart,numberlen);
+			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
+			if(third_colon>=0)
+			{
+				third_colon-=numberstart+numberlen;
+				err_msg.replace(0,1,"(");
+			}
+			const char *err_warn	=is_error?"error":"warning";
+			if(third_colon>=0)
+			{
+				std::string rep="): ";
+				rep+=err_warn;
+				rep+=" C7555: ";
+				err_msg.replace(third_colon,1,rep);
+			}
+			int filenumber=atoi(filenumber_str.c_str());
+			string filename=sourceFilesUtf8[filenumber];
+			// e.g. already defined at 2(157)
+			int already=(int)err_msg.find("already defined at ");
+			if(already>=0&&already<err_msg.length())
+			{
+				int numberpos=already+19;
+				int brack_pos=err_msg.find("(",numberpos);
+				string first_def_file_no=err_msg.substr(numberpos,brack_pos-numberpos);
+				int already_filenumber=atoi(first_def_file_no.c_str());
+				string already_filename=sourceFilesUtf8[filenumber];
+				err_msg.replace(numberpos,brack_pos-numberpos,(string("\n\tsee first definition at "+already_filename).c_str()));
+			}
+			std::string err_line	=filename+err_msg;
+			return err_line;
+		}
+	}
+	return "";
+}
+void PutFilenamesInLog(string &slog,vector<string> filenames)
+{
+	// now rewrite log to use filenames.
+	string newlog;
+	if(slog.find("No errors")>=slog.length())
+	{
+		int pos=0;
+		int next=(int)slog.find('\n',pos+1);
+		while(next>=0)
+		{
+			std::string line		=slog.substr(pos,next-pos);
+			std::string error_line	=RewriteErrorLine(line,filenames);
+			if(error_line.length())
+			{
+				newlog+=error_line+"\n";
+			}
+			pos=next+1;
+			next=(int)slog.find('\n',pos);
+		}
+		slog=newlog;
+	}
+}
 
 Sampler::Sampler()
 {
@@ -267,16 +375,6 @@ int GLFX_APIENTRY glfxGenEffect()
     gEffects.push_back(new Effect);
     return (int)gEffects.size()-1;
 }
-/*bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filenamesUtf8)
-{
-	if(glfxParseEffectFromMemory( effect, src,filenamesUtf8[0]))
-	{
-		gEffects[effect]->SetFilenameList(filenamesUtf8);
-		return true;
-	}
-	gEffects[effect]->SetFilenameList(filenamesUtf8);
-	return false;
-}*/
 
 bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const char **file_paths_utf8)
 {
@@ -294,8 +392,11 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const c
 	{
 		prepro_open=&OpenFile;
 		prepro_close=&CloseFile;
-		preprocess(file);
+		std::map<std::string, std::string> defines;
+		defines["GLFX"] = "1";
+		preprocess(file,defines);
 		src=preproOutput.str();
+		gEffects[effect]->SetFilenameList(GetPreprocessorFilenamesUtf8());
 	}
 	catch(...)
 	{
@@ -350,7 +451,8 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const c
 bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const char *filename)
 {
     bool retVal=true;
-    try {
+    try
+	{
         gEffect=gEffects[effect];
         gEffect->Dir()="";
 		if(filename)
@@ -359,17 +461,20 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
         glfxset_lineno(1);
         glfxparse();
     }
-    catch(const char* err) {
+    catch(const char* err)
+	{
         gEffect->Log()<<err<<endl;
         gEffect->Active()=false;
         retVal=false;
     }
-    catch(const string& err) {
+    catch(const string& err)
+	{
         gEffect->Log()<<err<<endl;
         gEffect->Active()=false;
         retVal=false;
     }
-    catch(...) {
+    catch(...)
+	{
         gEffect->Log()<<"Unknown error occurred during parsing of source"<<endl;
         gEffect->Active()=false;
         retVal=false;
@@ -378,6 +483,9 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
     glfxpop_buffer_state();
 
     gEffect->PopulateProgramList();
+	string log=gEffect->Log().str();
+	PutFilenamesInLog(log,gEffects[effect]->GetFilenameList());
+	gEffect->Log().str(log);
     return retVal;
 }
 
@@ -485,92 +593,16 @@ GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const ch
 	return glfxCompileProgram(effect, tech_name, pass_name);
 }
 
-#pragma optimize("",off)
-static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
-{
-	bool is_error=true;
-	int errpos=(int)line.find("ERROR");
-	if(errpos<0)
-		errpos=(int)line.find("error");
-	if(errpos<0)
-	{
-		errpos=(int)line.find("WARNING");
-		is_error=false;
-	}
-	if(errpos<0)
-	{
-		errpos=(int)line.find("warning");
-		is_error=false;
-	}
-	if(errpos>=0)
-	{
-		int first_colon		=(int)line.find(":");
-		int second_colon	=(int)line.find(":",first_colon+1);
-		int third_colon		=(int)line.find(":",second_colon+1);
-		int first_bracket	=(int)line.find("(");
-		int second_bracket	=(int)line.find(")",first_bracket+1);
-		int numberstart,numberlen=0;
-	//somefile.glsl(263): error C2065: 'space_' : undeclared identifier
-		if(third_colon>=0&&second_colon>=0&&(second_colon-first_colon)<5)
-		{
-			numberstart	=first_colon+1;
-			numberlen	=second_colon-first_colon-1;
-		}
-	//	ERROR: 0:11: 'assign' :  cannot convert from '2-component vector of float' to 'float'
-		else if((third_colon<0||numberlen>6)&&second_bracket>=0)
-		{
-			if(first_colon<first_bracket)
-			{
-				numberstart	=first_colon+1;
-				numberlen	=first_bracket-first_colon-1;
-			}
-			else
-			{
-				numberstart=0;
-				numberlen=first_bracket;
-			}
-		}
-		else
-		{
-			numberstart=0;
-			numberlen=first_bracket;
-		}
-		if(numberlen>0)
-		{
-			std::string filenumber_str=line.substr(numberstart,numberlen);
-			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
-			if(third_colon>=0)
-			{
-				third_colon-=numberstart+numberlen;
-				err_msg.replace(0,1,"(");
-			}
-			const char *err_warn	=is_error?"error":"warning";
-			if(third_colon>=0)
-			{
-				std::string rep="): ";
-				rep+=err_warn;
-				rep+=" C7555: ";
-				err_msg.replace(third_colon,1,rep);
-			}
-			int filenumber=atoi(filenumber_str.c_str());
-			string filename=sourceFilesUtf8[filenumber];
-			std::string err_line	=filename+err_msg;
-			return err_line;
-		}
-	}
-	return "";
-}
-
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
 {
 	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL || !gEffects[effect]->Active())
         return 0;
 
     string slog;
+	string technique_str;
     unsigned progid;
 	try
 	{
-		string technique_str;
 		if (technique)
 			technique_str = technique;
 		progid = gEffects[effect]->BuildProgram(technique_str, pass, slog);
@@ -594,25 +626,7 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
 	{
 		slog+="Program not built.";
 	}
-	// now rewrite log to use filenames.
-	string newlog;
-	if(slog.find("No errors")>=slog.length())
-	{
-		int pos=0;
-		int next=(int)slog.find('\n',pos+1);
-		while(next>=0)
-		{
-			std::string line		=slog.substr(pos,next-pos);
-			std::string error_line	=RewriteErrorLine(line,gEffects[effect]->GetFilenameList());
-			if(error_line.length())
-			{
-				newlog+=error_line+"\n";
-			}
-			pos=next+1;
-			next=(int)slog.find('\n',pos);
-		}
-		slog=newlog;
-	}
+	PutFilenamesInLog(slog,gEffects[effect]->GetFilenameList());
 
     gEffects[effect]->Log()<<slog;
 

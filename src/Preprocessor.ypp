@@ -1,6 +1,6 @@
 %name-prefix "prepro_"
-%output "PreprocessParser.cpp"
-%defines "PreprocessParser.h"
+%output "src/PreprocessParser.cpp"
+%defines "src/PreprocessParser.h"
 %{
     #ifdef _MSC_VER
 		// MS's C++ compiler is more strict than gcc
@@ -29,16 +29,70 @@
 	// and endif pops the stack.
 	vector<bool> activeBlockStack;
 	vector<string> blockTestStack;
+	// We pass-through #if blocks.
+	vector<bool> passthroughBlockStack;
+	void ClearParserState()
+	{
+		activeBlockStack.clear();
+		blockTestStack.clear();
+		passthroughBlockStack.clear();
+	}
 	bool inActiveBlock()
 	{
 		if(!activeBlockStack.size())
 			return true;
 		return activeBlockStack.back();
 	}
+	void ifdef(string id)
+	{
+		bool result	=IsDefined(id);
+		activeBlockStack.push_back(result);
+		blockTestStack.push_back(("#ifdef ")+id);
+		passthroughBlockStack.push_back(false);
+		WriteLineNumber();
+	}
+	void ifndef(string id)
+	{
+		bool result	=!IsDefined(id);
+		activeBlockStack.push_back(result);
+		blockTestStack.push_back(("#ifndef ")+id);
+		passthroughBlockStack.push_back(false);
+		WriteLineNumber();
+	}
+	void hash_if(string id)
+	{
+		activeBlockStack.push_back(true);
+		blockTestStack.push_back(id);
+		passthroughBlockStack.push_back(true);
+		WriteLineNumber();
+		preproOutput<<id<<"\n";
+	}
+	void endif()
+	{
+		if(passthroughBlockStack.back())
+			preproOutput<<"#endif\n";
+		activeBlockStack.pop_back();
+		blockTestStack.pop_back();
+		passthroughBlockStack.pop_back();
+		WriteLineNumber();
+	}
+	void hash_else()
+	{
+		if (passthroughBlockStack.back())
+			preproOutput << "#else\n";
+		else
+		{
+			bool current = activeBlockStack.back();
+			activeBlockStack.pop_back();
+			activeBlockStack.push_back(!current);
+		}
+		blockTestStack.back() += " #else";
+		WriteLineNumber();
+	}
 %}
 /* declare tokens */
 %token NUMBER
-%token DEFINE IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IF_CONDITION
 %token EOL
 %%
 prog: prog prepr
@@ -47,39 +101,37 @@ prog: prog prepr
 						//printf("\n= %d\n", $1);
 	};
 
-prepr : IFNDEF IDENTIFIER
+prepr : IF IF_CONDITION
 	{
-		string str=$1.str;
+		string cond=($1.str+" ")+$2.str;
+		hash_if(cond);
+	}
+	| IFNDEF IDENTIFIER
+	{
 		string id=$2.str;
-		activeBlockStack.push_back(true);
-		blockTestStack.push_back((str+" ")+id);
+		ifndef(id);
 	}
 	| IFDEF IDENTIFIER
 	{
 		string str=$1.str;
 		string id=$2.str;
-		activeBlockStack.push_back(true);
-		blockTestStack.push_back((str+" ")+id);
+		ifdef(id);
 	}
 	| DEFINE IDENTIFIER optional_definition
 	{
-		string str=$1.str;
 		string id=$2.str;
 		string def=$3.str;
+		DefineMacro(id,def);
+		preproOutput<<"#define "<<id<<" "<<def<<"\n";
+		WriteLineNumber();
 	}
 	| ELSE
 	{
-		string str=$1.str;
-		bool current=activeBlockStack.back();
-		activeBlockStack.pop_back();
-		activeBlockStack.push_back(!current);
-		blockTestStack.back()+=" #else";
+		hash_else();
 	}
 	| ENDIF
 	{
-		string str=$1.str;
-		activeBlockStack.pop_back();
-		blockTestStack.pop_back();
+		endif();
 	};
 
 optional_definition : MACRO_DEFINITION

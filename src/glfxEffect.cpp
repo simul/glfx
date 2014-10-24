@@ -120,15 +120,17 @@ const vector<string>& Effect::GetFilenameList() const
 }
 
 
-void Effect::SetFilenameList(const char **filenamesUtf8)
+void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 {
+	m_filenames=filenamesUtf8;
+	/*
 	m_filenames.clear();
    const char **f=filenamesUtf8;
 	while(*f!=NULL)
 	{
 		m_filenames.push_back(*f);
 		f++;
-	}
+	}*/
 }
 
 void Effect::PopulateProgramList()
