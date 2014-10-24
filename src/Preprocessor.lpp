@@ -1,0 +1,198 @@
+%option yylineno
+%option noyywrap
+%option prefix="prepro_"
+%option outfile="PreprocessLexer.cpp" header-file="PreprocessLexer.h"
+%x IFILE PREPRO DEFINING DEFINING2
+
+%{
+    #ifdef _MSC_VER
+		// MS's C++ compiler is more strict than gcc
+		// No unistd.h
+		#define YY_NO_UNISTD_H
+		// Direct IO functions (read and such)
+		#include <io.h>
+		// Disable the warning for yywrap
+		#pragma warning( disable: 4003 )
+		// Disable the warning about depracted naming of _read and friends
+		#pragma warning( disable: 4996 )
+	#endif
+	#include <sstream>			// for ostringstream
+	#include <iostream>			// for cerr and cout
+	#include "Preprocessor.h"
+	#include "PreprocessParser.h"
+	int chars = 0;
+	int words = 0;
+	int lines = 0;
+	struct BufferStack
+	{
+		struct BufferStack *prev;	/* previous entry */
+		YY_BUFFER_STATE bs;			/* saved buffer */
+		int lineno;					/* saved line number */
+		const char *filename;		/* name of this file */
+		FILE *file;					/* current file */
+	};
+	BufferStack *currentBuffer = 0;
+	std::string currentFilename;
+	
+	int newfile(const char *fn);
+	int popfile(void);
+	extern void prepro_error(const char *s);
+	FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName)=NULL;
+	void (*prepro_close)(FILE *f)=NULL;
+	std::ostringstream preproOutput;
+%}
+
+ID_BLCK [a-zA-Z\.:][a-zA-Z0-9_\.:]*
+NUM_BLCK 0|([1-9][0-9]*)
+
+%%
+^"#"ifndef {
+				BEGIN PREPRO;
+				prepro_lval.str=yytext;
+				return IFNDEF;
+			}
+^"#"ifdef {
+				BEGIN PREPRO;
+				prepro_lval.str=yytext;
+				return IFDEF;
+			}
+<PREPRO>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						return IDENTIFIER;
+					}
+<PREPRO>\n	{
+				BEGIN INITIAL;
+			}
+
+^"#"define {
+				prepro_lval.str=yytext;
+				BEGIN DEFINING;
+				return DEFINE;
+			}
+<DEFINING>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						BEGIN DEFINING2;
+						return IDENTIFIER;
+					}
+<DEFINING2>\n {
+				BEGIN INITIAL;
+			}
+<DEFINING2>[^\n]+ {
+						/*handle up to end of line*/
+				/*		{
+							int c;
+							while((c = yyinput()) && c != '\n') ;
+						}
+						yylineno++;*/
+						prepro_lval.str=yytext;
+						//yytext();
+						return MACRO_DEFINITION;
+					}
+<DEFINING>\n {
+				BEGIN INITIAL;
+			}
+^"#"[ \t]*include[ \t]*[\"<] {
+								BEGIN IFILE; /*match #include statement up through the quote or <*/
+								}
+<IFILE>[^ \t\n\">]+ {
+						/*handle filename up to the closing quote, >, or end of line*/
+						{
+							int c;
+							while((c = yyinput()) && c != '\n') ;
+						}
+						yylineno++;
+						if(!newfile(yytext))
+							yyterminate(); /* no such file */
+						BEGIN INITIAL;
+					}
+<IFILE>.|\n {
+				fprintf(stderr, "%4d bad include line\n", yylineno);
+				yyterminate();
+			}
+<<EOF>> {
+			if(!popfile())
+				yyterminate();
+		}
+^. {
+	preproOutput<<yytext;// fprintf(yyout, "%4d %s", yylineno, yytext);
+	}
+^\n {
+	preproOutput<<yytext;//fprintf(yyout, "%4d %s", yylineno++, yytext);
+	}
+\n {
+	preproOutput<<yytext;//ECHO; yylineno++;
+	}
+. {
+	preproOutput<<yytext;//ECHO;
+	}
+%%
+void Preprocess(int argc, char **argv)
+{
+	yylex();
+	printf("%8d%8d%8d\n", lines, words, chars);
+}
+
+int newfile(const char *fn)
+{
+	std::string fullPathName;
+	FILE *f = prepro_open(fn,fullPathName);
+	/* die if no file or no room */
+	if(!f)
+	{
+		prepro_error(fn);
+		return 0;
+	}
+	BufferStack *bs		=new BufferStack;
+	if(!bs)
+	{
+		prepro_error("malloc");
+		exit(1);
+	}
+	/* remember state */
+	if(currentBuffer)
+		currentBuffer->lineno	=yylineno;
+	bs->prev			=currentBuffer;
+	/* set up current entry */
+	bs->bs				=yy_create_buffer(f, YY_BUF_SIZE);
+	bs->file			=f;
+	bs->filename		=fn;
+	yy_switch_to_buffer(bs->bs);
+	currentBuffer		=bs;
+	yylineno			=1;
+	currentFilename		=fullPathName;
+	return 1;
+}
+
+int popfile()
+{
+	BufferStack *bs		=currentBuffer;
+	BufferStack *prevbs;
+	if(!bs)
+	{
+		std::cout<<"no buf";
+		return 0;
+	}
+	/* get rid of current entry*/
+	prepro_close(bs->file);
+	yy_delete_buffer(bs->bs);
+	/* switch back to previous */
+	prevbs = bs->prev;
+	if(!prevbs)
+	{
+		delete bs;
+		return 0;
+	}
+	delete bs;
+	yy_switch_to_buffer(prevbs->bs);
+	currentBuffer		=prevbs;
+	yylineno			=currentBuffer->lineno;
+	currentFilename		=currentBuffer->filename;
+	return 1;
+}
+
+void preprocess(const char *filenameUtf8)
+{
+	newfile(filenameUtf8);
+	//	prepro__scan_string(newsrc.c_str());
+	prepro_parse();
+}

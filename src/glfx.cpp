@@ -52,12 +52,34 @@ typedef int errno_t;
 #endif
 #include "glfxScanner.h"
 #include "glfxProgram.h"
+#include "StringToWString.h"
+#include "StringFunctions.h"
+#include "FileLoader.h"
+
+vector<string> shaderPathsUtf8;
+FileLoader fileLoader;
+
+#include "Preprocessor.h"
+
+FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
+{
+	fullPathNameUtf8	=fileLoader.FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+	if(!fullPathNameUtf8.length())
+		return NULL;
+	wstring filenamew=StringToWString(fullPathNameUtf8);
+	FILE *f=_wfopen(filenamew.c_str(),L"r");
+	return f;
+}
+
+void CloseFile(FILE *f)
+{
+	fclose(f);
+}
 
 using namespace std;
 
 namespace glfxParser
 {
-
 #ifndef _MSC_VER
 
 errno_t strcpy_s(char* dst, size_t size, const char* src)
@@ -245,8 +267,7 @@ int GLFX_APIENTRY glfxGenEffect()
     gEffects.push_back(new Effect);
     return (int)gEffects.size()-1;
 }
-
-bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filenamesUtf8)
+/*bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,const char **filenamesUtf8)
 {
 	if(glfxParseEffectFromMemory( effect, src,filenamesUtf8[0]))
 	{
@@ -255,14 +276,35 @@ bool GLFX_APIENTRY glfxParseEffectFromTextSIMUL(int effect, const char* src,cons
 	}
 	gEffects[effect]->SetFilenameList(filenamesUtf8);
 	return false;
-}
+}*/
 
-bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
+bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const char **file_paths_utf8)
 {
     bool retVal=true;
-    
-    fopen_s(&glfxin, file, "r");
-    if(glfxin==NULL) {
+    shaderPathsUtf8.clear();
+	const char **path=file_paths_utf8;
+	while(*path)
+	{
+		shaderPathsUtf8.push_back(*path);
+		path++;
+	}
+	shaderPathsUtf8.push_back(GetDirectoryFromFilename(string(file)));
+	string src;
+	try
+	{
+		prepro_open=&OpenFile;
+		prepro_close=&CloseFile;
+		preprocess(file);
+		src=preproOutput.str();
+	}
+	catch(...)
+	{
+	}
+	retVal&=glfxParseEffectFromMemory(effect,src.c_str(),file);
+	//gEffects[effect]->SetFilenameList(filenamesUtf8);
+/*    fopen_s(&glfxin, file, "r");
+    if(glfxin==NULL)
+	{
         gEffects[effect]->Log()<<"Cannot open file "<<file<<endl;
         gEffects[effect]->Active()=false;
         return false;
@@ -300,8 +342,8 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file )
 
     glfxpop_buffer_state();
     fclose(glfxin);
-
     gEffect->PopulateProgramList();
+	*/
     return retVal;
 }
 

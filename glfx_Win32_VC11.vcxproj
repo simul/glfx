@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\FileLoader.cpp" />
     <ClCompile Include="src\glfx.cpp" />
     <ClCompile Include="src\glfxEffect.cpp" />
     <ClCompile Include="src\glfxLALRParser.cpp" />
@@ -45,15 +46,25 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4018</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">4018</DisableSpecificWarnings>
     </ClCompile>
+    <ClCompile Include="src\PreprocessLexer.cpp" />
+    <ClCompile Include="src\PreprocessParser.cpp" />
+    <ClCompile Include="src\StringFunctions.cpp" />
+    <ClCompile Include="src\StringToWString.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
+    <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
     <ClInclude Include="src\glfxLALRParser.hpp" />
     <ClInclude Include="src\glfxParser.h" />
     <ClInclude Include="src\glfxProgram.h" />
     <ClInclude Include="src\glfxScanner.h" />
+    <ClInclude Include="src\PreprocessLexer.h" />
+    <ClInclude Include="src\Preprocessor.h" />
+    <ClInclude Include="src\PreprocessParser.h" />
+    <ClInclude Include="src\StringFunctions.h" />
+    <ClInclude Include="src\StringToWString.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\glfx.lpp">
@@ -75,9 +86,9 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/glfxScanner.cpp</Outputs>
     </CustomBuild>
     <CustomBuild Include="src\glfx.ypp">
       <FileType>Document</FileType>
@@ -86,17 +97,39 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/glfxLALRParser.cpp</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="src\Preprocessor.lpp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_flex.exe" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/PreprocessLexer.cpp</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="src\Preprocessor.ypp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">START "title" /D"%(RootDir)%(Directory)" "win_bison.exe" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/PreprocessParser.cpp</Outputs>
+    </CustomBuild>
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
     <None Include="test\shaders\light_pass.glsl" />

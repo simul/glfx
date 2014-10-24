@@ -1,0 +1,85 @@
+%name-prefix "prepro_"
+%output "PreprocessParser.cpp"
+%defines "PreprocessParser.h"
+%{
+    #ifdef _MSC_VER
+		// MS's C++ compiler is more strict than gcc
+		// No unistd.h
+		#define YY_NO_UNISTD_H
+		// Direct IO functions (read and such)
+		#include <io.h>
+		// Disable the warning for yywrap
+		#pragma warning( disable: 4003 )
+		// Disable the warning about depracted naming of _read and friends
+		#pragma warning( disable: 4996 )
+	#endif
+	#include <stdio.h>
+	#include <iostream>		// For std::cout and cerr
+    #include <sstream>		// For std::ostringstream
+	#include "Preprocessor.h"
+	extern void prepro_error(const char *s);
+	#include "PreprocessLexer.h"
+	#define YYSTYPE PreprocessorType
+	using namespace std;
+%}
+/* declare tokens */
+%token NUMBER
+%token DEFINE IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION
+%token EOL
+%%
+prog: prog prepr
+    | /* nothing */// matches at beginning of input
+	{ // EOL is end of an expression
+						//printf("\n= %d\n", $1);
+	};
+
+prepr : IFNDEF IDENTIFIER
+	{
+		string str=$1.str;
+		string id=$2.str;
+	}
+	| IFDEF IDENTIFIER
+	{
+		string str=$1.str;
+		string id=$2.str;
+	}
+	| DEFINE IDENTIFIER optional_definition
+	{
+		string str=$1.str;
+		string id=$2.str;
+		string def=$3.str;
+	}
+	| ELSE
+	{
+		string str=$1.str;
+	}
+	| ENDIF
+	{
+		string str=$1.str;
+	};
+
+optional_definition : MACRO_DEFINITION
+					  {
+						  $$.str=$1.str;
+					  }
+					  |
+					  NUMBER
+					  {
+						  $$.str=$1.str;
+					  }
+					  |
+					  {
+						  $$.str="";
+					  }
+%%
+extern std::string currentFilename;
+void prepro_error(const char *errmsg)
+{
+	using namespace std;
+    ostringstream errMsg;
+	int lex_linenumber=prepro_get_lineno();
+	int true_linenumber=lex_linenumber;//+last_linenumber-global_linenumber;
+    errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< prepro_get_text()<<"\" Preprocessor "<<errmsg;
+	std::cerr<<errMsg.str().c_str()<<std::endl;
+  //  throw std::runtime_error(errMsg.str());
+}

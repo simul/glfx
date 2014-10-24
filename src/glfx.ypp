@@ -509,6 +509,7 @@ shader_lvalue : SHADER_TYPE LP NUM RP
 		$$.strs[1]=theShader.str();
 	}
 };
+
 shader_rvalue : EQUALS IDENTIFIER LP RP shader_layout
 {
 	$$.lineno=$2.lineno;
