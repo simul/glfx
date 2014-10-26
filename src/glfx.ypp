@@ -446,7 +446,7 @@ shader_def : shader_lvalue shader_rvalue SC
 	glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
 	if(shaderType==COMPUTE_SHADER)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
 	if(shaderType<NUM_OF_SHADER_TYPES&&$2.num>0)
 	{
 		string shaderName=($2.strs[0]);
@@ -489,7 +489,7 @@ shader_lvalue : SHADER_TYPE LP NUM RP
 	$$.sCommand=$1.sCommand;
 	glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 	if(shaderCommand==COMPUTE_SHADER)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
 	if(shaderCommand<NumShaderCommands)
 	{
 		string shaderName=($3.strs[0]);

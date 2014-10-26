@@ -86,7 +86,7 @@ unsigned Program::CompileAndLink(string& log) const
     
     if(m_separable)
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
-
+	
     glLinkProgram(programId);
 	
     for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
@@ -95,18 +95,19 @@ unsigned Program::CompileAndLink(string& log) const
         glDeleteShader(*it);
     }
     
-    GLint tmp;
-    glGetProgramiv(programId, GL_LINK_STATUS, &tmp);
-    res&=tmp;
-    
-    sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
-    
-    glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &tmp);
-    char* infoLog = new char[tmp];
-    glGetProgramInfoLog(programId, tmp, &tmp, infoLog);
-    sLog<<"Linkage details:"<<endl<<infoLog<<endl;
-    delete[] infoLog;
-    
+    GLint lnk;
+    glGetProgramiv(programId, GL_LINK_STATUS, &lnk);
+    res&=lnk;
+    if(!lnk)
+	{
+	    sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
+		int len=0;
+		glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &len);
+		char infoLog[1024];
+		glGetProgramInfoLog(programId,1024,&len,infoLog);
+		sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+	}
+	
     log=sLog.str();
 
     if(!res)
@@ -124,14 +125,16 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
     GLint tmp,res;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &tmp);
     res=tmp;
-    
-    sLog<<"Status: "<<shaderSrc.name<<" shader compiled with"<<(tmp ? "out" : "")<<" errors"<<endl;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
+    //if(!tmp)
+	{
+		if(!tmp)
+			sLog<<"Status: "<<shaderSrc.name<<" shader compiled with"<<(tmp ? "out" : "")<<" errors"<<endl;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
 
-    char* infoLog=new char[tmp];
-    glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
-    sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
-    delete[] infoLog;
-
+		char* infoLog=new char[tmp];
+		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
+		sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
+		delete[] infoLog;
+	}
     return res;
 }

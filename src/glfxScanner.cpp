@@ -3872,28 +3872,23 @@ the last is C code to be copied verbatim to the output.
 */
 #line 16 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
     #ifdef _MSC_VER
-    // MS's C++ compiler is more strict than gcc
-
-    // No unistd.h
-    #define YY_NO_UNISTD_H
-
-    // Direct IO functions (read and such)
-    #include <io.h>
-
-    // Disable the warning for glfxwrap
-    #pragma warning( disable: 4003 )
-
-    // Disable the warning about depracted naming of _read and friends
-    #pragma warning( disable: 4996 )
-
+		// MS's C++ compiler is more strict than gcc
+		// No unistd.h
+		#define YY_NO_UNISTD_H
+		// Direct IO functions (read and such)
+		#include <io.h>
+		// Disable the warning for glfxwrap
+		#pragma warning( disable: 4003 )
+		// Disable the warning about deprecated naming of _read and friends
+		#pragma warning( disable: 4996 )
     #endif
 
     #ifdef _M_X64
-    // flex is (still) incompatible with x64
-    // it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
-    // it should work though, nothing too serious
-    #pragma warning( disable:4267 )
-    #pragma warning( disable:4244 )
+		// flex is (still) incompatible with x64
+		// it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
+		// it should work though, nothing too serious
+		#pragma warning( disable:4267 )
+		#pragma warning( disable:4244 )
     #endif
 
     #include <iostream>
@@ -3911,9 +3906,9 @@ the last is C code to be copied verbatim to the output.
 
     using namespace std;
     using namespace glfxParser;
-#pragma optimize("",off)
+	#pragma optimize("",off)
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions*/
-#line 3917 "src/glfxScanner.cpp"
+#line 3912 "src/glfxScanner.cpp"
 
 #define INITIAL 0
 
@@ -4082,9 +4077,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 65 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 60 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
-#line 4088 "src/glfxScanner.cpp"
+#line 4083 "src/glfxScanner.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -4174,58 +4169,58 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 66 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 61 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.strs[0]=glfxtext;return LAYOUT;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 67 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 62 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false; return PROGRAM;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 68 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 63 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=true; return PROGRAM;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 69 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 64 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false; return TECHNIQUE;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 70 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 65 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false; return PASS;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 71 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 66 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false; return GROUP;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 72 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 67 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return SHADER;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 73 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 68 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno; return INTERFACE;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 74 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 69 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return SAMPLER;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 75 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 70 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return LINE;
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 76 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 71 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 									    string tmp(glfxtext);
 									    size_t firstLoc=tmp.find('"')+1;
@@ -4237,203 +4232,203 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 84 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 79 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.strs[0]=glfxtext; return STORAGET;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 85 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 80 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 86 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 81 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 87 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 82 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 88 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 83 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 89 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 84 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 90 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 85 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 92 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 87 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetVertexShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 93 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 88 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetHullShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 94 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 89 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetDomainShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 95 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 90 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetGeometryShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 96 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 91 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 97 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 92 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 98 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 93 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetComputeShader; return SHADER_COMMAND;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 100 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 95 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetRasterizerState; return SHADER_COMMAND;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 101 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 96 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetDepthStencilState; return SHADER_COMMAND;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 102 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 97 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=SetBlendState; return SHADER_COMMAND;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 104 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 99 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.strs[0]=glfxtext; return QUOTED_STRING;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 105 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 100 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.num=atoi(glfxtext); glfxlval.strs[0]=glfxtext; return NUM;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 106 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 101 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.fnum=(float)atof(glfxtext); return FLOAT;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 107 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 102 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return STORAGEQ;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 108 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 103 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return GL_FRAGDEPTH;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 109 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 104 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.num=1; return NUM;}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 110 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 105 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.num=0; return NUM;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 111 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 106 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; return IDENTIFIER;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 112 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 107 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return LP;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 113 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 108 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return RP;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 114 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 109 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return LB;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 115 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 110 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return RB;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 116 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 111 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return EMPTY_ARRAY_BRACKETS;}
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 117 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 112 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return COMMA;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 118 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 113 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return EQUALS;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 119 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 114 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return SC;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 120 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 115 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {return COLON;}
 	YY_BREAK
 case 46:
 /* rule 46 can match eol */
 YY_RULE_SETUP
-#line 121 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 116 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; // Single line comment (with possible continuation)
 	YY_BREAK
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 122 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 117 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; // Multiline comment
 	YY_BREAK
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 123 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 118 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext;
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 124 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 119 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {errLex(glfxtext);}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 125 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 120 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 ECHO;
 	YY_BREAK
-#line 4437 "src/glfxScanner.cpp"
+#line 4432 "src/glfxScanner.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -5434,7 +5429,7 @@ void glfxfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 125 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 120 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
 

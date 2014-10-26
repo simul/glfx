@@ -14,28 +14,23 @@ the last is C code to be copied verbatim to the output.
 
 %{
     #ifdef _MSC_VER
-    // MS's C++ compiler is more strict than gcc
-
-    // No unistd.h
-    #define YY_NO_UNISTD_H
-
-    // Direct IO functions (read and such)
-    #include <io.h>
-
-    // Disable the warning for yywrap
-    #pragma warning( disable: 4003 )
-
-    // Disable the warning about depracted naming of _read and friends
-    #pragma warning( disable: 4996 )
-
+		// MS's C++ compiler is more strict than gcc
+		// No unistd.h
+		#define YY_NO_UNISTD_H
+		// Direct IO functions (read and such)
+		#include <io.h>
+		// Disable the warning for yywrap
+		#pragma warning( disable: 4003 )
+		// Disable the warning about deprecated naming of _read and friends
+		#pragma warning( disable: 4996 )
     #endif
 
     #ifdef _M_X64
-    // flex is (still) incompatible with x64
-    // it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
-    // it should work though, nothing too serious
-    #pragma warning( disable:4267 )
-    #pragma warning( disable:4244 )
+		// flex is (still) incompatible with x64
+		// it makes some casts from pointers to integers (pointer casts seem to be fixed in the latest version) and from size_t to integers
+		// it should work though, nothing too serious
+		#pragma warning( disable:4267 )
+		#pragma warning( disable:4244 )
     #endif
 
     #include <iostream>
@@ -53,7 +48,7 @@ the last is C code to be copied verbatim to the output.
 
     using namespace std;
     using namespace glfxParser;
-#pragma optimize("",off)
+	#pragma optimize("",off)
 %}
 
 ID_BLCK [a-zA-Z\.:][a-zA-Z0-9_\.:]*

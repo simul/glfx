@@ -2050,7 +2050,7 @@ yyreduce:
 	glfxParser::ShaderCommand shaderCommand=(yyvsp[(1) - (3)]).sCommand;
 	// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
 	if(shaderType==COMPUTE_SHADER)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
 	if(shaderType<NUM_OF_SHADER_TYPES&&(yyvsp[(2) - (3)]).num>0)
 	{
 		string shaderName=((yyvsp[(2) - (3)]).strs[0]);
@@ -2100,7 +2100,7 @@ yyreduce:
 	(yyval).sCommand=(yyvsp[(1) - (4)]).sCommand;
 	glfxParser::ShaderCommand shaderCommand=(yyvsp[(1) - (4)]).sCommand;
 	if(shaderCommand==COMPUTE_SHADER)
-		theShader<<"#define USE_GL_COMPUTE_SHADER"<<endl;
+		theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
 	if(shaderCommand<NumShaderCommands)
 	{
 		string shaderName=((yyvsp[(3) - (4)]).strs[0]);

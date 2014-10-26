@@ -158,7 +158,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 			numberstart=0;
 			numberlen=first_bracket;
 		}
-		if(numberlen>0)
+		if(numberlen>0&&numberlen<8)
 		{
 			std::string filenumber_str=line.substr(numberstart,numberlen);
 			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
@@ -192,7 +192,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 			return err_line;
 		}
 	}
-	return "";
+	return line;
 }
 void PutFilenamesInLog(string &slog,vector<string> filenames)
 {
