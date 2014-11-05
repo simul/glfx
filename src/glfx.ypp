@@ -482,17 +482,18 @@ shader_lvalue : SHADER_TYPE LP NUM RP
 	$$.num=$3.num;
 	$$.sType=$1.sType;
 }
-| SHADER_COMMAND LP IDENTIFIER RP
+| SHADER_COMMAND LP NUM COMMA IDENTIFIER RP
 {
 	ostringstream theShader;
 	$$.num=$3.num;
-	$$.sCommand=$1.sCommand;
+	$$.sCommand = $1.sCommand;
+	theShader << "#version " << $3.num << endl;
 	glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 	if(shaderCommand==COMPUTE_SHADER)
 		theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
 	if(shaderCommand<NumShaderCommands)
 	{
-		string shaderName=($3.strs[0]);
+		string shaderName=($5.strs[0]);
 		if(_stricmp(shaderName.c_str(),"NULL")!=0)
 		{
 			theShader<<gEffect->m_sharedCode.str();
@@ -501,7 +502,7 @@ shader_lvalue : SHADER_TYPE LP NUM RP
 			{
 				ostringstream errMsg;
 				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-				errSem(errMsg.str(), $3.lineno);
+				errSem(errMsg.str(), $5.lineno);
 			}
 			// Currently in case of error it never returns (throw)
 			// TODO: Handle continuation in case of error

@@ -133,7 +133,8 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
 
 		char* infoLog=new char[tmp];
 		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
-		sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
+		if (strlen(infoLog)>0)
+			sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
 		delete[] infoLog;
 	}
     return res;
