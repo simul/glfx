@@ -2,7 +2,7 @@
 %option noyywrap
 %option prefix="prepro_"
 %option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
-%x IFILE PREPRO DEFINING DEFINING2 IF_STATEMENT
+%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 DEFINING5 IF_STATEMENT
 
 %{
     #ifdef _MSC_VER
@@ -59,17 +59,19 @@
 	{
 		WriteLineNumber(yylineno);
 	}
-	struct MacroDefinition
-	{
-		std::string definition;
-		std::vector<std::string> parameters;
-	};
 	typedef map<string,MacroDefinition*> MacroMap;
 	MacroMap macros;
 	bool IsDefined(std::string name)
 	{
 		MacroMap::iterator i=macros.find(name);
 		return (i!=macros.end());
+	}
+	const MacroDefinition *GetMacro(std::string name)
+	{
+		MacroMap::iterator i=macros.find(name);
+		if(i!=macros.end())
+			return i->second;
+		else return NULL;
 	}
 	void DefineMacro(std::string name,std::string definition)
 	{
@@ -100,69 +102,32 @@ ID_BLCK [a-zA-Z_\.:][a-zA-Z0-9_\.:]*
 NUM_BLCK 0|([1-9][0-9]*)
 
 %%
-"#"if {
+<INITIAL>"#"if {
 				BEGIN IF_STATEMENT;
 				prepro_lval.str=yytext;
 				return IF;
 			}
-"#"ifndef {
+<INITIAL>"#"ifndef {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
 				return IFNDEF;
 			}
-"#"ifdef {
+<INITIAL>"#"ifdef {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
 				return IFDEF;
 			}
-"#"else {
+<INITIAL>"#"else {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
 				return ELSE;
 			}
-"#"endif {
+<INITIAL>"#"endif {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
 				return ENDIF;
 			}
-<IF_STATEMENT>[^\n>]+ {
-						/*handle up to the end of line*/
-						{
-							int c;
-							while((c = yyinput()) && c != '\n') ;
-						}
-						yylineno++;
-						BEGIN INITIAL;
-						prepro_lval.str=yytext;
-						return IF_CONDITION;
-					}
-<PREPRO>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						return IDENTIFIER;
-					}
-
-^"#"define {
-				prepro_lval.str=yytext;
-				BEGIN DEFINING;
-				return DEFINE;
-			}
-<DEFINING>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						BEGIN DEFINING2;
-						return IDENTIFIER;
-					}
-<DEFINING2>[^\n]+ {
-						/*handle up to end of line*/
-				/*		{
-							int c;
-							while((c = yyinput()) && c != '\n') ;
-						}
-						yylineno++;*/
-						prepro_lval.str=yytext;
-						//yytext();
-						return MACRO_DEFINITION;
-					}
-^"#"[ \t]*include[ \t]*[\"<] {
+<INITIAL>^"#"include[ \t]*[\"<] {
 								BEGIN IFILE; /*match #include statement up through the quote or <*/
 								}
 <IFILE>[^ \t\n\">]+ {
@@ -184,7 +149,84 @@ NUM_BLCK 0|([1-9][0-9]*)
 				ClearMacros();
 				yyterminate();
 			}
-<PREPRO,DEFINING,DEFINING2>\n	{
+<PREPRO>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						return IDENTIFIER;
+					}
+<IF_STATEMENT>"defined" {
+						return DEFINED;
+					}
+<IF_STATEMENT>"("	{
+						prepro_lval.str=yytext;
+						return LEFT_BRACKET;
+					} 
+<IF_STATEMENT>")"	{
+						prepro_lval.str=yytext;
+						return RIGHT_BRACKET;
+					}
+<IF_STATEMENT>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						return IDENTIFIER;
+					}
+<IF_STATEMENT>{NUM_BLCK} {
+				prepro_lval.num=atoi(yytext);
+				return NUMBER;
+					}
+<IF_STATEMENT>"!" {
+						return BOOLEAN_NOT;
+					}
+<IF_STATEMENT>"==" {
+						return IS_EQUAL;
+					}
+<IF_STATEMENT>\n {
+						prepro_lval.str=yytext;
+				BEGIN INITIAL;
+					}
+<INITIAL>^"#"define {
+				prepro_lval.str=yytext;
+				BEGIN DEFINING;
+				return DEFINE;
+			}
+<DEFINING>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						BEGIN DEFINING2;
+						return IDENTIFIER;
+					}
+<DEFINING2>"("		{
+						BEGIN DEFINING3;
+						prepro_lval.str=yytext;
+						return LEFT_BRACKET;
+					} 
+<DEFINING3>","		{
+						prepro_lval.str=yytext;
+						return COMMA;
+					}  
+<DEFINING3>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						return IDENTIFIER;
+					} 
+<DEFINING3>")"		{
+						prepro_lval.str=yytext;
+						BEGIN DEFINING4;
+						return RIGHT_BRACKET;
+					}
+<DEFINING2,DEFINING4>[ \t]	{
+						prepro_lval.str=yytext;
+						BEGIN DEFINING5;
+					}
+<DEFINING5>[^\n]+ {
+						/*handle up to end of line*/
+				/*		{
+							int c;
+							while((c = yyinput()) && c != '\n') ;
+						}
+						yylineno++;*/
+						prepro_lval.str=yytext;
+						//yytext();
+						BEGIN INITIAL;
+						return MACRO_DEFINITION;
+					}
+<PREPRO,DEFINING,DEFINING2,IF_STATEMENT>\n	{
 				BEGIN INITIAL;
 			}
 <DEFINING,DEFINING2,PREPRO><<EOF>> {
@@ -218,6 +260,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 	if(inActiveBlock())
 		preproOutput<<yytext;//ECHO;
 	}
+
 %%
 void Preprocess(int argc, char **argv)
 {
@@ -260,7 +303,7 @@ int newfile(const char *fn)
 	}
 	bs->filename		=filenamesUtf8.find(fullPathName)->first.c_str();
 	WriteLineNumber(yylineno);
-	preproOutput<<"#line 1 "<<filenamesUtf8[currentFilename]<<std::endl;
+	//preproOutput<<"#line 1 "<<currentFilename<<std::endl;
 	return 1;
 }
 
@@ -298,8 +341,8 @@ vector<string> GetPreprocessorFilenamesUtf8()
 	vector<string> newvec;
 	for(map<string,int>::iterator i=filenamesUtf8.begin();i!=filenamesUtf8.end();i++)
 	{
-		if(i->second>=newvec.size())
-			newvec.resize(i->second+1);
+		if(i->second>=(int)newvec.size())
+			newvec.resize((size_t)(i->second+1));
 		newvec[i->second]=i->first;
 	}
 	return newvec;
@@ -307,6 +350,7 @@ vector<string> GetPreprocessorFilenamesUtf8()
 void preprocess(const char *filenameUtf8, map<string, string> defines)
 {
 	ClearParserState();
+	BEGIN INITIAL;
 	preproOutput.str("");
 	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
 	{

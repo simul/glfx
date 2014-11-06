@@ -49,7 +49,7 @@
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifdef ")+id);
 		passthroughBlockStack.push_back(false);
-		WriteLineNumber();
+		//WriteLineNumber();
 	}
 	void ifndef(string id)
 	{
@@ -57,15 +57,47 @@
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifndef ")+id);
 		passthroughBlockStack.push_back(false);
-		WriteLineNumber();
+		//WriteLineNumber();
 	}
-	void hash_if(string id)
+	void hash_if(string id,Test test,int num)
 	{
-		activeBlockStack.push_back(true);
+		if(test==IS_DEFINED)
+		{
+			ifdef(id);
+			return;
+		}
+		if(test==NOT_DEFINED)
+		{
+			ifndef(id);
+			return;
+		}
+		const MacroDefinition *m=GetMacro(id);
+		if(!m)
+		{
+			string str=string("Macro ")+id+string(" not defined");
+			prepro_error(str.c_str());
+			return;
+		}
+		int value=atoi(m->definition.c_str());
+		bool result=false;
+		if(test==EQUALS)
+		{
+			result=(value==num);
+		}
+		else if(test==NONZERO)
+		{
+			result=(value!=0);
+		}
+		else
+		{
+			prepro_error("Can't handle this condition");
+			return;
+		}
+		activeBlockStack.push_back(result);
 		blockTestStack.push_back(id);
-		passthroughBlockStack.push_back(true);
-		WriteLineNumber();
-		preproOutput<<id<<"\n";
+		passthroughBlockStack.push_back(false);
+		//WriteLineNumber();
+		//preproOutput<<id<<"\n";
 	}
 	void endif()
 	{
@@ -97,15 +129,16 @@
 				bool current = activeBlockStack.back();
 				activeBlockStack.pop_back();
 				activeBlockStack.push_back(!current);
+				if(current)
+					WriteLineNumber();
 			}
 		}
 		blockTestStack.back() += " #else";
-		WriteLineNumber();
 	}
 %}
 /* declare tokens */
 %token NUMBER
-%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IF_CONDITION
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED
 %token EOL
 %%
 prog: prog prepr
@@ -114,10 +147,12 @@ prog: prog prepr
 						//printf("\n= %d\n", $1);
 	};
 
-prepr : IF IF_CONDITION
+prepr : IF if_condition
 	{
-		string cond=($1.str+" ")+$2.str;
-		hash_if(cond);
+		string var=$2.str;
+		int num=$2.num;
+		Test test=$2.test;
+		hash_if(var,test,num);
 	}
 	| IFNDEF IDENTIFIER
 	{
@@ -126,17 +161,17 @@ prepr : IF IF_CONDITION
 	}
 	| IFDEF IDENTIFIER
 	{
-		string str=$1.str;
 		string id=$2.str;
 		ifdef(id);
 	}
-	| DEFINE IDENTIFIER optional_definition
+	| DEFINE IDENTIFIER optional_params optional_definition
 	{
 		string id=$2.str;
-		string def=$3.str;
+		string def=$4.str;
+		string params=$3.str;
 		DefineMacro(id,def);
-		preproOutput<<"#define "<<id<<" "<<def<<"\n";
-		WriteLineNumber();
+		preproOutput<<"#define "<<id<<params<<" "<<def<<"\n";
+		//WriteLineNumber();
 	}
 	| ELSE
 	{
@@ -146,6 +181,61 @@ prepr : IF IF_CONDITION
 	{
 		endif();
 	};
+optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
+				 {
+				$$.str="(";
+				$$.str+=$2.str;
+				$$.str+=")";
+				 }
+				 |
+				 {
+					$$.str="";
+				 };
+param_list : param_list COMMA IDENTIFIER
+			 {
+				$$.str=$1.str+",";
+				$$.str+=$3.str;
+			 }
+			 |
+			IDENTIFIER
+			 {
+				 $$.str=$1.str;
+			 };
+if_condition: IDENTIFIER if_test
+			{
+				$$.str=$1.str;
+				$$.num=$2.num;
+				$$.test=$2.test;
+			}
+			| optional_boolean_not defined_test
+			{
+				$$.test=$1.test;
+				$$.str=$2.str;
+			};
+defined_test: DEFINED LEFT_BRACKET IDENTIFIER RIGHT_BRACKET
+		{
+			$$.str=$3.str;
+		};
+optional_boolean_not: BOOLEAN_NOT
+		{
+			$$.test=NOT_DEFINED;
+		}
+		|
+		{
+			$$.test=IS_DEFINED;
+		};
+
+if_test: IS_EQUAL NUMBER
+			{
+				$$.num=$2.num;
+				$$.test=EQUALS;
+			}
+			|
+			{
+				$$.str="";
+				$$.num=1;
+				$$.test=NONZERO;
+			};
 
 optional_definition : MACRO_DEFINITION
 					  {
@@ -161,6 +251,7 @@ optional_definition : MACRO_DEFINITION
 						  $$.str="";
 					  }
 %%
+
 extern std::string currentFilename;
 void prepro_error(const char *errmsg)
 {

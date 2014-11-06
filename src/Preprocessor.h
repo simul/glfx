@@ -4,6 +4,10 @@
 #include <vector>
 #include <string>
 #include <map>
+enum Test
+{
+	IS_DEFINED,NOT_DEFINED,NONZERO,EQUALS,NOTEQUAL,GREATER,LESS,GREATER_EQUAL,LESS_EQUAL
+};
 struct PreprocessorType
 {
 	PreprocessorType() {}
@@ -12,6 +16,12 @@ struct PreprocessorType
 		int num;
 	};
 	std::string str;
+	Test test;
+};
+struct MacroDefinition
+{
+	std::string definition;
+	std::vector<std::string> parameters;
 };
 
 #define YYSTYPE PreprocessorType
@@ -27,6 +37,7 @@ extern void WriteLineNumber();
 extern void WriteLineNumber(int);
 extern bool IsDefined(std::string name);
 extern void DefineMacro(std::string name,std::string definition);
+extern const MacroDefinition *GetMacro(std::string name);
 extern void UndefineMacro(std::string name);
 extern void ClearParserState();
 #endif

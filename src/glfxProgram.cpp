@@ -95,17 +95,20 @@ unsigned Program::CompileAndLink(string& log) const
         glDeleteShader(*it);
     }
     
-    GLint lnk;
-    glGetProgramiv(programId, GL_LINK_STATUS, &lnk);
-    res&=lnk;
-    if(!lnk)
+    if(res)
 	{
-	    sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
-		int len=0;
-		glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &len);
-		char infoLog[1024];
-		glGetProgramInfoLog(programId,1024,&len,infoLog);
-		sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+		GLint lnk;
+		glGetProgramiv(programId, GL_LINK_STATUS, &lnk);
+		res&=lnk;
+		if(!lnk)
+		{
+			sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
+			int len=0;
+			glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &len);
+			char infoLog[1024];
+			glGetProgramInfoLog(programId,1024,&len,infoLog);
+			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+		}
 	}
 	
     log=sLog.str();
