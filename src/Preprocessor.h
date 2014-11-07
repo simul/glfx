@@ -33,6 +33,7 @@ extern void preprocess(const char *file, std::map<std::string, std::string> defi
 // Are we in an active  #if #endif block?
 extern bool inActiveBlock();
 extern std::vector<std::string> GetPreprocessorFilenamesUtf8();
+extern void Write(const char *);
 extern void WriteLineNumber();
 extern void WriteLineNumber(int);
 extern bool IsDefined(std::string name);

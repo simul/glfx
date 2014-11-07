@@ -30,12 +30,12 @@
 	vector<bool> activeBlockStack;
 	vector<string> blockTestStack;
 	// We pass-through #if blocks.
-	vector<bool> passthroughBlockStack;
+	//vector<bool> passthroughBlockStack;
 	void ClearParserState()
 	{
 		activeBlockStack.clear();
 		blockTestStack.clear();
-		passthroughBlockStack.clear();
+	//	passthroughBlockStack.clear();
 	}
 	bool inActiveBlock()
 	{
@@ -45,38 +45,36 @@
 	}
 	void ifdef(string id)
 	{
-		bool result	=IsDefined(id);
+		bool result	=IsDefined(id)&&inActiveBlock();
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifdef ")+id);
-		passthroughBlockStack.push_back(false);
+//passthroughBlockStack.push_back(false);
 		//WriteLineNumber();
 	}
 	void ifndef(string id)
 	{
-		bool result	=!IsDefined(id);
+		bool result=(!IsDefined(id))&&inActiveBlock();
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifndef ")+id);
-		passthroughBlockStack.push_back(false);
+//		passthroughBlockStack.push_back(false);
 		//WriteLineNumber();
 	}
-	void hash_if(string id,Test test,int num)
+	bool hash_if(string id,Test test,int num=0)
 	{
 		if(test==IS_DEFINED)
 		{
-			ifdef(id);
-			return;
+			return IsDefined(id);
 		}
 		if(test==NOT_DEFINED)
 		{
-			ifndef(id);
-			return;
+			return !IsDefined(id);
 		}
 		const MacroDefinition *m=GetMacro(id);
 		if(!m)
 		{
 			string str=string("Macro ")+id+string(" not defined");
 			prepro_error(str.c_str());
-			return;
+			return false;
 		}
 		int value=atoi(m->definition.c_str());
 		bool result=false;
@@ -91,33 +89,35 @@
 		else
 		{
 			prepro_error("Can't handle this condition");
-			return;
+			return false;
 		}
-		activeBlockStack.push_back(result);
-		blockTestStack.push_back(id);
-		passthroughBlockStack.push_back(false);
-		//WriteLineNumber();
-		//preproOutput<<id<<"\n";
+		return result;
+	}
+		//
+	void apply_condition(string var,bool result)
+	{
+		activeBlockStack.push_back(result&&inActiveBlock());
+		blockTestStack.push_back(var);
 	}
 	void endif()
 	{
-		if(passthroughBlockStack.back())
-			preproOutput<<"#endif\n";
+		//if(passthroughBlockStack.back())
+		//	preproOutput<<"#endif\n";
 		if(activeBlockStack.size()==0)
 			prepro_error("Mismatched #endif");
 		else
 		{
 			activeBlockStack.pop_back();
 			blockTestStack.pop_back();
-			passthroughBlockStack.pop_back();
+		//	passthroughBlockStack.pop_back();
 		}
 		WriteLineNumber();
 	}
 	void hash_else()
 	{
-		if (passthroughBlockStack.back())
-			preproOutput << "#else\n";
-		else
+		//if (passthroughBlockStack.back())
+		//	preproOutput << "#else\n";
+		//else
 		{
 			if(activeBlockStack.size()==0)
 			{
@@ -128,7 +128,7 @@
 			{
 				bool current = activeBlockStack.back();
 				activeBlockStack.pop_back();
-				activeBlockStack.push_back(!current);
+				activeBlockStack.push_back((!current)&&inActiveBlock());
 				if(current)
 					WriteLineNumber();
 			}
@@ -138,7 +138,7 @@
 %}
 /* declare tokens */
 %token NUMBER
-%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR
 %token EOL
 %%
 prog: prog prepr
@@ -147,12 +147,15 @@ prog: prog prepr
 						//printf("\n= %d\n", $1);
 	};
 
-prepr : IF if_condition
+prepr : IF if_conditions
 	{
 		string var=$2.str;
 		int num=$2.num;
 		Test test=$2.test;
-		hash_if(var,test,num);
+		apply_condition(var,$2.num!=0);
+	}
+	| EOL
+	{
 	}
 	| IFNDEF IDENTIFIER
 	{
@@ -170,7 +173,9 @@ prepr : IF if_condition
 		string def=$4.str;
 		string params=$3.str;
 		DefineMacro(id,def);
-		preproOutput<<"#define "<<id<<params<<" "<<def<<"\n";
+		ostringstream str;
+		str<<"#define "<<id<<params<<" "<<def<<"\n";
+		Write(str.str().c_str());
 		//WriteLineNumber();
 	}
 	| ELSE
@@ -183,9 +188,9 @@ prepr : IF if_condition
 	};
 optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
 				 {
-				$$.str="(";
-				$$.str+=$2.str;
-				$$.str+=")";
+					$$.str="(";
+					$$.str+=$2.str;
+					$$.str+=")";
 				 }
 				 |
 				 {
@@ -201,41 +206,62 @@ param_list : param_list COMMA IDENTIFIER
 			 {
 				 $$.str=$1.str;
 			 };
-if_condition: IDENTIFIER if_test
+if_conditions: if_conditions OR if_condition
+			{
+				$$.num=$1.num|$3.num;
+				$$.str=($1.str+"|")+$3.str;
+			}
+			 | if_condition
 			{
 				$$.str=$1.str;
-				$$.num=$2.num;
-				$$.test=$2.test;
-			}
-			| optional_boolean_not defined_test
-			{
-				$$.test=$1.test;
-				$$.str=$2.str;
+				$$.num=$1.num;
 			};
+if_condition: IDENTIFIER if_test
+					{
+						string id=$1.str;
+						int num=$2.num;
+						Test test=$2.test;
+						$$.num=hash_if(id,test,num);
+						$$.str=$1.str+$2.str;
+					}
+				| optional_boolean_not defined_test
+					{
+						$$.test=$1.test;
+						Test test=$1.test;
+						string id=$1.str+$2.str;
+						$$.num=hash_if(id,$1.test);
+						$$.str=id;
+					};
 defined_test: DEFINED LEFT_BRACKET IDENTIFIER RIGHT_BRACKET
-		{
-			$$.str=$3.str;
-		};
+					{
+						$$.str="defined(";
+						$$.str+=$3.str;
+						$$.str+=")";
+					};
 optional_boolean_not: BOOLEAN_NOT
-		{
-			$$.test=NOT_DEFINED;
-		}
-		|
-		{
-			$$.test=IS_DEFINED;
-		};
+					{
+						$$.str="!";
+						$$.test=NOT_DEFINED;
+					}
+					|
+					{
+						$$.str="";
+						$$.test=IS_DEFINED;
+					};
 
 if_test: IS_EQUAL NUMBER
-			{
-				$$.num=$2.num;
-				$$.test=EQUALS;
-			}
-			|
-			{
-				$$.str="";
-				$$.num=1;
-				$$.test=NONZERO;
-			};
+					{
+						$$.num=$2.num;
+						$$.test=EQUALS;
+						$$.str="==";
+						$$.str+=$2.str;
+					}
+					|
+					{
+						$$.str="";
+						$$.num=1;
+						$$.test=NONZERO;
+					};
 
 optional_definition : MACRO_DEFINITION
 					  {

@@ -48,6 +48,16 @@
 	// that will correspond to file numbers, e.g. #line 15 1, where filenamesUtf8[1]=="mycode.h"
 	map<string,int> filenamesUtf8;
 	static int last_filenumber=0;
+	static int current_state=0;
+	void Write(const char *tt)
+	{
+		current_state=YY_START;
+		preproOutput<<tt;
+	}
+	void Write()
+	{
+		Write(yytext);
+	}
 	void WriteLineNumber(int l)
 	{
 		if(inActiveBlock())
@@ -156,6 +166,12 @@ NUM_BLCK 0|([1-9][0-9]*)
 <IF_STATEMENT>"defined" {
 						return DEFINED;
 					}
+<IF_STATEMENT>"||" {
+						return OR;
+					}
+<IF_STATEMENT>"&&" {
+						return AND;
+					}
 <IF_STATEMENT>"("	{
 						prepro_lval.str=yytext;
 						return LEFT_BRACKET;
@@ -165,13 +181,14 @@ NUM_BLCK 0|([1-9][0-9]*)
 						return RIGHT_BRACKET;
 					}
 <IF_STATEMENT>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						return IDENTIFIER;
-					}
+							prepro_lval.str=yytext;
+							return IDENTIFIER;
+						}
 <IF_STATEMENT>{NUM_BLCK} {
-				prepro_lval.num=atoi(yytext);
-				return NUMBER;
-					}
+							prepro_lval.str=yytext;
+							prepro_lval.num=atoi(yytext);
+							return NUMBER;
+						}
 <IF_STATEMENT>"!" {
 						return BOOLEAN_NOT;
 					}
@@ -181,6 +198,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 <IF_STATEMENT>\n {
 						prepro_lval.str=yytext;
 				BEGIN INITIAL;
+				return EOL;
 					}
 <INITIAL>^"#"define {
 				prepro_lval.str=yytext;
@@ -244,21 +262,25 @@ NUM_BLCK 0|([1-9][0-9]*)
 				yyterminate();
 			}
 		}
-^. {
+<INITIAL>^. {
+		current_state=YY_START;
 	if(inActiveBlock())
-		preproOutput<<yytext;// fprintf(yyout, "%4d %s", yylineno, yytext);
+		Write();
 	}
-^\n {
+<INITIAL>^\n {
+		current_state=YY_START;
 	if(inActiveBlock())
-		preproOutput<<yytext;//fprintf(yyout, "%4d %s", yylineno++, yytext);
+		Write();
 	}
-\n {
+<INITIAL>\n {
+		current_state=YY_START;
 	if(inActiveBlock())
-		preproOutput<<yytext;//ECHO; yylineno++;
+		Write();
 	}
-. {
+<INITIAL>. {
+		current_state=YY_START;
 	if(inActiveBlock())
-		preproOutput<<yytext;//ECHO;
+		Write();
 	}
 
 %%
@@ -303,7 +325,6 @@ int newfile(const char *fn)
 	}
 	bs->filename		=filenamesUtf8.find(fullPathName)->first.c_str();
 	WriteLineNumber(yylineno);
-	//preproOutput<<"#line 1 "<<currentFilename<<std::endl;
 	return 1;
 }
 
@@ -347,6 +368,7 @@ vector<string> GetPreprocessorFilenamesUtf8()
 	}
 	return newvec;
 }
+
 void preprocess(const char *filenameUtf8, map<string, string> defines)
 {
 	ClearParserState();
