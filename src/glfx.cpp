@@ -158,7 +158,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 			numberstart=0;
 			numberlen=first_bracket;
 		}
-		if(numberlen>0&&numberlen<8)
+		if(numberlen>=0&&numberlen<8)
 		{
 			std::string filenumber_str=line.substr(numberstart,numberlen);
 			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
@@ -175,7 +175,9 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 				rep+=" C7555: ";
 				err_msg.replace(third_colon,1,rep);
 			}
-			int filenumber=atoi(filenumber_str.c_str());
+			int filenumber = 0;
+			if (filenumber_str.length())
+				filenumber=atoi(filenumber_str.c_str());
 			string filename=sourceFilesUtf8[filenumber];
 			// e.g. already defined at 2(157)
 			int already=(int)err_msg.find("already defined at ");
@@ -376,7 +378,7 @@ int GLFX_APIENTRY glfxGenEffect()
     return (int)gEffects.size()-1;
 }
 
-bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const char **file_paths_utf8)
+bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const char **file_paths_utf8, const char **macros, const char **defs) 
 {
     bool retVal=true;
     shaderPathsUtf8.clear();
@@ -393,8 +395,15 @@ bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const c
 		prepro_open=&OpenFile;
 		prepro_close=&CloseFile;
 		std::map<std::string, std::string> defines;
+		const char **m = macros,**d=defs;
+		while(*m&&*d)
+		{
+			defines[*m] = *d;
+			m++;
+			d++;
+		}
 		defines["GLFX"] = "1";
-		preprocess(file,defines);
+		preprocess(file, defines);
 		src=preproOutput.str();
 		gEffects[effect]->SetFilenameList(GetPreprocessorFilenamesUtf8());
 	}

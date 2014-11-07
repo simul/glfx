@@ -62,11 +62,14 @@ GLFXAPI int GLFX_APIENTRY glfxGenEffect();
 /**************************************************
 * glfxCreateEffectFromFile
 * Input:
-*   effect  -- GLFX effect id
-*   file    -- File name
+*   effect				-- GLFX effect id
+*   file				-- File name
+*   shaderPathsUtf8		-- NULL-terminated list of paths for include files.
+*   macros				-- NULL-terminated list of macros to be predefined
+*   defs				-- list of corresponding macro definitions
 * Return value: Status
 **************************************************/
-GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromFile( int effect, const char* file,const char **shaderPathsUtf8);
+GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const char **shaderPathsUtf8, const char **macros, const char **defs);
 
 /**************************************************
 * glfxCreateEffectFromMemory

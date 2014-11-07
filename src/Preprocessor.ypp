@@ -172,11 +172,14 @@ prepr : IF if_conditions
 		string id=$2.str;
 		string def=$4.str;
 		string params=$3.str;
+		if(inActiveBlock())
 		DefineMacro(id,def);
-		ostringstream str;
-		str<<"#define "<<id<<params<<" "<<def<<"\n";
-		Write(str.str().c_str());
-		//WriteLineNumber();
+		std::ostringstream definition;
+		definition<<"#define "<<id<<params;
+		if(def.length())
+			definition<<" "<<def;
+		definition<<"\n";
+		Write(definition.str().c_str());
 	}
 	| ELSE
 	{
