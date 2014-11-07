@@ -200,6 +200,11 @@ NUM_BLCK 0|([1-9][0-9]*)
 				BEGIN INITIAL;
 				return EOL;
 					}
+<IF_STATEMENT>"//"[^\n]+ {
+						prepro_lval.str=yytext;
+				BEGIN INITIAL;
+				return EOL;
+					}
 <INITIAL>^"#"define {
 				prepro_lval.str=yytext;
 				BEGIN DEFINING;

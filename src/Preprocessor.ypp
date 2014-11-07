@@ -232,6 +232,13 @@ if_condition: IDENTIFIER if_test
 						$$.num=hash_if(id,$1.test);
 						$$.str=id;
 					};
+				| NUMBER
+					{
+						$$.test=NONZERO;
+						string id=$1.str;
+						$$.num=($1.num!=0);
+						$$.str=id;
+					};
 defined_test: DEFINED LEFT_BRACKET IDENTIFIER RIGHT_BRACKET
 					{
 						$$.str="defined(";
