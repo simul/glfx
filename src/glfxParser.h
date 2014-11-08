@@ -57,9 +57,10 @@ struct glfxstype
 
     struct variable
 	{
-        string  prepend;
+        string  storage;
         string  type;
         string  identifier;
+        string semantic;
     };
 
     struct samplerVar
@@ -91,14 +92,16 @@ struct glfxstype
 		ShaderCommand sCommand;
         RegisterParamType rType;
     };
+
     // Carrying these around is bad luck, or more like bad performance. But whatever...
-    string strs[3];
+    string strs[4];
 };
 
 namespace glfxParser
 {
 	extern bool gLexPassthrough;
-
+	extern bool read_shader;
+	
 	#ifdef LINUX
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
 	#endif

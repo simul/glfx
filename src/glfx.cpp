@@ -68,12 +68,25 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 		return NULL;
 	wstring filenamew=StringToWString(fullPathNameUtf8);
 	FILE *f=_wfopen(filenamew.c_str(),L"r");
+	string path=fullPathNameUtf8;
+	int last_slash=path.find_last_of("/");
+	int last_bslash=path.find_last_of("\\");
+	if(last_bslash>last_slash)
+		last_slash=last_bslash;
+	if(last_slash>0)
+		path=path.substr(0,last_slash);
+	shaderPathsUtf8.push_back(path);
 	return f;
 }
 
 void CloseFile(FILE *f)
 {
-	fclose(f);
+	if(f)
+	{
+	// Pop the current path of this file.
+		shaderPathsUtf8.pop_back();
+		fclose(f);
+	}
 }
 
 using namespace std;
@@ -106,7 +119,7 @@ int fdopen_s(FILE** pFile, int fildes, const char *mode)
 
 Effect *gEffect=NULL;
 bool gLexPassthrough=true;
-
+bool read_shader=false;
 
 #pragma optimize("",off)
 static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
@@ -411,49 +424,6 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	{
 	}
 	retVal&=glfxParseEffectFromMemory(effect,src.c_str(),file);
-	//gEffects[effect]->SetFilenameList(filenamesUtf8);
-/*    fopen_s(&glfxin, file, "r");
-    if(glfxin==NULL)
-	{
-        gEffects[effect]->Log()<<"Cannot open file "<<file<<endl;
-        gEffects[effect]->Active()=false;
-        return false;
-    }
-    try {
-        glfxdebug=1;
-        gEffect=gEffects[effect];
-        
-        string fname(file);
-        size_t lastSlash=fname.find_last_of('/')+1;
-        size_t lastBackSlash=fname.find_last_of('\\')+1;
-        lastSlash=max(lastSlash, lastBackSlash);
-        gEffect->Dir()=fname.substr(0, lastSlash);
-        gEffect->Filename()=fname;
-
-        glfxrestart(glfxin);
-        glfxset_lineno(1);
-        glfxparse();
-    }
-    catch(const char* err) {
-        gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
-        retVal=false;
-    }
-    catch(const string& err) {
-        gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
-        retVal=false;
-    }
-    catch(...) {
-        gEffect->Log()<<"Unknown error occurred during parsing of "<<file<<endl;
-        gEffect->Active()=false;
-        retVal=false;
-    }
-
-    glfxpop_buffer_state();
-    fclose(glfxin);
-    gEffect->PopulateProgramList();
-	*/
     return retVal;
 }
 
@@ -482,6 +452,12 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
         gEffect->Active()=false;
         retVal=false;
     }
+    catch(const std::exception& exc)
+	{
+        gEffect->Log()<<exc.what()<<endl;
+        gEffect->Active()=false;
+        retVal=false;
+    }
     catch(...)
 	{
         gEffect->Log()<<"Unknown error occurred during parsing of source"<<endl;
@@ -490,8 +466,8 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
     }
 
     glfxpop_buffer_state();
-
-    gEffect->PopulateProgramList();
+	if(retVal)
+	    gEffect->PopulateProgramList();
 	string log=gEffect->Log().str();
 	PutFilenamesInLog(log,gEffects[effect]->GetFilenameList());
 	gEffect->Log().str(log);

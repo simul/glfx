@@ -50,8 +50,35 @@
 	map<string,int> filenamesUtf8;
 	static int last_filenumber=0;
 	static int current_state=0;
+	static int skip_from=0;
+	static bool write_line_number_next=false;
+	void WriteLineNumber(int l)
+	{
+		if(inActiveBlock())
+		{
+			preproOutput<<"#line "<<l<<" "<<filenamesUtf8[currentFilename]<<std::endl;
+		}
+		write_line_number_next=false;
+	}
+	void WriteLineNumber()
+	{
+		WriteLineNumber(yylineno);
+	}
 	void Write(const char *tt)
 	{
+		const char *t=tt;
+		bool non_empty=false;
+		while(*t)
+		{
+			if(*t!='\n'&&*t!=' '&&*t!='\r'&&*t!='\t')
+			{
+				non_empty=true;
+				break;
+			}
+			t++;
+		}
+		if(non_empty&&write_line_number_next)
+			WriteLineNumber();
 		current_state=YY_START;
 		preproOutput<<tt;
 	}
@@ -59,16 +86,10 @@
 	{
 		Write(yytext);
 	}
-	void WriteLineNumber(int l)
+	void Skip()
 	{
-		if(inActiveBlock())
-		{
-			preproOutput<<"#line "<<l<<" "<<filenamesUtf8[currentFilename]<<std::endl;
-		}
-	}
-	void WriteLineNumber()
-	{
-		WriteLineNumber(yylineno);
+		skip_from=yylineno;
+		write_line_number_next=true;
 	}
 	typedef map<string,MacroDefinition*> MacroMap;
 	MacroMap macros;
@@ -115,25 +136,25 @@ NUM_BLCK 0|([1-9][0-9]*)
 
 %%
 <INITIAL>"#"if {
-				BEGIN IF_STATEMENT;
-				prepro_lval.str=yytext;
-				return IF;
-			}
+					BEGIN IF_STATEMENT;
+					prepro_lval.str=yytext;
+					return IF;
+				}
 <INITIAL>"#"ifndef {
-				BEGIN PREPRO;
-				prepro_lval.str=yytext;
-				return IFNDEF;
-			}
+						BEGIN PREPRO;
+						prepro_lval.str=yytext;
+						return IFNDEF;
+					}
 <INITIAL>"#"ifdef {
-				BEGIN PREPRO;
-				prepro_lval.str=yytext;
-				return IFDEF;
-			}
+					BEGIN PREPRO;
+					prepro_lval.str=yytext;
+					return IFDEF;
+				}
 <INITIAL>"#"else {
-				BEGIN PREPRO;
-				prepro_lval.str=yytext;
-				return ELSE;
-			}
+					BEGIN PREPRO;
+					prepro_lval.str=yytext;
+					return ELSE;
+				}
 <INITIAL>"#"endif {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
@@ -148,7 +169,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 							int c;
 							while((c = yyinput()) && c != '\n') ;
 						}
-						yylineno++;
+						//yylineno++;
 						if(!newfile(yytext))
 						{
 							ClearMacros();
@@ -185,7 +206,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 <IF_STATEMENT>{ID_BLCK}	{
 							prepro_lval.str=yytext;
 							return IDENTIFIER;
-						}
+					}
 <IF_STATEMENT>{NUM_BLCK} {
 							prepro_lval.str=yytext;
 							prepro_lval.num=atoi(yytext);
@@ -199,19 +220,19 @@ NUM_BLCK 0|([1-9][0-9]*)
 					}
 <IF_STATEMENT>\n {
 						prepro_lval.str=yytext;
-				BEGIN INITIAL;
-				return EOL;
+						BEGIN INITIAL;
+						return EOL;
 					}
 <IF_STATEMENT>"//"[^\n]+ {
 						prepro_lval.str=yytext;
-				BEGIN INITIAL;
-				return EOL;
+						BEGIN INITIAL;
+						return EOL;
 					}
 <INITIAL>"#"define {
-				prepro_lval.str=yytext;
-				BEGIN DEFINING;
-				return DEFINE;
-			}
+						prepro_lval.str=yytext;
+						BEGIN DEFINING;
+						return DEFINE;
+					}
 <DEFINING>{ID_BLCK}	{
 						prepro_lval.str=yytext;
 						BEGIN DEFINING2;
@@ -241,10 +262,9 @@ NUM_BLCK 0|([1-9][0-9]*)
 					}
 <DEFINING5>[^\n]+ {
 						prepro_lval.str=yytext;
-						BEGIN INITIAL;
 						return MACRO_DEFINITION;
 					}
-<PREPRO,DEFINING,DEFINING2,DEFINING4,IF_STATEMENT>\n	{
+<PREPRO,DEFINING,DEFINING2,DEFINING4,DEFINING5,IF_STATEMENT>\n	{
 				BEGIN INITIAL;
 				return EOL;
 			}
@@ -263,21 +283,29 @@ NUM_BLCK 0|([1-9][0-9]*)
 				yyterminate();
 			}
 		}
+
 <INITIAL>^. {
 		current_state=YY_START;
 	if(inActiveBlock())
 		Write();
 	}
+
+
 <INITIAL>^\n {
 		current_state=YY_START;
 	if(inActiveBlock())
 		Write();
 	}
+
+
 <INITIAL>\n {
 		current_state=YY_START;
 	if(inActiveBlock())
 		Write();
 	}
+
+
+
 <INITIAL>. {
 		current_state=YY_START;
 	if(inActiveBlock())
@@ -325,7 +353,8 @@ int newfile(const char *fn)
 		last_filenumber++;
 	}
 	bs->filename		=filenamesUtf8.find(fullPathName)->first.c_str();
-	WriteLineNumber(yylineno);
+	//WriteLineNumber(yylineno);
+	Skip();
 	return 1;
 }
 
@@ -353,7 +382,8 @@ int popfile()
 	currentBuffer		=prevbs;
 	yylineno			=currentBuffer->lineno;
 	currentFilename		=currentBuffer->filename;
-	WriteLineNumber(yylineno-2);
+	
+	Skip();
 	delete bs;
 	return 1;
 }
@@ -369,7 +399,6 @@ vector<string> GetPreprocessorFilenamesUtf8()
 	}
 	return newvec;
 }
-
 void preprocess(const char *filenameUtf8, map<string, string> defines)
 {
 	ClearParserState();

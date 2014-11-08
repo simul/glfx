@@ -41,4 +41,5 @@ extern void DefineMacro(std::string name,std::string definition);
 extern const MacroDefinition *GetMacro(std::string name);
 extern void UndefineMacro(std::string name);
 extern void ClearParserState();
+extern void Skip();
 #endif

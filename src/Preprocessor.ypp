@@ -99,6 +99,7 @@
 		activeBlockStack.push_back(result&&inActiveBlock());
 		blockTestStack.push_back(var);
 	}
+
 	void endif()
 	{
 		//if(passthroughBlockStack.back())
@@ -111,7 +112,7 @@
 			blockTestStack.pop_back();
 		//	passthroughBlockStack.pop_back();
 		}
-		WriteLineNumber();
+		Skip();
 	}
 	void hash_else()
 	{
@@ -130,7 +131,7 @@
 				activeBlockStack.pop_back();
 				activeBlockStack.push_back((!current)&&inActiveBlock());
 				if(current)
-					WriteLineNumber();
+					Skip();
 			}
 		}
 		blockTestStack.back() += " #else";
@@ -173,13 +174,14 @@ prepr : IF if_conditions
 		string def=$4.str;
 		string params=$3.str;
 		if(inActiveBlock())
-		DefineMacro(id,def);
+			DefineMacro(id,def);
 		std::ostringstream definition;
 		definition<<"#define "<<id<<params;
 		if(def.length())
 			definition<<" "<<def;
 		definition<<"\n";
-		Write(definition.str().c_str());
+		if(inActiveBlock())
+			Write(definition.str().c_str());
 	}
 	| ELSE
 	{

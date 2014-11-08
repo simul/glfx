@@ -23,8 +23,7 @@
 
     // No unistd.h (for flex)
     #define YY_NO_UNISTD_H
-	#define YYERROR_VERBOSE
-    
+		#define YYERROR_VERBOSE
     #endif
     #include "glfxScanner.h"
     #include "glfxEffect.h"
@@ -41,17 +40,16 @@
 	#pragma optimize("",off)
 %}
 
-%token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH STORAGET SHADER_TYPE SHADER_COMMAND
-%token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT EMPTY_ARRAY_BRACKETS
-%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING
+%token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
+%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE
 
 %%
 
 prog : prog tok
     | { // Initialization code
-    gEffect->m_sharedCode.str("");    // clear the stream
-    //gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
-    gLexPassthrough=true;
+	    gEffect->m_sharedCode.str("");    // clear the stream
+	    gLexPassthrough=true;
 	};
 	tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
 	{
@@ -64,12 +62,12 @@ prog : prog tok
 		global_linenumber=$1.lineno;
 		gEffect->m_sharedCode<<$1.strs[0]<<" "<<$3.num<<" "<<$4.num<<endl;
 	}
-    | shader_and_layout IDENTIFIER LP param_list RP read_block lex_passthrough
+    | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
 		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
-		for(vector<YYSTYPE::variable>::const_iterator it=$4.vars->begin();it!=$4.vars->end();++it)
+		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
 			string type(it->type);
 			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
@@ -83,13 +81,13 @@ prog : prog tok
 				lineno=$1.lineno;
 		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
 			shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-			shaderCode<<it->prepend<<' '<<type<<' '<<it->identifier<<';'<<endl;
+			shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';'<<endl;
 		}
-		delete $4.vars;
-		std::string shaderName=$3.strs[0];
+		delete $5.vars;
+		std::string shaderName=$4.strs[0];
 		// Add definition and code
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$6.strs[0];//<<"#line "<<$7.lineno<<" "<<gEffect->Filename().c_str()<<endl<<$7.strs[0];
+		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$7.strs[0];
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 		
@@ -103,65 +101,22 @@ prog : prog tok
 	| TECHNIQUE lex_fx IDENTIFIER LB tech_def RB lex_passthrough
 	{
 		gEffect->m_techniques[$3.strs[0]] = $5.tech;
-	}
-    | INCLUDE
+	};
+	shader_and_layout: SHADER shader_fx cslayout
 	{
-		FILE* includeF;
-		string fName(gEffect->Dir());
-		fName+=$1.strs[0];
-		fopen_s(&includeF, fName.c_str(), "rb");
-		if(!includeF)
-			errSem("Cannot open include file", $1.lineno);
-		fseek(includeF, 0, SEEK_END);
-		int size=ftell(includeF)+1;
-		unsigned char* includeStr=new unsigned char[size];
-		rewind(includeF);
-		fread(includeStr, 1, size, includeF);
-		includeStr[size-1]=0;
-    
-		gEffect->m_includes++;
-	 //   gEffect->m_sharedCode<<"#line 1 \""<<fName.c_str()<<"\""<<endl;//gEffect->m_includes
-		gEffect->m_sharedCode<<includeStr<<endl;
-	   // gEffect->m_sharedCode<<"#line "<<$1.lineno+1<<" "<<gEffect->Filename().c_str()<<endl;
-    
-		fclose(includeF);
-		delete[] includeStr;
-	}
-    | SAMPLER lex_fx samplerClass LB samplerParamList RB samplerVars SC lex_passthrough
-	{
-		Sampler* samp=$5.samp;
-		samp->SetParam("Type", $1.strs[0]);
-		string dcl=samp->Descriptor();
-		if(dcl.size() == 0)
-			errSem("No sampler declaration can be generated", $1.lineno);
-		if($3.strs[0].size()>0)
-			gEffect->m_samplers[$3.strs[0]]=new Sampler(*samp);
-		for(vector<YYSTYPE::samplerVar>::const_iterator it=$7.texNames->begin(); it!=$7.texNames->end(); ++it)
-		{
-			//gEffect->m_sharedCode<<"#line "<<$1.lineno<<" "<<gEffect->Filename().c_str()<<endl;
-			gEffect->m_sharedCode<<it->binding<<" uniform "<<dcl<<' '<<it->name<<';'<<endl;
-			gEffect->m_samplers[it->name]=new Sampler(*samp);
-		}
-		delete samp;
-		delete $7.texNames;
-		//gEffect->m_sharedCode<<"#line "<<glfxget_lineno()<<" "<<gEffect->Filename().c_str()<<endl;
-	}
-;
-shader_and_layout: SHADER lex_fx cslayout
-	{
-	string s1=$1.strs[0];
-	$$.strs[0]=s1;
-	 };
+		string s1=$1.strs[0];
+		$$.strs[0]=s1;
+	};
 	cslayout: LAYOUT layout_params
 	{
 		currentCsLayout="";
 		currentCsLayout+=$1.strs[0];
 		currentCsLayout+=$2.strs[0];
 	}
-	 | {
-   currentCsLayout= "";
-};
-
+	|
+	{
+	   currentCsLayout= "";
+	};
 layout_params:LP NUM COMMA NUM COMMA NUM RP
 {
 	std::string ret="(";
@@ -175,9 +130,15 @@ layout_params:LP NUM COMMA NUM COMMA NUM RP
 };
 lex_fx :
 { /* Switch lex to fx scanning */
+	read_shader=false;
     gLexPassthrough=false;
-}
-;
+};
+
+shader_fx :
+{
+	read_shader=true;
+    gLexPassthrough=false;
+};
 
 number_or_filename : NUM
 					 {
@@ -195,8 +156,8 @@ lex_passthrough :
 ;
 
 read_block : { /* Read next block */
-    $$.lineno=glfxget_lineno();
-    $$.strs[0]=glfxreadblock('{', '}');
+    $$.strs[0]= glfxreadblock('{', '}');
+    $$.lineno= glfxget_lineno();
 }
 ;
 
@@ -289,76 +250,102 @@ samplerParam : IDENTIFIER EQUALS IDENTIFIER {
 }
 ;
 
-param_list : param_list COMMA fullparam {
-    $$.vars=$1.vars;
+num_list : num_list COMMA NUM
+	{
+		$$.vars=$1.vars;
+		YYSTYPE::variable var;
+		var.identifier=$3.strs[0];
+		$$.vars->push_back(var);
+	}
+    | NUM
+	{
+		YYSTYPE::variable var;
+		var.identifier=$1.strs[0];
+		$$.vars = new vector<YYSTYPE::variable>;
+		$$.vars->push_back(var);
+	}
+;
+param_declaration_list : param_declaration_list COMMA param_declaration
+	{
+		$$.vars=$1.vars;
 
-    YYSTYPE::variable var;
-    var.prepend=$3.strs[0];
-    var.type=$3.strs[1];
-    var.identifier=$3.strs[2];
+		YYSTYPE::variable var;
+		var.storage=$3.strs[0];
+		var.type=$3.strs[1];
+		var.identifier=$3.strs[2];
     
-    $$.vars->push_back(var);
-}
-    | fullparam {
-    YYSTYPE::variable var;
-    var.prepend=$1.strs[0];
-    var.type=$1.strs[1];
-    var.identifier=$1.strs[2];
+		$$.vars->push_back(var);
+	}
+    | param_declaration
+	{
+		YYSTYPE::variable var;
+		var.storage=$1.strs[0];
+		var.type=$1.strs[1];
+		var.identifier=$1.strs[2];
     
-    $$.vars = new vector<YYSTYPE::variable>;
-    $$.vars->push_back(var);
-}
+		$$.vars = new vector<YYSTYPE::variable>;
+		$$.vars->push_back(var);
+	}
     | {
-    $$.vars = new vector<YYSTYPE::variable>;
-}
+		$$.vars = new vector<YYSTYPE::variable>;
+	}
 ;
 
-fullparam : storage param arrayBrackets location {
+param_declaration : param opt_sq location {
     ostringstream prepend;
 
-    switch($4.rType) {
+    switch($3.rType)
+	{
     case REGISTER_INT:
-        prepend<<"layout(location="<<$4.num<<") ";
+        prepend<<"layout(location="<<$3.num<<") ";
         break;
     case REGISTER_NAME:
-        prepend<<"layout(location="<<$4.strs[0]<<") ";
+        prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     }
     
-    prepend<<$1.strs[0]<<' '<<$2.strs[0];
-    $$.strs[0]=prepend.str();
-    $$.strs[1]=$2.strs[1];
-    $$.strs[2]=$2.strs[2];
-    $$.strs[2]+=$3.strs[0];
-}
-;
+    prepend<<$1.strs[0];
 
-storage : STORAGET {
-    $$.strs[0]=$1.strs[0];
-}
-    | { /* None */
-    $$.strs[0]="";
-}
-;
+	string storage	=prepend.str();
+	string type		=$1.strs[1];
+	string id		=$1.strs[2]+$2.strs[0];
 
-param : STORAGEQ IDENTIFIER IDENTIFIER
+    $$.strs[0]=storage;
+    $$.strs[1]=type;
+    $$.strs[2]=id;
+
+    $$.strs[3]=$2.strs[0];
+    $$.strs[3]+=$3.strs[0];
+};
+
+opt_sq: LEFT_SQ RIGHT_SQ
+				{
+	$$.strs[0]="[]";
+				}
+				|
+				{
+					$$.strs[0]="";
+				};
+
+param : opt_storage IDENTIFIER IDENTIFIER
+	{
+		string storage	=$1.strs[0];
+		string type		=$2.strs[0];
+		string id		=$3.strs[0];
+		$$.strs[0]		= storage	;
+		$$.strs[1]		= type		;
+		$$.strs[2]		= id		;
+	}
+
+;
+	opt_storage : STORAGEQ
 	{
 		$$.strs[0]=$1.strs[0];
-		$$.strs[1]=$2.strs[0];
-		$$.strs[2]=$3.strs[0];
 	}
-;
-
-arrayBrackets : EMPTY_ARRAY_BRACKETS
-	{
-		$$.strs[0]="[]";
-	}
-    |
+	|
 	{
 		$$.strs[0]="";
 	}
-;
-
 location : COLON NUM
 	{
 		$$.num=$2.num;
@@ -405,8 +392,7 @@ pass_list: pass_list pass_def
 		newp= *p;
 	}
 	delete p;
-}
-;
+};
 
 pass_def: PASS IDENTIFIER LB prog_def RB
 {
@@ -416,11 +402,10 @@ pass_def: PASS IDENTIFIER LB prog_def RB
 }
 
 prog_def : shaders_list
-	{
-		$$.prog = new Program(*($1.shaders));
-		delete $1.shaders;
-	}
-	;
+{
+    $$.prog = new Program(*($1.shaders));
+    delete $1.shaders;
+};
 
 shaders_list : shaders_list shader_def
 	{
@@ -433,10 +418,24 @@ shaders_list : shaders_list shader_def
 		$$.shaders=new map<ShaderType, Program::Shader>;
 		(*$$.shaders)[$1.sType].src=$1.strs[0];
 		(*$$.shaders)[$1.sType].name=$1.strs[1];
-	}
-	;
+	};
 	
-shader_def : shader_lvalue shader_rvalue SC
+shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
+			 {
+				 string rast_name=$3.strs[0];
+			 }
+			 | SET_DEPTH_COMMAND LP IDENTIFIER COMMA NUM RP SC
+			 {
+				 string depth_name=$3.strs[0];
+				 int index=$5.num;
+			 }
+			 | SET_BLEND_COMMAND LP IDENTIFIER COMMA vec4 COMMA NUM RP SC
+			 {
+				 string blend_name=$3.strs[0];
+				 string vec4text=$5.strs[0];
+				 unsigned mask=$7.unum;
+			 }
+|  shader_lvalue shader_rvalue SC
 {
 	// Assemble the shader
 	ostringstream theShader;
@@ -479,7 +478,7 @@ shader_def : shader_lvalue shader_rvalue SC
 //shader_def : SHADER_COMMAND LP IDENTIFIER RP shader_layout SC
 shader_lvalue : SHADER_TYPE LP NUM RP
 {
-	$$.num=$3.num;
+	$$.num	=$3.num;
 	$$.sType=$1.sType;
 }
 | SHADER_COMMAND LP NUM COMMA IDENTIFIER RP
@@ -577,17 +576,19 @@ void glfxerror(const char* e)
 void errSyn(const char* e)
 {
     ostringstream errMsg;
-
-    errMsg<<"0("<<glfxget_lineno()<<") : error: Syntax error, "<<glfxget_text()<<" "<<e;
-    throw errMsg.str();
+	int lex_linenumber=glfxget_lineno();
+	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
+    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx syntax error: \""<<glfxget_text()<<"\" "<<e;
+    throw std::runtime_error(errMsg.str());
 }
 
-void errSem(const string& str, int line)
+void errSem(const string& str, int lex_linenumber)
 {
     ostringstream errMsg;
     
-    if(line==-1)
-        line=glfxget_lineno();
-    errMsg<<"0("<<line<<") : error: "<<str;
+    if(lex_linenumber==-1)
+        lex_linenumber= glfxget_lineno();
+	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
+    errMsg<<current_filenumber<<"("<<true_linenumber<<") : psfx error: "<<str;
     throw errMsg.str();
 }
