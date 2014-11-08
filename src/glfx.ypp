@@ -62,6 +62,7 @@ prog : prog tok
 		global_linenumber=$1.lineno;
 		gEffect->m_sharedCode<<$1.strs[0]<<" "<<$3.num<<" "<<$4.num<<endl;
 	}
+	// GL-style, e.g. shader VSMain(in type param,out type param)
     | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
 	{
 		ostringstream shaderCode;
@@ -419,6 +420,15 @@ shaders_list : shaders_list shader_def
 		(*$$.shaders)[$1.sType].src=$1.strs[0];
 		(*$$.shaders)[$1.sType].name=$1.strs[1];
 	};
+vec4: IDENTIFIER LP FLOAT COMMA FLOAT COMMA FLOAT COMMA FLOAT RP
+	  {
+		  $$.strs[0]=$1.strs[0]+"(";
+		  
+		  $$.strs[0]+=$3.strs[0]+",";
+		  $$.strs[0]+=$5.strs[0]+",";
+		  $$.strs[0]+=$7.strs[0]+",";
+		  $$.strs[0]+=$9.strs[0]+")";
+	  };
 	
 shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 			 {
