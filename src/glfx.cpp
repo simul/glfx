@@ -464,7 +464,6 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
         gEffect->Active()=false;
         retVal=false;
     }
-
     glfxpop_buffer_state();
 	if(retVal)
 	    gEffect->PopulateProgramList();

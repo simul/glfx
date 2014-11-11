@@ -11,6 +11,7 @@ namespace glfxParser
 		{
 			string  name;
 			string  src;
+			string  layout;
 		};
 
 		Program(const map<ShaderType, Shader>& shaders);

@@ -122,6 +122,7 @@ unsigned Program::CompileAndLink(string& log) const
 int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstream& sLog ) const
 {
     const char* strSrc=shaderSrc.src.c_str();
+    const char* layout=shaderSrc.layout.c_str();
     glShaderSource(shader, 1, &strSrc, NULL);
     glCompileShader(shader);
     

@@ -78,7 +78,10 @@ extern int glfxdebug;
      RENDER_STATE = 287,
      QUOTED_STRING = 288,
      SHADER_LINE = 289,
-     SHADER_TYPE = 290
+     SHADER_TYPE = 290,
+     DEFINE = 291,
+     MACRO_DEFINITION = 292,
+     EOL = 293
    };
 #endif
 

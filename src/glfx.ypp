@@ -43,6 +43,7 @@
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE
+%token DEFINE MACRO_DEFINITION EOL
 
 %%
 
@@ -55,12 +56,21 @@ prog : prog tok
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 	}
+	| DEFINE MACRO_DEFINITION EOL
+	{
+	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
 		last_linenumber=$3.num;
 		current_filenumber=$4.num;
 		global_linenumber=$1.lineno;
 		gEffect->m_sharedCode<<$1.strs[0]<<" "<<$3.num<<" "<<$4.num<<endl;
+	}
+	| LAYOUT lex_fx layout_params lex_passthrough
+	{
+		currentCsLayout="";
+		currentCsLayout+=$1.strs[0];
+		currentCsLayout+=$3.strs[0];
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param)
     | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
@@ -88,7 +98,8 @@ prog : prog tok
 		std::string shaderName=$4.strs[0];
 		// Add definition and code
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-		shaderCode<<currentCsLayout<<"\nvoid main()"<<endl<<$7.strs[0];
+		shaderCode<<"void main()"<<endl<<$7.strs[0];
+		gEffect->m_shaderLayouts[shaderName]=currentCsLayout;
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 		
@@ -103,20 +114,9 @@ prog : prog tok
 	{
 		gEffect->m_techniques[$3.strs[0]] = $5.tech;
 	};
-	shader_and_layout: SHADER shader_fx cslayout
+	shader_and_layout: SHADER shader_fx
 	{
-		string s1=$1.strs[0];
-		$$.strs[0]=s1;
-	};
-	cslayout: LAYOUT layout_params
-	{
-		currentCsLayout="";
-		currentCsLayout+=$1.strs[0];
-		currentCsLayout+=$2.strs[0];
-	}
-	|
-	{
-	   currentCsLayout= "";
+		$$.strs[0]=$1.strs[0];
 	};
 layout_params:LP NUM COMMA NUM COMMA NUM RP
 {
@@ -471,6 +471,8 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 				errSem(errMsg.str(), true_linenumber);
 			}
+			if(shaderType==COMPUTE_SHADER)
+				theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
 			// Currently in case of error it never returns (throw)
 			// TODO: Handle continuation in case of error
 			theShader<<it->second;

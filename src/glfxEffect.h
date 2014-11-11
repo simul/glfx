@@ -11,6 +11,7 @@ namespace glfxParser
 		vector<string>          m_techniqueNames;
 		map<string, Sampler*>   m_samplers;
 		map<string, string>     m_shaders;
+		map<string, string>     m_shaderLayouts;
 		struct InterfaceDcl
 		{
 			string id;

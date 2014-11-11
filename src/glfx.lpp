@@ -52,7 +52,7 @@ the last is C code to be copied verbatim to the output.
 	#pragma optimize("",off)
 %}
 
-%x IN_SHADER
+%x IN_SHADER IN_DEFINE
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -61,18 +61,39 @@ STR_BLCK \"[^"\n]*\"
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
-<INITIAL>"patch"|"centroid"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}*/
+<INITIAL>"patch"|"centroid"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}*/
 %%
-<INITIAL>CS_LAYOUT							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext;return LAYOUT;}
-<INITIAL>"program"							glfxlval.boolean=false; return PROGRAM;
-<INITIAL>"stages"							glfxlval.boolean=true; return PROGRAM;
-<INITIAL>"technique"						glfxlval.boolean=false; return TECHNIQUE;
-<INITIAL>"pass"								glfxlval.boolean=false; return PASS;
-<INITIAL>"group"							glfxlval.boolean=false; return GROUP;
-<INITIAL>"shader"							glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return SHADER;
-<INITIAL>"interface"						glfxlval.lineno=yylineno; return INTERFACE;
-<INITIAL>"sampler"							glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return SAMPLER;
-<INITIAL>"#line"								glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return LINE;
+<INITIAL>"#"define {
+						if(gLexPassthrough)
+							gEffect->m_sharedCode<<yytext; 
+						BEGIN IN_DEFINE;
+						return DEFINE;
+					}
+<IN_DEFINE>[^\n]+ {
+						if(gLexPassthrough)
+							gEffect->m_sharedCode<<yytext; 
+						return MACRO_DEFINITION;
+					}
+<IN_DEFINE>\n	{
+						if(gLexPassthrough)
+							gEffect->m_sharedCode<<yytext; 
+				BEGIN INITIAL;
+				return EOL;
+			}
+<INITIAL>CS_LAYOUT								{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													return LAYOUT;
+												}
+<INITIAL>"program"								glfxlval.boolean=false;		return PROGRAM;
+<INITIAL>"stages"								glfxlval.boolean=true;		return PROGRAM;
+<INITIAL>"technique"							glfxlval.boolean=false;		return TECHNIQUE;
+<INITIAL>"pass"									glfxlval.boolean=false;		return PASS;
+<INITIAL>"group"								glfxlval.boolean=false;		return GROUP;
+<INITIAL>"shader"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return SHADER;
+<INITIAL>"interface"							glfxlval.lineno=yylineno;	return INTERFACE;
+<INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return SAMPLER;
+<INITIAL>"#line"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return LINE;
 <INITIAL>^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
 													string tmp(yytext);
 													size_t firstLoc=tmp.find('"')+1;
@@ -81,132 +102,132 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
 													return INCLUDE;
 												}
-<INITIAL>"vs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
-<INITIAL>"tc"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
-<INITIAL>"te"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
-<INITIAL>"gs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
-<INITIAL>"fs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
-<INITIAL>"cs"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
+<INITIAL>"vs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
+<INITIAL>"tc"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
+<INITIAL>"te"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
+<INITIAL>"gs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
+<INITIAL>"fs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
+<INITIAL>"cs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
 
-<INITIAL>"SetVertexShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetVertexShader; return SHADER_COMMAND;}
-<INITIAL>"SetHullShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetHullShader; return SHADER_COMMAND;}
-<INITIAL>"SetDomainShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDomainShader; return SHADER_COMMAND;}
-<INITIAL>"SetGeometryShader"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetGeometryShader; return SHADER_COMMAND;}
-<INITIAL>"SetPixelShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
-<INITIAL>"SetFragmentShader"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
-<INITIAL>"SetComputeShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetComputeShader; return SHADER_COMMAND;}
+<INITIAL>"SetVertexShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetVertexShader; return SHADER_COMMAND;}
+<INITIAL>"SetHullShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetHullShader; return SHADER_COMMAND;}
+<INITIAL>"SetDomainShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDomainShader; return SHADER_COMMAND;}
+<INITIAL>"SetGeometryShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetGeometryShader; return SHADER_COMMAND;}
+<INITIAL>"SetPixelShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
+<INITIAL>"SetFragmentShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetFragmentShader; return SHADER_COMMAND;}
+<INITIAL>"SetComputeShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetComputeShader; return SHADER_COMMAND;}
 
-<INITIAL>"SetRasterizerState"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SET_RASTERIZER_COMMAND;}
-<INITIAL>"SetDepthStencilState"				if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
-<INITIAL>"SetBlendState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SET_BLEND_COMMAND;}
+<INITIAL>"SetRasterizerState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SET_RASTERIZER_COMMAND;}
+<INITIAL>"SetDepthStencilState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
+<INITIAL>"SetBlendState"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SET_BLEND_COMMAND;}
 
-<INITIAL>{STR_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.strs[0]=yytext;
-													return QUOTED_STRING;
-												}
-											}
-<INITIAL>{HEX_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.unum=strtoul(yytext, NULL, 16);
-													glfxlval.strs[0]=yytext;
-													return NUM;
-												}
-											}
-<INITIAL>{NUM_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.num=atoi(yytext);
-													glfxlval.strs[0]=yytext;
-													return NUM;
-												}
-											}
-<INITIAL>{FLOAT_BLCK}						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
-<INITIAL>"in"|"out"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
-<INITIAL>"gl_FragDepth"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
-<INITIAL>"true"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=1; return NUM;}
-<INITIAL>"false"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=0; return NUM;}
-<INITIAL>{ID_BLCK}							{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.lineno=yylineno;
-													glfxlval.strs[0]=yytext;
-													return IDENTIFIER;
-												}
-											}
-<INITIAL>{ID_BLCK}"::"{ID_BLCK}				{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.lineno=yylineno;
-													glfxlval.strs[0]=yytext;
-													return IDENTIFIER;
-												}
-											}
-<INITIAL>"("								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LP;}
-<INITIAL>")"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RP;}
-<INITIAL>"{"								{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													if(read_shader)
+<INITIAL>{STR_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
 													{
-														brace++;
-														BEGIN IN_SHADER;
+														glfxlval.strs[0]=yytext;
+														return QUOTED_STRING;
 													}
-													return LB;
 												}
-											}
-<INITIAL>"}"								{
-												if(gLexPassthrough)
-													gEffect->m_sharedCode<<yytext;
-												else
-												{
-													return RB;
-												}//"["[\t ]*"]"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EMPTY_ARRAY_BRACKETS;}
-											}
-<INITIAL>"["								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LEFT_SQ;}
-<INITIAL>"]"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RIGHT_SQ;}
-<INITIAL>","								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COMMA;}
-<INITIAL>"="								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
-<INITIAL>";"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
-<INITIAL>":"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
-<INITIAL>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
-<INITIAL>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/	if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
-<INITIAL>[\t\n ]							if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-<INITIAL>.									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
+<INITIAL>{HEX_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.unum=strtoul(yytext, NULL, 16);
+														glfxlval.strs[0]=yytext;
+														return NUM;
+													}
+												}
+<INITIAL>{NUM_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.num=atoi(yytext);
+														glfxlval.strs[0]=yytext;
+														return NUM;
+													}
+												}
+<INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
+<INITIAL>"in"|"out"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
+<INITIAL>"gl_FragDepth"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
+<INITIAL>"true"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=1; return NUM;}
+<INITIAL>"false"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=0; return NUM;}
+<INITIAL>{ID_BLCK}								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														return IDENTIFIER;
+													}
+												}
+<INITIAL>{ID_BLCK}"::"{ID_BLCK}					{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														return IDENTIFIER;
+													}
+												}
+<INITIAL>"("									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LP;}
+<INITIAL>")"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RP;}
+<INITIAL>"{"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														if(read_shader)
+														{
+															brace++;
+															BEGIN IN_SHADER;
+														}
+														return LB;
+													}
+												}
+<INITIAL>"}"									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														return RB;
+													}//"["[\t ]*"]"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EMPTY_ARRAY_BRACKETS;}
+												}
+<INITIAL>"["									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LEFT_SQ;}
+<INITIAL>"]"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RIGHT_SQ;}
+<INITIAL>","									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COMMA;}
+<INITIAL>"="									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
+<INITIAL>";"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
+<INITIAL>":"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
+<INITIAL>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
+<INITIAL>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
+<INITIAL>[\t\n ]								if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+<INITIAL>.										if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
 
-<IN_SHADER>"{"								{
-												glfxlval.strs[0]=yytext;
-												brace++;
-												return SHADER_LINE;
-											}
-<IN_SHADER>"}"								{
-												glfxlval.strs[0]=yytext;
-												brace--;
-												if(!brace)
-												{
-													BEGIN INITIAL;
-													return RB;
+<IN_SHADER>"{"									{
+													glfxlval.strs[0]=yytext;
+													brace++;
+													return SHADER_LINE;
 												}
-												return SHADER_LINE;
-											}
-<IN_SHADER>[^\n{}]*\n						{
-												glfxlval.strs[0]=yytext;
-												return SHADER_LINE;
-											}
+<IN_SHADER>"}"									{
+													glfxlval.strs[0]=yytext;
+													brace--;
+													if(!brace)
+													{
+														BEGIN INITIAL;
+														return RB;
+													}
+													return SHADER_LINE;
+												}
+<IN_SHADER>[^\n{}]*\n							{
+													glfxlval.strs[0]=yytext;
+													return SHADER_LINE;
+												}
 %%
 
 void errLex(const char* tok)
