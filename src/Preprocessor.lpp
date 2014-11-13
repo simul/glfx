@@ -167,7 +167,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 						/*handle filename up to the closing quote, >, or end of line*/
 						{
 							int c;
-							while((c = yyinput()) && c != '\n') ;
+							while((c = yyinput()) && c != '\n'&&c>=0) ;
 						}
 						//yylineno++;
 						if(!newfile(yytext))
