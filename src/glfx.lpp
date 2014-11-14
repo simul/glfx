@@ -52,7 +52,7 @@ the last is C code to be copied verbatim to the output.
 	#pragma optimize("",off)
 %}
 
-%x IN_SHADER IN_DEFINE
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -79,7 +79,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 							gEffect->m_sharedCode<<yytext; 
 				BEGIN INITIAL;
 				return EOL;
-			}
+				}
 <INITIAL>CS_LAYOUT								{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
@@ -120,6 +120,20 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"SetRasterizerState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SET_RASTERIZER_COMMAND;}
 <INITIAL>"SetDepthStencilState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
 <INITIAL>"SetBlendState"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SET_BLEND_COMMAND;}
+
+<INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_VERTEX_SHADER;}
+<INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
+<INITIAL>"FragmentShader"						{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
+<IN_SHADER_COMPILE>"CompileShader"				{glfxlval.lineno=yylineno;	return COMPILE_SHADER;}
+<IN_SHADER_COMPILE>{ID_BLCK}					{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													return IDENTIFIER;
+												}
+<IN_DEFINE>";"									{
+													BEGIN INITIAL;
+													return SC;
+												}
 
 <INITIAL>{STR_BLCK}								{
 													if(gLexPassthrough)
@@ -243,20 +257,21 @@ string glfxreadblock(unsigned char openChar, unsigned char closeChar)
 {
     string str;
     int braceBalance=0;
-    unsigned char c;
+    int c;
     bool done=false;
     do {
-        c=(unsigned char)yyinput();
-        str+=c;
-        if(c==0)
+        c=yyinput();
+        if(c<=0)
 		{
             throw "Brace balance error\n";
 		}
-        else if(c==openChar)
+        str+=(unsigned char)c;
+		if((unsigned char)c==openChar)
 		{
             braceBalance++;
 		}
-        else if(c==closeChar) {
+        else if((unsigned char)c==closeChar)
+		{
             braceBalance--;
             if(braceBalance<0)
 			{

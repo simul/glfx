@@ -164,9 +164,9 @@ NUM_BLCK 0|([1-9][0-9]*)
 								BEGIN IFILE; /*match #include statement up through the quote or <*/
 								}
 <IFILE>[^ \t\n\">]+ {
+						int c=0;
 						/*handle filename up to the closing quote, >, or end of line*/
 						{
-							int c;
 							while((c = yyinput()) && c != '\n'&&c>=0) ;
 						}
 						//yylineno++;

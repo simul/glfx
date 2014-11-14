@@ -79,9 +79,12 @@ extern int glfxdebug;
      QUOTED_STRING = 288,
      SHADER_LINE = 289,
      SHADER_TYPE = 290,
-     DEFINE = 291,
-     MACRO_DEFINITION = 292,
-     EOL = 293
+     COMPILE_SHADER = 291,
+     DEFINE = 292,
+     MACRO_DEFINITION = 293,
+     EOL = 294,
+     DECL_VERTEX_SHADER = 295,
+     DECL_PIXEL_SHADER = 296
    };
 #endif
 
