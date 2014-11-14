@@ -254,8 +254,7 @@ samplerParam : IDENTIFIER EQUALS IDENTIFIER {
     $$.strs[0]=$1.strs[0];
     $$.num=$3.num;
     $$.samplerParamType=SAMPLER_PARAM_INT;
-}
-;
+};
 
 num_list : num_list COMMA NUM
 	{
@@ -293,14 +292,15 @@ param_declaration_list : param_declaration_list COMMA param_declaration
 		$$.vars = new vector<YYSTYPE::variable>;
 		$$.vars->push_back(var);
 	}
-    | {
+    |
+	{
 		$$.vars = new vector<YYSTYPE::variable>;
 	}
 ;
 
-param_declaration : param opt_sq location {
+param_declaration : param opt_sq location
+{
     ostringstream prepend;
-
     switch($3.rType)
 	{
     case REGISTER_INT:
@@ -310,7 +310,6 @@ param_declaration : param opt_sq location {
         prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     }
-    
     prepend<<$1.strs[0];
 
 	string storage	=prepend.str();
@@ -327,7 +326,7 @@ param_declaration : param opt_sq location {
 
 opt_sq: LEFT_SQ RIGHT_SQ
 				{
-	$$.strs[0]="[]";
+					$$.strs[0]="[]";
 				}
 				|
 				{
@@ -342,9 +341,7 @@ param : opt_storage IDENTIFIER IDENTIFIER
 		$$.strs[0]		= storage	;
 		$$.strs[1]		= type		;
 		$$.strs[2]		= id		;
-	}
-
-;
+	};
 	opt_storage : STORAGEQ
 	{
 		$$.strs[0]=$1.strs[0];
@@ -450,37 +447,40 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				 string vec4text=$5.strs[0];
 				 unsigned mask=$7.unum;
 			 }
-			| shader_lvalue shader_rvalue SC
+			| shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = VS_Main();
 			{
 				glfxParser::ShaderType shaderType=$1.sType;
 				glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-				if(shaderType<NUM_OF_SHADER_TYPES&&$2.num>0)
+				if(shaderType<NUM_OF_SHADER_TYPES&&$3.num>0)
 				{
 					// Assemble the shader
 					ostringstream theShader;
 					theShader<<"#version "<<$1.num<<endl;
-					theShader<<$2.strs[1];
+					theShader<<$3.strs[1];
 					// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
 					if(shaderType==COMPUTE_SHADER)
 						theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
-					string shaderName=($2.strs[0]);
+					string shaderName=($3.strs[0]);
 					if(_stricmp(shaderName.c_str(),"NULL")!=0)
 					{
 						theShader<<gEffect->m_sharedCode.str();
 						map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
 						if(it==gEffect->m_shaders.end())
 						{
-							int ylineno=$2.lineno;
+							int ylineno=$3.lineno;
 							int true_linenumber=ylineno+(last_linenumber-global_linenumber);
 							ostringstream errMsg;
 							errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 							errSem(errMsg.str(), true_linenumber);
 						}
-						if(shaderType==COMPUTE_SHADER)
-							theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
+						else
+						{
+							if(shaderType==COMPUTE_SHADER)
+								theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
 						// Currently in case of error it never returns (throw)
 						// TODO: Handle continuation in case of error
-						theShader<<it->second;
+							theShader<<it->second;
+						}
 					}
 					$$.strs[1]=shaderName;
 					$$.strs[0]=theShader.str();
@@ -497,11 +497,16 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				$$.num	=$3.num;
 				$$.sType=$1.sType;
 			}
+			// For example: SetVertexShader(vs_main);
 			| SHADER_COMMAND LP shader_variable RP
 			{
+				// the shader_variable is something like vs_main, for which we have a compile command like:
+				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
+				// i.e. it's a combination of shadertype, profile, and function name.
+				// so these are stored in gEffect->m_compiledSHaders.
 				ostringstream theShader;
-				$$.num=$3.num;
-				$$.sCommand = $1.sCommand;
+				$$.num		=$3.num;
+				$$.sCommand	=$1.sCommand;
 				theShader << "#version " << $3.num << endl;
 				glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 				if(shaderCommand==COMPUTE_SHADER)
@@ -519,9 +524,10 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 							errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 							errSem(errMsg.str(), $3.lineno);
 						}
+						else
 						// Currently in case of error it never returns (throw)
 						// TODO: Handle continuation in case of error
-						theShader<<it->second;
+							theShader<<it->second;
 					}
 					$$.strs[0]=shaderName;
 					$$.strs[1]=theShader.str();
@@ -533,11 +539,11 @@ shader_variable:NUM COMMA IDENTIFIER
 					$$.num=$1.num;
 					$$.lineno=$3.lineno;
 				};
-shader_rvalue : EQUALS IDENTIFIER LP RP shader_layout
+shader_rvalue : IDENTIFIER LP RP shader_layout
 {
-	$$.lineno=$2.lineno;
-	$$.strs[0]=$2.strs[0];
-	$$.strs[1]=$5.strs[0];
+	$$.lineno=$1.lineno;
+	$$.strs[0]=$1.strs[0];
+	$$.strs[1]=$4.strs[0];
 }
 |
 {
