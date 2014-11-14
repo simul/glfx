@@ -83,8 +83,7 @@ extern int glfxdebug;
      DEFINE = 292,
      MACRO_DEFINITION = 293,
      EOL = 294,
-     DECL_VERTEX_SHADER = 295,
-     DECL_PIXEL_SHADER = 296
+     DECL_SHADER = 295
    };
 #endif
 

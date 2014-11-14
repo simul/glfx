@@ -121,16 +121,45 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"SetDepthStencilState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
 <INITIAL>"SetBlendState"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SET_BLEND_COMMAND;}
 
-<INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_VERTEX_SHADER;}
-<INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
-<INITIAL>"FragmentShader"						{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
-<IN_SHADER_COMPILE>"CompileShader"				{glfxlval.lineno=yylineno;	return COMPILE_SHADER;}
+<INITIAL>"VertexShader"							{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=VERTEX_SHADER;
+													BEGIN IN_SHADER_COMPILE;
+													return DECL_SHADER;
+												}
+<INITIAL>"PixelShader"							{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=FRAGMENT_SHADER;
+													BEGIN IN_SHADER_COMPILE;
+													return DECL_SHADER;
+												}
+<INITIAL>"FragmentShader"						{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=FRAGMENT_SHADER;
+													BEGIN IN_SHADER_COMPILE;
+													return DECL_SHADER;
+												}
+<IN_SHADER_COMPILE>"CompileShader"				{
+													glfxlval.lineno=yylineno;
+													return COMPILE_SHADER;
+												}
 <IN_SHADER_COMPILE>{ID_BLCK}					{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
+}
+<IN_SHADER_COMPILE>"("							return LP;
+<IN_SHADER_COMPILE>")"							return RP;
+<IN_SHADER_COMPILE>","							return COMMA;
+<IN_SHADER_COMPILE>"="							{
+													return EQUALS;
 												}
-<IN_DEFINE>";"									{
+<IN_SHADER_COMPILE>{NUM_BLCK}					{
+													glfxlval.num = atoi(yytext);
+													glfxlval.strs[0] = yytext;
+													return NUM;
+												}
+<IN_SHADER_COMPILE>";"							{
 													BEGIN INITIAL;
 													return SC;
 												}
@@ -243,6 +272,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													return SHADER_LINE;
 												}
 %%
+
+
+void ResetGlfxParseState()
+{
+	BEGIN INITIAL;
+}
 
 void errLex(const char* tok)
 {

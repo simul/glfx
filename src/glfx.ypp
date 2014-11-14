@@ -43,7 +43,7 @@
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER
-%token DEFINE MACRO_DEFINITION EOL DECL_VERTEX_SHADER DECL_PIXEL_SHADER
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER
 
 %%
 
@@ -52,6 +52,16 @@ prog : prog tok
 	    gEffect->m_sharedCode.str("");    // clear the stream
 	    gLexPassthrough=true;
 	};
+	shader_decl_lvalue: DECL_SHADER IDENTIFIER
+	{
+		$$.strs[0] = $2.strs[0];
+		$$.sType= $1.sType;
+	};
+	 shader_decl_rvalue: COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP
+	{
+		 $$.strs[0]=$6.strs[0];
+		 $$.num = $4.num;
+	};
 	tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
@@ -59,11 +69,15 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
-	| SHADER_TYPE IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER RP SC
+	| shader_decl_lvalue EQUALS shader_decl_rvalue  SC
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
+
+		string shaderName = $3.strs[0];
+		int profile = $3.num;
+//		gEffect->m_shaders[shaderName] = shaderCode.str();
 	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
