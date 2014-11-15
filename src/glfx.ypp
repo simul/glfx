@@ -59,7 +59,7 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
-	| DECL_SHADER IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER RP SC
+	| DECL_SHADER IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP SC
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
@@ -502,14 +502,9 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 					$$.strs[1]=$1.strs[0];
 				}
 				$$.sType=$1.sType;
-			};
-			shader_lvalue : SHADER_TYPE LP NUM RP
-			{
-				$$.num	=$3.num;
-				$$.sType=$1.sType;
 			}
 			// For example: SetVertexShader(vs_main);
-			| SHADER_COMMAND LP IDENTIFIER RP
+			| SHADER_COMMAND LP IDENTIFIER RP SC
 			{
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
@@ -528,6 +523,7 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 					CompiledShader *compiledShader	=i->second;
 					$$.num							=compiledShader->version;
 					$$.sCommand						=$1.sCommand;
+					$$.sType						=$1.sType;
 					ostringstream theShader;
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
@@ -556,6 +552,11 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 					}
 				}
 			};
+shader_lvalue : SHADER_TYPE LP NUM RP
+{
+	$$.num	=$3.num;
+	$$.sType=$1.sType;
+};
 shader_variable:NUM COMMA IDENTIFIER
 				{
 					$$.strs[0]=$3.strs[0];

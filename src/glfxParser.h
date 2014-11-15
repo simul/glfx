@@ -118,3 +118,4 @@ extern int glfxdebug;
 string glfxreadblock(unsigned char openChar, unsigned char closeChar);
 void glfxerror(const char*);
 int glfxparse();
+void resetGlfxParse();

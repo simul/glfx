@@ -3,6 +3,7 @@
 #include "glfxClasses.h"
 #include <map>
 #include <string>
+
 namespace glfxParser
 {
 	//! A shader to be compiled. 
