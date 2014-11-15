@@ -1,17 +1,29 @@
 #ifndef GLFXEFFECT_H
 #define GLFXEFFECT_H
-
+#include "glfxClasses.h"
+#include <map>
+#include <string>
 namespace glfxParser
 {
+	//! A shader to be compiled. 
+	struct CompiledShader
+	{
+		ShaderType shaderType;
+		int version;
+		std::string m_functionName;
+	};
+	typedef std::map<std::string,CompiledShader*> CompiledShaderMap;
+	typedef std::map<std::string,std::string> StringMap;
 	class Effect
 	{
-		map<string, Program*>   m_programs;
-		vector<string>          m_programNames;
-		map<string, Technique*> m_techniques;
-		vector<string>          m_techniqueNames;
-		map<string, Sampler*>   m_samplers;
-		map<string, string>     m_shaders;
-		map<string, string>     m_shaderLayouts;
+		map<std::string, Program*>   m_programs;
+		vector<std::string>          m_programNames;
+		map<std::string, Technique*> m_techniques;
+		vector<std::string>          m_techniqueNames;
+		map<std::string, Sampler*>   m_samplers;
+		map<std::string, std::string>     m_shaders;
+		map<std::string, std::string>     m_shaderLayouts;
+		CompiledShaderMap			m_compiledShaders;
 		struct InterfaceDcl
 		{
 			string id;
@@ -45,7 +57,6 @@ namespace glfxParser
 		string& Filename();
 		~Effect();
 		Effect();
-
 		friend int ::glfxparse();
 		friend int ::glfxlex();
 	};

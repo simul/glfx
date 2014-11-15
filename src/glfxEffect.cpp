@@ -39,6 +39,8 @@ Effect::~Effect()
         delete it->second;
     for(map<string,Sampler*>::iterator it=m_samplers.begin(); it!=m_samplers.end(); ++it)
         delete it->second;
+    for(CompiledShaderMap::iterator it=m_compiledShaders.begin(); it!=m_compiledShaders.end(); ++it)
+        delete it->second;
 }
 
 bool& Effect::Active()

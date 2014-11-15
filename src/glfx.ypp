@@ -43,7 +43,7 @@
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER
-%token DEFINE MACRO_DEFINITION EOL DECL_VERTEX_SHADER DECL_PIXEL_SHADER
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER
 
 %%
 
@@ -59,11 +59,25 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
-	| SHADER_TYPE IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER RP SC
+	| DECL_SHADER IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER RP SC
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
+		string compiledShaderName=$2.strs[0];
+		CompiledShader *compiledShader=NULL;
+		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
+		if(i!=gEffect->m_compiledShaders.end())
+		{
+			compiledShader=i->second;
+			// TODO: Warn here about double-compiling a shader.
+		}
+		else
+			gEffect->m_compiledShaders[compiledShaderName]=compiledShader=new CompiledShader;
+		compiledShader->shaderType=$1.sType;
+		compiledShader->version=$6.num;
+		compiledShader->m_functionName=$8.strs[0];
+
 	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
@@ -183,7 +197,7 @@ samplerVars : samplerVars COMMA samplerVar {
     sv.binding=$3.strs[0];
     sv.name=$3.strs[1];
     $$.texNames->push_back(sv);
-}
+	}
     | samplerVar {
     $$.texNames=new vector<YYSTYPE::samplerVar>;
     YYSTYPE::samplerVar sv;
@@ -206,10 +220,8 @@ samplerVar : IDENTIFIER location {
     
     $$.strs[0]=prepend.str();
     $$.strs[1]=$1.strs[0];
-}
-;
+};
     
-
 samplerParamList : samplerParamList samplerParam SC {
     $$.samp=$1.samp;
     switch($2.samplerParamType) {
@@ -237,8 +249,7 @@ samplerParamList : samplerParamList samplerParam SC {
         $$.samp->SetParam($1.strs[0], $1.fnum);
         break;
     }
-}
-;
+};
 
 samplerParam : IDENTIFIER EQUALS IDENTIFIER {
     $$.strs[0]=$1.strs[0];
@@ -498,39 +509,51 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				$$.sType=$1.sType;
 			}
 			// For example: SetVertexShader(vs_main);
-			| SHADER_COMMAND LP shader_variable RP
+			| SHADER_COMMAND LP IDENTIFIER RP
 			{
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
 				// i.e. it's a combination of shadertype, profile, and function name.
 				// so these are stored in gEffect->m_compiledSHaders.
-				ostringstream theShader;
-				$$.num		=$3.num;
-				$$.sCommand	=$1.sCommand;
-				theShader << "#version " << $3.num << endl;
-				glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-				if(shaderCommand==COMPUTE_SHADER)
-					theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
-				if(shaderCommand<NumShaderCommands)
+				string compiledShaderName=$3.strs[0];
+				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
+				if(i==gEffect->m_compiledShaders.end())
 				{
-					string shaderName=($3.strs[0]);
-					if(_stricmp(shaderName.c_str(),"NULL")!=0)
+					ostringstream errMsg;
+					errMsg<<"Unable to find compiled shader \""<<compiledShaderName<<'\"';
+					errSem(errMsg.str(), $3.lineno);
+				}
+				else
+				{
+					CompiledShader *compiledShader	=i->second;
+					$$.num							=compiledShader->version;
+					$$.sCommand						=$1.sCommand;
+					ostringstream theShader;
+					theShader << "#version " << compiledShader->version << endl;
+					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
+					if(shaderCommand==COMPUTE_SHADER)
+						theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
+					if(shaderCommand<NumShaderCommands)
 					{
-						theShader<<gEffect->m_sharedCode.str();
-						map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
-						if(it==gEffect->m_shaders.end())
+						string shaderName=compiledShader->m_functionName;
+						if(_stricmp(shaderName.c_str(),"NULL")!=0)
 						{
-							ostringstream errMsg;
-							errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-							errSem(errMsg.str(), $3.lineno);
+							theShader<<gEffect->m_sharedCode.str();
+							map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
+							if(it==gEffect->m_shaders.end())
+							{
+								ostringstream errMsg;
+								errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
+								errSem(errMsg.str(), $3.lineno);
+							}
+							else
+							// Currently in case of error it never returns (throw)
+							// TODO: Handle continuation in case of error
+								theShader<<it->second;
 						}
-						else
-						// Currently in case of error it never returns (throw)
-						// TODO: Handle continuation in case of error
-							theShader<<it->second;
+						$$.strs[0]=shaderName;
+						$$.strs[1]=theShader.str();
 					}
-					$$.strs[0]=shaderName;
-					$$.strs[1]=theShader.str();
 				}
 			};
 shader_variable:NUM COMMA IDENTIFIER

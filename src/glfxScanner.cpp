@@ -5224,17 +5224,17 @@ if(gLexPassthrough) gEffect->m_sharedCode<<glfxtext; else {glfxlval.sCommand=Set
 case 31:
 YY_RULE_SETUP
 #line 124 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_VERTEX_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 125 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 126 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_PIXEL_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
