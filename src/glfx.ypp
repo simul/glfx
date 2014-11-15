@@ -59,25 +59,24 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
-	| DECL_SHADER IDENTIFIER EQUALS COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP SC
+	| DECL_SHADER IDENTIFIER EQUALS shader_compile SC
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
-		string compiledShaderName=$2.strs[0];
-		CompiledShader *compiledShader=NULL;
-		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
+		string compiledShaderName		=$2.strs[0];
+		CompiledShader *cs				=gEffect->m_compiledShaders[$4.strs[0]];
+		CompiledShader *compiledShader	=NULL;
+		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
 		if(i!=gEffect->m_compiledShaders.end())
 		{
-			compiledShader=i->second;
+			delete i->second;
 			// TODO: Warn here about double-compiling a shader.
 		}
-		else
-			gEffect->m_compiledShaders[compiledShaderName]=compiledShader=new CompiledShader;
+		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 		compiledShader->shaderType=$1.sType;
-		compiledShader->version=$6.num;
-		compiledShader->m_functionName=$8.strs[0];
-
+		compiledShader->version=$4.num;
+		compiledShader->m_functionName=$4.strs[0];
 	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
@@ -504,7 +503,7 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				$$.sType=$1.sType;
 			}
 			// For example: SetVertexShader(vs_main);
-			| SHADER_COMMAND LP IDENTIFIER RP SC
+			| SHADER_COMMAND LP shader_compile RP SC
 			{
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
@@ -547,11 +546,30 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 							// TODO: Handle continuation in case of error
 								theShader<<it->second;
 						}
-						$$.strs[0]=shaderName;
-						$$.strs[1]=theShader.str();
+						$$.strs[1]=shaderName;
+						$$.strs[0]=theShader.str();
 					}
 				}
 			};
+		shader_compile: IDENTIFIER
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+		| COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP 
+		{
+			stringstream ss;
+			ss << $5.strs[0]<<"Compiled"<<$1.strs[0]<<$3.num;
+			string compiledShaderName						=$$.strs[0]	=ss.str();
+			$$.strs[0]										=compiledShaderName;
+
+			CompiledShader *compiledShader	=gEffect->m_compiledShaders[compiledShaderName];
+
+			compiledShader->m_functionName					=$4.strs[0];
+			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
+			compiledShader->shaderType						=$1.sType;
+			compiledShader->version							=$3.num;
+			compiledShader->m_functionName					=$5.strs[0];
+		};
 shader_lvalue : SHADER_TYPE LP NUM RP
 {
 	$$.num	=$3.num;

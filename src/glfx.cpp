@@ -437,8 +437,8 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
 		if(filename)
 		  gEffect->Filename()=filename;
         glfx_scan_string(src);
+        glfxset_lineno(1);
 		resetGlfxParse();
-		ResetGlfxParseState();
         glfxparse();
     }
     catch(const char* err)
