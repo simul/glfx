@@ -74,9 +74,6 @@ prog : prog tok
 			// TODO: Warn here about double-compiling a shader.
 		}
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
-		compiledShader->shaderType		=$1.sType;
-		compiledShader->version			=$$.num=$4.num;
-		compiledShader->m_functionName	=$$.strs[0]=$4.strs[0];
 	}
 	| LINE lex_fx NUM NUM lex_passthrough
 	{
@@ -554,21 +551,21 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 		shader_compile: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0];
-			$$.num=$3.num;
+			$$.num=0;
 		}
 		| COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP 
 		{
 			stringstream ss;
 			ss << $5.strs[0]<<"Compiled"<<$1.strs[0]<<$3.num;
-			string compiledShaderName						=$$.strs[0]	=ss.str();
+			string compiledShaderName						=ss.str();
 			$$.strs[0]										=compiledShaderName;
 
 			CompiledShader *compiledShader	=gEffect->m_compiledShaders[compiledShaderName];
 
 			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
+			compiledShader->m_functionName					=$5.strs[0];
 			compiledShader->shaderType						=$1.sType;
 			compiledShader->version							=$$.num=$3.num;
-			compiledShader->m_functionName					=$5.strs[0];
 		};
 shader_lvalue : SHADER_TYPE LP NUM RP
 {

@@ -109,13 +109,65 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"fs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
 <INITIAL>"cs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
 		
-<INITIAL>"SetVertexShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VERTEX_SHADER; 					;glfxlval.sCommand=SetVertexShader;		return SHADER_COMMAND;}
-<INITIAL>"SetHullShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; 	;glfxlval.sCommand=SetHullShader;		return SHADER_COMMAND;}
-<INITIAL>"SetDomainShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	;glfxlval.sCommand=SetDomainShader;		return SHADER_COMMAND;}
-<INITIAL>"SetGeometryShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; 				;glfxlval.sCommand=SetGeometryShader;	return SHADER_COMMAND;}
-<INITIAL>"SetPixelShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; 				;glfxlval.sCommand=SetFragmentShader;	return SHADER_COMMAND;}
-<INITIAL>"SetFragmentShader"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; 				;glfxlval.sCommand=SetFragmentShader;	return SHADER_COMMAND;}
-<INITIAL>"SetComputeShader"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER;	 				;glfxlval.sCommand=SetComputeShader;	return SHADER_COMMAND;}
+<INITIAL>"SetVertexShader"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=VERTEX_SHADER; 					
+														glfxlval.sCommand=SetVertexShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetHullShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=TESSELATION_CONTROL_SHADER;
+													glfxlval.sCommand=SetHullShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
+<INITIAL>"SetDomainShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
+													glfxlval.sCommand=SetDomainShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
+<INITIAL>"SetGeometryShader"					{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=GEOMETRY_SHADER; 				
+													glfxlval.sCommand=SetGeometryShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
+<INITIAL>"SetPixelShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=FRAGMENT_SHADER; 				
+													glfxlval.sCommand=SetFragmentShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
+<INITIAL>"SetFragmentShader"					{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=FRAGMENT_SHADER; 				
+													glfxlval.sCommand=SetFragmentShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
+<INITIAL>"SetComputeShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												else
+												{
+													glfxlval.sType=COMPUTE_SHADER;	 				
+													glfxlval.sCommand=SetComputeShader;
+													BEGIN IN_SHADER_COMPILE;
+													return SHADER_COMMAND;
+												}}
 
 <INITIAL>"SetRasterizerState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SET_RASTERIZER_COMMAND;}
 <INITIAL>"SetDepthStencilState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
