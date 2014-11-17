@@ -43,7 +43,7 @@
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER
-%token DEFINE MACRO_DEFINITION EOL DECL_SHADER
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
 
 %%
 
@@ -59,6 +59,16 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
+	| PROFILE IDENTIFIER LP NUM RP SC
+	{
+		string profileName		=$2.strs[0];
+		int profileNum			=$4.num;
+		if(gEffect->m_profileToVersion.find(profileName)!=gEffect->m_profileToVersion.end())
+		{
+			glfxWarning("redefining profile ");
+		}
+		gEffect->m_profileToVersion[profileName]=profileNum;
+	}
 	| DECL_SHADER IDENTIFIER EQUALS shader_compile SC
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
@@ -72,6 +82,7 @@ prog : prog tok
 		{
 			delete i->second;
 			// TODO: Warn here about double-compiling a shader.
+			glfxWarning("double-compiling shader ");
 		}
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 	}
@@ -420,15 +431,42 @@ prog_def : shaders_list
 
 shaders_list : shaders_list shader_def
 	{
-		$$.shaders=$1.shaders;
-		(*$$.shaders)[$2.sType].src=$2.strs[0];
-		(*$$.shaders)[$2.sType].name=$2.strs[1];
+		map<ShaderType, Program::Shader>* map1=$1.shaders;
+		ShaderType sType	=$2.sType;
+		string src			=$2.strs[0];
+		string name			=$2.strs[1];
+		(*map1)[sType].src	=src;
+		(*map1)[sType].name	=name;
+		$$.shaders			=map1;
 	}
 	| shader_def
 	{
-		$$.shaders=new map<ShaderType, Program::Shader>;
-		(*$$.shaders)[$1.sType].src=$1.strs[0];
-		(*$$.shaders)[$1.sType].name=$1.strs[1];
+		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
+		string src			=$1.strs[0];
+		string name			=$1.strs[1];
+		ShaderType sType	=$1.sType;
+		$$.strs[0]			=src;
+		$$.strs[1]			=name;
+		$$.sType			=sType;
+		(*map1)[sType].src	=src;
+		(*map1)[sType].name	=name;
+		$$.shaders=map1;
+	}
+	| shaders_list shader_fn
+	{
+		map<ShaderType, Program::Shader>* map1=$1.shaders;
+		$$.shaders=$1.shaders;
+		$$.strs[0]	="";
+		$$.strs[1]	="";
+		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
+	}
+	| shader_fn
+	{
+		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
+		$$.shaders=map1;
+		$$.strs[0]	="";
+		$$.strs[1]	="";
+		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
 vec4: IDENTIFIER LP FLOAT COMMA FLOAT COMMA FLOAT COMMA FLOAT RP
 	  {
@@ -439,7 +477,7 @@ vec4: IDENTIFIER LP FLOAT COMMA FLOAT COMMA FLOAT COMMA FLOAT RP
 		  $$.strs[0]+=$9.strs[0]+")";
 	  };
 	
-shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
+shader_fn : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 			 {
 				 string rast_name=$3.strs[0];
 			 }
@@ -453,9 +491,13 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				 string blend_name=$3.strs[0];
 				 string vec4text=$5.strs[0];
 				 unsigned mask=$7.unum;
-			 }
-			| shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = VS_Main();
+			 };
+
+shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = VS_Main();
 			{
+				$$.strs[1]="";
+				$$.strs[0]="";
+				$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 				glfxParser::ShaderType shaderType=$1.sType;
 				glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 				if(shaderType<NUM_OF_SHADER_TYPES&&$3.num>0)
@@ -502,6 +544,9 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 			// For example: SetVertexShader(vs_main);
 			| SHADER_COMMAND LP shader_compile RP SC
 			{
+				$$.strs[1]="";
+				$$.strs[0]="";
+				$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
 				// i.e. it's a combination of shadertype, profile, and function name.
@@ -510,9 +555,15 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
 				if(i==gEffect->m_compiledShaders.end())
 				{
-					ostringstream errMsg;
-					errMsg<<"Unable to find compiled shader \""<<compiledShaderName<<'\"';
-					errSem(errMsg.str(), $3.lineno);
+					if(stricmp(compiledShaderName.c_str(),"NULL")==0)
+					{
+					}
+					else
+					{
+						ostringstream errMsg;
+						errMsg<<"Unable to find compiled shader \""<<compiledShaderName<<'\"';
+						errSem(errMsg.str(), $3.lineno);
+					}
 				}
 				else
 				{
@@ -550,13 +601,27 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 			};
 		shader_compile: IDENTIFIER
 		{
-			$$.strs[0]=$1.strs[0];
-			$$.num=0;
+			string compiledShaderName	=$1.strs[0];
+			$$.strs[0]					=compiledShaderName;
+			$$.num						=0;
+			$$.lineno					=$1.lineno;
 		}
-		| COMPILE_SHADER LP NUM COMMA IDENTIFIER LP RP RP 
+		| COMPILE_SHADER LP IDENTIFIER COMMA IDENTIFIER LP RP RP 
 		{
+			$$.lineno					=$5.lineno;
+			string profileName								=$3.strs[0];
+			ProfileMap::iterator i							=gEffect->m_profileToVersion.find(profileName);
+			int version_num=0;
+			if(i==gEffect->m_profileToVersion.end())
+			{
+				ostringstream msg;
+				msg<<"Profile not found"<<profileName<<endl;
+				errSem(msg.str().c_str());
+			}
+			else
+				version_num=i->second;
 			stringstream ss;
-			ss << $5.strs[0]<<"Compiled"<<$1.strs[0]<<$3.num;
+			ss << $5.strs[0]<<"Compiled"<<version_num;
 			string compiledShaderName						=ss.str();
 			$$.strs[0]										=compiledShaderName;
 
@@ -565,7 +630,7 @@ shader_def : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
 			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
 			compiledShader->m_functionName					=$5.strs[0];
 			compiledShader->shaderType						=$1.sType;
-			compiledShader->version							=$$.num=$3.num;
+			compiledShader->version							=$$.num=version_num;
 		};
 shader_lvalue : SHADER_TYPE LP NUM RP
 {
@@ -633,6 +698,15 @@ read_parenthesis :
 ;
 
 %%
+
+void glfxWarning(const char* e)
+{
+    ostringstream errMsg;
+	int lex_linenumber=glfxget_lineno();
+	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
+    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx warning: \""<<glfxget_text()<<"\" "<<e;
+	gEffect->Log()<<errMsg;
+}
 
 void glfxerror(const char* e)
 {

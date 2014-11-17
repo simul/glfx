@@ -15,15 +15,21 @@ namespace glfxParser
 	};
 	typedef std::map<std::string,CompiledShader*> CompiledShaderMap;
 	typedef std::map<std::string,std::string> StringMap;
+	typedef std::map<std::string,int> ProfileMap;
 	class Effect
 	{
-		map<std::string, Program*>   m_programs;
-		vector<std::string>          m_programNames;
-		map<std::string, Technique*> m_techniques;
-		vector<std::string>          m_techniqueNames;
-		map<std::string, Sampler*>   m_samplers;
-		map<std::string, std::string>     m_shaders;
-		map<std::string, std::string>     m_shaderLayouts;
+		map<std::string, Program*>		m_programs;
+		vector<std::string>				m_programNames;
+		map<std::string, Technique*>	m_techniques;
+		vector<std::string>				m_techniqueNames;
+		map<std::string, Sampler*>		m_samplers;
+		map<std::string, std::string>	m_shaders;
+		map<std::string, std::string>	m_shaderLayouts;
+		//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
+		//! We will use the keyword Profile.
+		//! e.g.
+		//!		Profile vs_4_0(410);
+		ProfileMap					m_profileToVersion;	
 		CompiledShaderMap			m_compiledShaders;
 		struct InterfaceDcl
 		{

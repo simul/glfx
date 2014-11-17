@@ -115,7 +115,8 @@ namespace glfxParser
 extern int glfxdebug;
 #endif
 
-string glfxreadblock(unsigned char openChar, unsigned char closeChar);
-void glfxerror(const char*);
-int glfxparse();
-void resetGlfxParse();
+extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
+extern void glfxerror(const char*);
+extern int glfxparse();
+extern void resetGlfxParse();
+extern void glfxWarning(const char* e);
