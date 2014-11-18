@@ -57,9 +57,9 @@ struct glfxstype
 
     struct variable
 	{
-        string  storage;
-        string  type;
-        string  identifier;
+        string storage;
+        string type;
+        string identifier;
         string semantic;
     };
 
@@ -87,9 +87,10 @@ struct glfxstype
     
     union
 	{
-        SamplerParam samplerParamType;
-        ShaderType sType;
-		ShaderCommand sCommand;
+        SamplerParam	samplerParamType;
+        ShaderType		sType;
+		ShaderCommand	sCommand;
+		RenderState		renderState;
         RegisterParamType rType;
     };
 

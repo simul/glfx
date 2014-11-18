@@ -43,7 +43,7 @@
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER
-%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE RENDER_STATE_DECL
 
 %%
 
@@ -58,6 +58,22 @@ prog : prog tok
 	}
 	| DEFINE MACRO_DEFINITION EOL
 	{
+	}
+	| RENDER_STATE_DECL IDENTIFIER LB render_state_list RB SC
+	{
+		RenderState t=$1.renderState;
+		string name=$2.strs[0];
+		if(t==RASTERIZER_STATE)
+		{
+		}
+		if(t==BLEND_STATE)
+		{
+		}
+		if(t==DEPTHSTENCIL_STATE)
+		{
+		}
+		int true_linenumber=$6.lineno+(last_linenumber-global_linenumber);
+	//	WriteLineNumber(true_linenumber);
 	}
 	| PROFILE IDENTIFIER LP NUM RP SC
 	{
@@ -141,6 +157,20 @@ prog : prog tok
 	{
 		gEffect->m_techniques[$3.strs[0]] = $5.tech;
 	};
+	line_statement: LINE lex_fx NUM number_or_filename lex_passthrough
+	{
+		last_linenumber=$3.num;
+		current_filenumber=$4.num;
+		current_filename=$4.strs[0];
+		global_linenumber=$1.lineno;
+		WriteLineNumber(gEffect->m_sharedCode,current_filename,last_linenumber);//
+	}
+	ignore_line_statement: LINE NUM number_or_filename
+	{
+		last_linenumber		=$2.num;
+		current_filenumber	=$3.num;
+		global_linenumber	=$1.lineno;
+	}
 	shader_and_layout: SHADER shader_fx
 	{
 		$$.strs[0]=$1.strs[0];
@@ -697,6 +727,51 @@ read_parenthesis :
 	}
 ;
 
+render_state_list : render_state_list render_state_command
+					{
+						$$.strs[0]=$1.strs[0];
+					}
+					|
+					render_state_command
+					{
+						$$.strs[0]=$1.strs[0];
+					};
+render_state_command : render_state_identifier EQUALS render_state_rvalue SC
+					   {
+						$$.strs[0]=$1.strs[0];
+						$$.strs[1]=$3.strs[0];
+						$$.num=$3.num;
+					   };
+					|
+						ignore_line_statement
+					{
+					};
+render_state_identifier : IDENTIFIER optional_index
+					 {
+						$$.strs[0]=$1.strs[0];
+						$$.num=$2.num;
+					 };
+optional_index : LEFT_SQ NUM RIGHT_SQ
+				 {
+					 $$.num=$2.num;
+					 $$.fnum=$2.fnum;
+				 }
+				 |
+				 {
+					 $$.num=0;
+				 };
+render_state_rvalue : IDENTIFIER
+					  {
+						  $$.strs[0]=$1.strs[0];
+					  }
+					  | NUM
+					  {
+						  $$.num=$1.num;
+					  };
+					  | FLOAT
+					  {
+						  $$.fnum=$1.fnum;
+					  };
 %%
 
 void glfxWarning(const char* e)

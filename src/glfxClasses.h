@@ -48,6 +48,13 @@ namespace glfxParser
 		COMPUTE_SHADER,
 		NUM_OF_SHADER_TYPES
 	};
+	enum RenderState
+	{
+		RASTERIZER_STATE
+		,DEPTHSTENCIL_STATE
+		,BLEND_STATE
+		,NUMRENDERSTATES
+	};
 	enum ShaderCommand
 	{
 		SetVertexShader

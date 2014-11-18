@@ -52,7 +52,7 @@ the last is C code to be copied verbatim to the output.
 	#pragma optimize("",off)
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -112,7 +112,23 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"gs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
 <INITIAL>"fs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
 <INITIAL>"cs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
-		
+
+
+<INITIAL>"RasterizerState"					{
+													glfxlval.renderState=RASTERIZER_STATE;
+													BEGIN IN_RENDER_STATE;
+													return RENDER_STATE_DECL;
+												}
+<INITIAL>"DepthStencilState"					{
+													glfxlval.renderState=DEPTHSTENCIL_STATE;
+													BEGIN IN_RENDER_STATE;
+													return RENDER_STATE_DECL;
+												}
+<INITIAL>"BlendState"							{
+													glfxlval.renderState=BLEND_STATE;
+													BEGIN IN_RENDER_STATE;
+													return RENDER_STATE_DECL;
+												}
 <INITIAL>"SetVertexShader"						{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
@@ -124,58 +140,99 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														return SHADER_COMMAND;
 													}
 												}
-<INITIAL>"SetHullShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=TESSELATION_CONTROL_SHADER;
-													glfxlval.sCommand=SetHullShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-<INITIAL>"SetDomainShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
-													glfxlval.sCommand=SetDomainShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-<INITIAL>"SetGeometryShader"					{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=GEOMETRY_SHADER; 				
-													glfxlval.sCommand=SetGeometryShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-<INITIAL>"SetPixelShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=FRAGMENT_SHADER; 				
-													glfxlval.sCommand=SetFragmentShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-<INITIAL>"SetFragmentShader"					{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=FRAGMENT_SHADER; 				
-													glfxlval.sCommand=SetFragmentShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-<INITIAL>"SetComputeShader"						{if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
-												else
-												{
-													glfxlval.sType=COMPUTE_SHADER;	 				
-													glfxlval.sCommand=SetComputeShader;
-													BEGIN IN_SHADER_COMPILE;
-													return SHADER_COMMAND;
-												}}
-
-<INITIAL>"SetRasterizerState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetRasterizerState; return SET_RASTERIZER_COMMAND;}
-<INITIAL>"SetDepthStencilState"					if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetDepthStencilState; return SET_DEPTH_COMMAND;}
-<INITIAL>"SetBlendState"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sCommand=SetBlendState; return SET_BLEND_COMMAND;}
+<INITIAL>"SetHullShader"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=TESSELATION_CONTROL_SHADER;
+														glfxlval.sCommand=SetHullShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetDomainShader"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
+														glfxlval.sCommand=SetDomainShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetGeometryShader"					{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=GEOMETRY_SHADER; 				
+														glfxlval.sCommand=SetGeometryShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetPixelShader"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=FRAGMENT_SHADER; 				
+														glfxlval.sCommand=SetFragmentShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetFragmentShader"					{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=FRAGMENT_SHADER; 				
+														glfxlval.sCommand=SetFragmentShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetComputeShader"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sType=COMPUTE_SHADER;	 				
+														glfxlval.sCommand=SetComputeShader;
+														BEGIN IN_SHADER_COMPILE;
+														return SHADER_COMMAND;
+													}
+												}
+<INITIAL>"SetRasterizerState"					{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sCommand=SetRasterizerState;
+														return SET_RASTERIZER_COMMAND;
+													}
+												}
+<INITIAL>"SetDepthStencilState"					{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sCommand=SetDepthStencilState;
+														return SET_DEPTH_COMMAND;
+													}
+												}
+<INITIAL>"SetBlendState"						{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext;
+													else
+													{
+														glfxlval.sCommand=SetBlendState;
+														return SET_BLEND_COMMAND;
+													}
+												}
 
 <INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
 <INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
@@ -184,25 +241,29 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno;
 													return COMPILE_SHADER;
 												}
-<IN_SHADER_COMPILE>{ID_BLCK}					{
+<IN_SHADER_COMPILE,IN_RENDER_STATE>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
 												}
-<IN_SHADER_COMPILE>{NUM_BLCK}					{
+<IN_SHADER_COMPILE,IN_RENDER_STATE>{NUM_BLCK}					{
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													return NUM;
 												}
-<IN_SHADER_COMPILE>"("							return LP;
-<IN_SHADER_COMPILE>")"							return RP;
-<IN_SHADER_COMPILE>","							return COMMA;
-<IN_SHADER_COMPILE>"="							return EQUALS;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"("			return LP;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>")"			return RP;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>","			return COMMA;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"="			return EQUALS;
 <IN_SHADER_COMPILE>";"							{
 													BEGIN INITIAL;
 													return SC;
 												}
-
+<IN_RENDER_STATE>";"							{
+													if(!brace)
+														BEGIN INITIAL;
+													return SC;
+												}
 <INITIAL>{STR_BLCK}								{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;
@@ -291,12 +352,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>[\t\n ]								if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
 <INITIAL>.										if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
 
-<IN_SHADER>"{"									{
+<IN_SHADER,IN_RENDER_STATE>"{"					{
 													glfxlval.strs[0]=yytext;
 													brace++;
-													return SHADER_LINE;
+													return LB;
 												}
-<IN_SHADER>"}"									{
+<IN_SHADER>"}"					{
 													glfxlval.strs[0]=yytext;
 													brace--;
 													if(!brace)
@@ -304,7 +365,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														BEGIN INITIAL;
 														return RB;
 													}
-													return SHADER_LINE;
+													return RB;
+												}
+<IN_RENDER_STATE>"}"					{
+													glfxlval.strs[0]=yytext;
+													brace--;
+													return RB;
 												}
 <IN_SHADER>[^\n{}]*\n							{
 													glfxlval.strs[0]=yytext;

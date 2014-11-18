@@ -84,7 +84,8 @@ extern int glfxdebug;
      MACRO_DEFINITION = 293,
      EOL = 294,
      DECL_SHADER = 295,
-     PROFILE = 296
+     PROFILE = 296,
+     RENDER_STATE_DECL = 297
    };
 #endif
 
