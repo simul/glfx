@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 int glfxparse();
 int glfxlex();
-
+typedef unsigned GLenum;
 namespace glfxParser
 {
 	using namespace std;
@@ -73,7 +73,61 @@ namespace glfxParser
 #include "glfxProgram.h"
 namespace glfxParser
 {
-
+	/*
+	Blending in OpenGL:
+		GL_ZERO;
+		GL_ONE;
+		GL_SRC_COLOR;
+		GL_ONE_MINUS_SRC_COLOR;
+		GL_SRC_ALPHA;
+		GL_ONE_MINUS_SRC_ALPHA;
+		GL_DST_ALPHA;
+		GL_ONE_MINUS_DST_ALPHA;
+		GL_DST_COLOR;
+		GL_ONE_MINUS_DST_COLOR;
+		UNIMPLEMENTED_BLEND_SRC_ALPHA_SAT:
+		UNIMPLEMENTED_BLEND_BLEND_FACTOR:
+		UNIMPLEMENTED_BLEND_INV_BLEND_FACTOR:
+		GL_SRC1_COLOR;
+		GL_ONE_MINUS_SRC1_COLOR;
+		GL_SRC1_ALPHA;
+		GL_ONE_MINUS_SRC1_ALPHA;
+	*/
+	
+	struct BlendState
+	{
+		BlendState();
+		GLenum SrcBlend;			
+		GLenum DestBlend;			
+		GLenum BlendOp;				
+		GLenum SrcBlendAlpha;		
+		GLenum DestBlendAlpha;		
+		GLenum BlendOpAlpha;		
+		bool AlphaToCoverageEnable;
+		std::map<int,bool> BlendEnable;
+		std::map<int,unsigned char> RenderTargetWriteMask;
+	};
+	struct DepthStencilState
+	{
+		DepthStencilState();
+		bool DepthEnable;
+		int DepthWriteMask;
+		GLenum DepthFunc;
+	};
+	struct RasterizerState
+	{
+		RasterizerState();
+		GLenum	FillMode;
+		GLenum	CullMode;
+		bool	FrontCounterClockwise;
+		int		DepthBias;
+		float	DepthBiasClamp;
+		float	SlopeScaledDepthBias;
+		bool	DepthClipEnable;
+		bool	ScissorEnable;
+		bool	MultisampleEnable;
+		bool	AntialiasedLineEnable;
+	};
 	class Sampler
 	{
 		map<string, string>     m_stringParams;

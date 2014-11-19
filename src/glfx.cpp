@@ -55,7 +55,7 @@ typedef int errno_t;
 #include "StringToWString.h"
 #include "StringFunctions.h"
 #include "FileLoader.h"
-
+#pragma optimize("",off);
 vector<string> shaderPathsUtf8;
 FileLoader fileLoader;
 
@@ -117,8 +117,174 @@ int fdopen_s(FILE** pFile, int fildes, const char *mode)
 
 #endif
 
+GLenum toBlendGLEnum(const std::string &str)
+{
+	if(is_equal(str,"SRC_ALPHA"))
+		return GL_SRC_ALPHA;
+	else if(is_equal(str,"INV_SRC_ALPHA"))
+		return GL_ONE_MINUS_SRC_ALPHA;
+	else if(is_equal(str,"ZERO"))
+		return GL_ZERO;
+	else if(is_equal(str,"ONE"))
+		return GL_ONE;
+	else if(is_equal(str,"SRC_COLOR"))
+		return GL_SRC_COLOR;
+	else if(is_equal(str,"INV_SRC_COLOR"))
+		return GL_ONE_MINUS_SRC_COLOR;
+	else if(is_equal(str,"DEST_ALPHA"))
+		return GL_DST_ALPHA;
+	else if(is_equal(str,"INV_DEST_ALPHA"))
+		return GL_ONE_MINUS_DST_ALPHA;
+	else if(is_equal(str,"DEST_COLOR"))
+		return GL_DST_COLOR;
+	else if(is_equal(str,"INV_DEST_COLOR"))
+		return GL_ONE_MINUS_DST_COLOR;
+	else if(is_equal(str,"SRC_ALPHA_SAT"))
+	{
+		ostringstream str;
+		str<<"unknown blend type: "<<str;
+		glfxerror(str.str().c_str());
+		return 0;
+	}
+	else if(is_equal(str,"BLEND_FACTOR"))
+	{
+		ostringstream str;
+		str<<"unknown blend type: "<<str;
+		glfxerror(str.str().c_str());
+		return 0;
+	}
+	else if(is_equal(str,"INV_BLEND_FACTOR"))
+	{
+		ostringstream str;
+		str<<"unknown blend type: "<<str;
+		glfxerror(str.str().c_str());
+		return 0;
+	}
+	else if(is_equal(str,"SRC1_COLOR"))
+		return GL_SRC1_COLOR;
+	else if(is_equal(str,"INV_SRC1_COLOR"))
+		return GL_ONE_MINUS_SRC1_COLOR;
+	else if(is_equal(str,"SRC1_ALPHA"))
+		return GL_SRC1_ALPHA;
+	else if(is_equal(str,"INV_SRC1_ALPHA"))
+		return GL_ONE_MINUS_SRC1_ALPHA;
+	else
+	{
+		ostringstream str;
+		str<<"unknown blend type: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toBlendOpGLEnum(const std::string &str)
+{
+	if(is_equal(str,"ADD"))
+		return GL_ADD;
+	else if(is_equal(str,"SUBTRACT"))
+		return GL_SUBTRACT;
+	else if(is_equal(str,"MULTIPLY"))
+		return GL_MULT;
+	else
+	{
+		ostringstream str;
+		str<<"unknown blend operation: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toFillModeGLenum(const std::string &str)
+{
+	if(is_equal(str,"WIREFRAME"))
+		return GL_POLYGON;
+	else if(is_equal(str,"SOLID"))
+		return GL_LINES;
+	else if(is_equal(str,"NONE"))
+		return GL_POINTS;
+	else
+	{
+		ostringstream err;
+		err<<"unknown fill mode: "<<str;
+		glfxerror(err.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toCullModeGLenum(const std::string &str)
+{
+	if(is_equal(str,"FRONT"))
+		return GL_FRONT;
+	else if(is_equal(str,"BACK"))
+		return GL_BACK;
+	else if(is_equal(str,"NONE"))
+		return GL_FRONT_AND_BACK;
+	else
+	{
+		ostringstream err;
+		err<<"unknown cull mode: "<<str;
+		glfxerror(err.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toDepthFuncGLEnum(const std::string &str)
+{
+	if(is_equal(str,"ALWAYS"))
+		return GL_ALWAYS;
+	else if(is_equal(str,"NEVER"))
+		return GL_NEVER;
+	else if(is_equal(str,"LESS"))
+		return GL_LESS;
+	else if(is_equal(str,"GREATER"))
+		return GL_GREATER;
+	else if(is_equal(str,"LESS_EQUAL"))
+		return GL_LEQUAL;
+	else if(is_equal(str,"GREATER_EQUAL"))
+		return GL_GEQUAL;
+	else
+	{
+		ostringstream str;
+		str<<"unknown depth function: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+BlendState::BlendState():SrcBlend(GL_SRC_ALPHA)	
+					,DestBlend(GL_ONE_MINUS_SRC_ALPHA)
+					,BlendOp(GL_ADD)		
+					,SrcBlendAlpha(GL_SRC_ALPHA)
+					,DestBlendAlpha(GL_ONE_MINUS_SRC_ALPHA)
+					,BlendOpAlpha(GL_ADD)	
+					,AlphaToCoverageEnable(false)
+{
+}
+
+DepthStencilState::DepthStencilState()
+	:DepthEnable(true)
+	,DepthWriteMask(GL_ONE)
+	,DepthFunc(GL_LEQUAL)
+{}
+
+RasterizerState::RasterizerState()
+	:FillMode(GL_POLYGON)
+		,CullMode(GL_CULL_FACE)
+		,FrontCounterClockwise(true)
+		,DepthBias(0)
+		,DepthBiasClamp(0.0f)
+		,SlopeScaledDepthBias(0.0f)
+		,DepthClipEnable(false)
+		,ScissorEnable(false)
+		,MultisampleEnable(false)
+		,AntialiasedLineEnable(false)
+{
+}
+
 Effect *gEffect=NULL;
 bool gLexPassthrough=true;
+
+RenderState	 renderState;
 bool read_shader=false;
 
 #pragma optimize("",off)

@@ -63,23 +63,23 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
 <INITIAL>"patch"|"centroid"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}*/
 %%
-<INITIAL>"#"define {
-						if(gLexPassthrough)
-							gEffect->m_sharedCode<<yytext; 
-						BEGIN IN_DEFINE;
-						return DEFINE;
-					}
-<IN_DEFINE>[^\n]+ {
-						if(gLexPassthrough)
-							gEffect->m_sharedCode<<yytext; 
-						return MACRO_DEFINITION;
-					}
-<IN_DEFINE>\n	{
-						if(gLexPassthrough)
-							gEffect->m_sharedCode<<yytext; 
-				BEGIN INITIAL;
-				return EOL;
-				}
+<INITIAL>"#"define								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext; 
+													BEGIN IN_DEFINE;
+													return DEFINE;
+												}
+<IN_DEFINE>[^\n]+								{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext; 
+													return MACRO_DEFINITION;
+												}
+<IN_DEFINE>\n									{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext; 
+													BEGIN INITIAL;
+													return EOL;
+												}
 <INITIAL>CS_LAYOUT								{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
@@ -97,7 +97,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													BEGIN IN_SHADER_COMPILE;
 													return PROFILE;
 												}
-<INITIAL>"#line"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return LINE;
+<INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE>"#line"	{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														return LINE;
+													}
 <INITIAL>^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
 													string tmp(yytext);
 													size_t firstLoc=tmp.find('"')+1;
@@ -113,19 +117,21 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"fs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
 <INITIAL>"cs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
 
-
-<INITIAL>"RasterizerState"					{
-													glfxlval.renderState=RASTERIZER_STATE;
+<INITIAL>"RasterizerState"						{
+													glfxlval.lineno=yylineno;
+													renderState=RASTERIZER_STATE;
 													BEGIN IN_RENDER_STATE;
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"DepthStencilState"					{
-													glfxlval.renderState=DEPTHSTENCIL_STATE;
+													glfxlval.lineno=yylineno;
+													renderState=DEPTHSTENCIL_STATE;
 													BEGIN IN_RENDER_STATE;
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"BlendState"							{
-													glfxlval.renderState=BLEND_STATE;
+													glfxlval.lineno=yylineno;
+													renderState=BLEND_STATE;
 													BEGIN IN_RENDER_STATE;
 													return RENDER_STATE_DECL;
 												}
@@ -246,13 +252,21 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>{NUM_BLCK}					{
+<IN_SHADER_COMPILE,IN_RENDER_STATE>{NUM_BLCK}	{
+													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													return NUM;
 												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>{FLOAT_BLCK}	{
+													glfxlval.lineno=yylineno;
+													glfxlval.fnum=(float)atof(yytext);
+													return FLOAT;
+												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE>"("			return LP;
 <IN_SHADER_COMPILE,IN_RENDER_STATE>")"			return RP;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"["			return LEFT_SQ;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"			return RIGHT_SQ;
 <IN_SHADER_COMPILE,IN_RENDER_STATE>","			return COMMA;
 <IN_SHADER_COMPILE,IN_RENDER_STATE>"="			return EQUALS;
 <IN_SHADER_COMPILE>";"							{
@@ -269,6 +283,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
+														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
 														return QUOTED_STRING;
 													}
@@ -278,6 +293,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
+														glfxlval.lineno=yylineno;
 														glfxlval.unum=strtoul(yytext, NULL, 16);
 														glfxlval.strs[0]=yytext;
 														return NUM;
@@ -288,6 +304,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														gEffect->m_sharedCode<<yytext;
 													else
 													{
+														glfxlval.lineno=yylineno;
 														glfxlval.num=atoi(yytext);
 														glfxlval.strs[0]=yytext;
 														return NUM;
@@ -347,17 +364,25 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"="									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
 <INITIAL>";"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
 <INITIAL>":"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
-<INITIAL>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
-<INITIAL>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		if(gLexPassthrough) gEffect->m_sharedCode<<yytext; // Multiline comment
-<INITIAL>[\t\n ]								if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+<INITIAL,IN_RENDER_STATE>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
+												}
+<INITIAL,IN_RENDER_STATE>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
+													if(gLexPassthrough)
+														gEffect->m_sharedCode<<yytext; // Multiline comment
+												}
+<INITIAL>[\t\n ]								{
+													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+												}
+<IN_RENDER_STATE>[\t\n ]						{}// Without this line, the yylineno would get out of whack.
 <INITIAL>.										if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
-
 <IN_SHADER,IN_RENDER_STATE>"{"					{
 													glfxlval.strs[0]=yytext;
 													brace++;
 													return LB;
 												}
-<IN_SHADER>"}"					{
+<IN_SHADER>"}"									{
 													glfxlval.strs[0]=yytext;
 													brace--;
 													if(!brace)
@@ -367,7 +392,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 													return RB;
 												}
-<IN_RENDER_STATE>"}"					{
+<IN_RENDER_STATE>"}"							{
 													glfxlval.strs[0]=yytext;
 													brace--;
 													return RB;
@@ -379,6 +404,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 %%
 void resetGlfxParse()
 {
+	brace=0;
 	glfxset_lineno(1);
 	BEGIN INITIAL;
 }

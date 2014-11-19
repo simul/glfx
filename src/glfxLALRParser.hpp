@@ -75,7 +75,7 @@ extern int glfxdebug;
      TECHNIQUE = 284,
      PASS = 285,
      GROUP = 286,
-     RENDER_STATE = 287,
+     RENDER_STATE_DECL = 287,
      QUOTED_STRING = 288,
      SHADER_LINE = 289,
      SHADER_TYPE = 290,
@@ -84,8 +84,7 @@ extern int glfxdebug;
      MACRO_DEFINITION = 293,
      EOL = 294,
      DECL_SHADER = 295,
-     PROFILE = 296,
-     RENDER_STATE_DECL = 297
+     PROFILE = 296
    };
 #endif
 

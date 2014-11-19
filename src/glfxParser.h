@@ -54,44 +54,57 @@ enum RegisterParamType
 struct glfxstype
 {
     glfxstype() {}
-
+	// A structure for various things we will want to store lists of.
     struct variable
 	{
-        string storage;
-        string type;
-        string identifier;
-        string semantic;
+        string	storage;
+        string	type;
+        string	identifier;
+        string	semantic;
     };
+
+	// Render state commands, like "DepthWriteMask = ZERO" and so on.
+	struct render_state_command
+	{
+		string	name;
+		string	value;
+		int		index;
+		union
+		{
+			int ival;
+			float fval;
+			bool bval;
+		};
+	};
 
     struct samplerVar
 	{
-        string  binding;
-        string  name;
+        string	binding;
+        string	name;
     };
-
+	
+	int								lineno;
     union
 	{
-        int num;
-        unsigned unum;
-        int lineno;
-        float fnum;
-        bool boolean;
-		Technique *tech;
-        Program* prog;
-		Sampler* samp; 
-		map<string, Program>* passes;
-        map<ShaderType, Program::Shader>* shaders;
-        vector<variable>* vars;
-        vector<samplerVar>* texNames;
+        int								num;
+        unsigned						unum;
+        float							fnum;
+        bool							boolean;
+		Technique						*tech;
+        Program							*prog;
+		Sampler							*samp; 
+		map<string, Program>			*passes;
+        map<ShaderType, Program::Shader>*shaders;
+        vector<variable>				*vars;
+        vector<samplerVar>				*texNames;
     };
     
     union
 	{
-        SamplerParam	samplerParamType;
-        ShaderType		sType;
-		ShaderCommand	sCommand;
-		RenderState		renderState;
-        RegisterParamType rType;
+        SamplerParam		samplerParamType;
+        ShaderType			sType;
+		ShaderCommand		sCommand;
+        RegisterParamType	rType;
     };
 
     // Carrying these around is bad luck, or more like bad performance. But whatever...
@@ -100,13 +113,19 @@ struct glfxstype
 
 namespace glfxParser
 {
+	extern RenderState			renderState;
 	extern bool gLexPassthrough;
 	extern bool read_shader;
 	
 	#ifdef LINUX
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
 	#endif
-
+	
+	extern GLenum toBlendGLEnum(const std::string &str);
+	extern GLenum toBlendOpGLEnum(const std::string &str);
+	extern GLenum toDepthFuncGLEnum(const std::string &str);
+	extern GLenum toFillModeGLenum(const std::string &str);
+	extern GLenum toCullModeGLenum(const std::string &str);
 }
 
 #define YYSTYPE glfxstype
@@ -121,3 +140,5 @@ extern void glfxerror(const char*);
 extern int glfxparse();
 extern void resetGlfxParse();
 extern void glfxWarning(const char* e);
+extern bool is_equal(const string& a, const char * b);
+
