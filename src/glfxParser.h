@@ -50,6 +50,17 @@ enum RegisterParamType
     REGISTER_NAME
 };
 
+struct ShaderParameterType
+{
+	union
+	{
+        int num;
+        float fnum;
+        bool boolean;
+	};
+	std::string str;
+};
+
 //! This is the struct that the parser uses to store data about document elements.
 struct glfxstype
 {
