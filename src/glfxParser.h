@@ -126,8 +126,11 @@ namespace glfxParser
 	extern GLenum toDepthFuncGLEnum(const std::string &str);
 	extern GLenum toFillModeGLenum(const std::string &str);
 	extern GLenum toCullModeGLenum(const std::string &str);
+	extern GLenum toMinFilterModeGLEnum(const std::string &str);
+	extern GLenum toMagFilterModeGLEnum(const std::string &str);
+	extern GLenum toAddressModeGLEnum(const std::string &str);
 }
-
+														   
 #define YYSTYPE glfxstype
 
 #if 1

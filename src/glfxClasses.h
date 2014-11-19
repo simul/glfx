@@ -53,6 +53,7 @@ namespace glfxParser
 		RASTERIZER_STATE
 		,DEPTHSTENCIL_STATE
 		,BLEND_STATE
+		,SAMPLER_STATE			// One of these things is not like the others...
 		,NUMRENDERSTATES
 	};
 	enum ShaderCommand
@@ -127,6 +128,14 @@ namespace glfxParser
 		bool	ScissorEnable;
 		bool	MultisampleEnable;
 		bool	AntialiasedLineEnable;
+	};
+	struct SamplerState
+	{
+		SamplerState();
+		GLenum	MinFilter,MagFilter;
+		GLenum	AddressU;
+		GLenum	AddressV;
+		GLenum	AddressW;
 	};
 	class Sampler
 	{

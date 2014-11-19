@@ -25,6 +25,7 @@ namespace glfxParser
 		map<std::string,Sampler*>			m_samplers;
 		map<std::string,BlendState*>		m_blendStates;
 		map<std::string,DepthStencilState*>	m_depthStencilStates;
+		map<std::string,SamplerState*>		m_samplerStates;
 		map<std::string,RasterizerState*>	m_rasterizerStates;
 		map<std::string,std::string>		m_shaders;
 		map<std::string,std::string>		m_shaderLayouts;

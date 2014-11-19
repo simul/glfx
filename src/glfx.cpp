@@ -251,6 +251,84 @@ GLenum toDepthFuncGLEnum(const std::string &str)
 	return 0;
 }
 
+GLenum toMinFilterModeGLEnum(const std::string &str)
+{
+	/* These are the D3D11 filters we will support GL analogues to. There are also comparison, max and min filters, which we will ignore:
+	MIN_MAG_MIP_POINT                        
+	MIN_MAG_POINT_MIP_LINEAR                 
+	MIN_POINT_MAG_LINEAR_MIP_POINT           
+	MIN_POINT_MAG_MIP_LINEAR                 
+	MIN_LINEAR_MAG_MIP_POINT                 
+	MIN_LINEAR_MAG_POINT_MIP_LINEAR          
+	MIN_MAG_LINEAR_MIP_POINT                 
+	MIN_MAG_MIP_LINEAR                       
+	ANISOTROPIC   */
+	if(is_equal(str,"MIN_MAG_MIP_POINT"))
+		return GL_NEAREST;
+	else if(is_equal(str,"MIN_MAG_POINT_MIP_LINEAR"))
+		return GL_NEAREST;		
+	else if(is_equal(str,"MIN_POINT_MAG_LINEAR_MIP_POINT"))
+		return GL_NEAREST;	
+	else if(is_equal(str,"MIN_LINEAR_MAG_POINT_MIP_LINEAR"))
+		return GL_LINEAR_MIPMAP_LINEAR;
+	else if(is_equal(str,"MIN_MAG_LINEAR_MIP_POINT"))
+		return GL_LINEAR_MIPMAP_NEAREST;	
+	else if(is_equal(str,"MIN_MAG_MIP_LINEAR"))
+		return GL_LINEAR_MIPMAP_LINEAR;	
+	else if(is_equal(str,"ANISOTROPIC"))
+		return GL_LINEAR_MIPMAP_LINEAR;	
+	else
+	{
+		ostringstream str;
+		str<<"unknown filter mode: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toMagFilterModeGLEnum(const std::string &str)
+{
+	if(is_equal(str,"MIN_MAG_MIP_POINT"))
+		return GL_NEAREST;
+	else if(is_equal(str,"MIN_MAG_POINT_MIP_LINEAR"))
+		return GL_NEAREST;		
+	else if(is_equal(str,"MIN_POINT_MAG_LINEAR_MIP_POINT"))
+		return GL_LINEAR;	
+	else if(is_equal(str,"MIN_LINEAR_MAG_POINT_MIP_LINEAR"))
+		return GL_NEAREST;
+	else if(is_equal(str,"MIN_MAG_LINEAR_MIP_POINT"))
+		return GL_LINEAR;	
+	else if(is_equal(str,"MIN_MAG_MIP_LINEAR"))
+		return GL_LINEAR;	
+	else if(is_equal(str,"ANISOTROPIC"))
+		return GL_LINEAR;	
+	else
+	{
+		ostringstream str;
+		str<<"unknown filter mode: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+GLenum toAddressModeGLEnum(const std::string &str)
+{
+	if(is_equal(str,"Wrap"))
+		return GL_REPEAT;
+	else if(is_equal(str,"Mirror"))
+		return GL_MIRRORED_REPEAT;
+	else if(is_equal(str,"Clamp"))
+		return GL_CLAMP_TO_EDGE;
+	else
+	{
+		ostringstream str;
+		str<<"unknown addressing mode: "<<str;
+		glfxerror(str.str().c_str());
+	}
+	return 0;
+}
+
+
 BlendState::BlendState():SrcBlend(GL_SRC_ALPHA)	
 					,DestBlend(GL_ONE_MINUS_SRC_ALPHA)
 					,BlendOp(GL_ADD)		
@@ -278,6 +356,14 @@ RasterizerState::RasterizerState()
 		,ScissorEnable(false)
 		,MultisampleEnable(false)
 		,AntialiasedLineEnable(false)
+{
+}
+SamplerState::SamplerState()
+	:MinFilter(GL_LINEAR_MIPMAP_LINEAR)
+	,MagFilter(GL_LINEAR)
+	,AddressU(GL_CLAMP_TO_EDGE)
+	,AddressV(GL_CLAMP_TO_EDGE)
+	,AddressW(GL_CLAMP_TO_EDGE)
 {
 }
 

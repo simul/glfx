@@ -135,6 +135,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													BEGIN IN_RENDER_STATE;
 													return RENDER_STATE_DECL;
 												}
+<INITIAL>"SamplerState"							{
+													glfxlval.lineno=yylineno;
+													renderState=SAMPLER_STATE;
+													BEGIN IN_RENDER_STATE;
+													return RENDER_STATE_DECL;
+												}
 <INITIAL>"SetVertexShader"						{
 													if(gLexPassthrough)
 														gEffect->m_sharedCode<<yytext;

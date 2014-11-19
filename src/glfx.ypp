@@ -33,6 +33,7 @@
 	RasterizerState buildRasterizerState;
 	BlendState buildBlendState;
 	DepthStencilState buildDepthStencilState;
+	SamplerState buildSamplerState;
 	static int last_linenumber=0;
 	static int current_filenumber=0;
 	static int global_linenumber=0;
@@ -127,6 +128,14 @@ prog : prog tok
 			gEffect->m_depthStencilStates[name]=ds;
 			// Set to default:
 			buildDepthStencilState=DepthStencilState();
+		}
+		if(t==SAMPLER_STATE)
+		{
+			SamplerState *ss=new SamplerState;
+			*ss=buildSamplerState;
+			gEffect->m_samplerStates[name]=ss;
+			// Set to default:
+			buildSamplerState=SamplerState();
 		}
 		int true_linenumber=$6.lineno+(last_linenumber-global_linenumber);
 	//	WriteLineNumber(true_linenumber);
@@ -868,6 +877,26 @@ render_state_command : render_state_identifier EQUALS render_state_rvalue SC
 								{
 									ostringstream str;
 									str<<"Unknown blend state command: "<<name;
+									errSem(str.str().c_str());
+								}
+							}
+							if(renderState==SAMPLER_STATE)
+							{
+								if(is_equal(name,"Filter"))
+								{
+									buildSamplerState.MinFilter			=(GLenum)toMinFilterModeGLEnum(value);
+									buildSamplerState.MagFilter			=(GLenum)toMagFilterModeGLEnum(value);
+								}
+								else if(is_equal(name,"AddressU"))
+									buildSamplerState.AddressU			=(GLenum)toAddressModeGLEnum(value);
+								else if(is_equal(name,"AddressV"))
+									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(value);
+								else if(is_equal(name,"AddressW"))
+									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(value);
+								else
+								{
+									ostringstream str;
+									str<<"Unknown Sampler state command: "<<name;
 									errSem(str.str().c_str());
 								}
 							}
