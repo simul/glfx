@@ -155,8 +155,34 @@ prepr : IF if_conditions
 		Test test=$2.test;
 		apply_condition(var,$2.num!=0);
 	}
+	| IDENTIFIER optional_params
+	{
+		if(inActiveBlock())
+		{
+			string str=ProcessMacro($1.str,$2.str);
+			{
+				Write(str.c_str());
+			}
+		}
+	}
 	| EOL
 	{
+	}
+	| LEFT_BRACKET
+	{
+		Write($1.str.c_str());
+	}
+	| RIGHT_BRACKET
+	{
+		Write($1.str.c_str());
+	}
+	| COMMA
+	{
+		Write($1.str.c_str());
+	}
+	| NUMBER
+	{
+		Write($1.str.c_str());
 	}
 	| IFNDEF IDENTIFIER
 	{
@@ -168,13 +194,13 @@ prepr : IF if_conditions
 		string id=$2.str;
 		ifdef(id);
 	}
-	| DEFINE IDENTIFIER optional_params optional_definition
+	| DEFINE IDENTIFIER optional_param_decls optional_definition
 	{
 		string id=$2.str;
 		string def=$4.str;
 		string params=$3.str;
 		if(inActiveBlock())
-			DefineMacro(id,def);
+			DefineMacro(id,params,def);
 		std::ostringstream definition;
 		definition<<"#define "<<id<<params;
 		if(def.length())
@@ -191,26 +217,57 @@ prepr : IF if_conditions
 	{
 		endif();
 	};
-optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
+optional_param_decls: LEFT_BRACKET param_decl_list RIGHT_BRACKET
 				 {
-					$$.str="(";
-					$$.str+=$2.str;
-					$$.str+=")";
+					$$.str=$2.str;
 				 }
 				 |
 				 {
 					$$.str="";
 				 };
-param_list : param_list COMMA IDENTIFIER
+param_decl_list : param_decl_list COMMA IDENTIFIER
 			 {
-				$$.str=$1.str+",";
-				$$.str+=$3.str;
+				string s=$1.str+",";
+				s+=$3.str;
+				$$.str=s;
 			 }
 			 |
 			IDENTIFIER
 			 {
 				 $$.str=$1.str;
 			 };
+optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
+				 {
+					$$.str=$2.str;
+				 }
+				 |
+				 {
+					$$.str="";
+				 };
+param_list : param_list COMMA param
+			 {
+				string s=$1.str+",";
+				s+=$3.str;
+				$$.str=s;
+			 }
+			 |
+			param
+			 {
+				 $$.str=$1.str;
+			 }
+			 |
+			 {
+				 $$.str="";
+			 };
+ param: IDENTIFIER
+			 {
+				 $$.str=$1.str;
+			 }
+			 |
+			 NUMBER
+		 {
+				 $$.str=$1.str;
+		 }
 if_conditions: if_conditions OR if_condition
 			{
 				$$.num=$1.num|$3.num;

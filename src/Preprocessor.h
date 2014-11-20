@@ -37,9 +37,10 @@ extern void Write(const char *);
 extern void WriteLineNumber();
 extern void WriteLineNumber(int);
 extern bool IsDefined(std::string name);
-extern void DefineMacro(std::string name,std::string definition);
+extern void DefineMacro(std::string name,std::string params,std::string definition);
 extern const MacroDefinition *GetMacro(std::string name);
 extern void UndefineMacro(std::string name);
+extern std::string ProcessMacro(std::string id,std::string params);
 extern void ClearParserState();
 extern void Skip();
 #endif

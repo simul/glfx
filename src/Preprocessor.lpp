@@ -1,4 +1,5 @@
 %option yylineno
+%option warn
 %option noyywrap
 %option prefix="prepro_"
 %option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
@@ -105,10 +106,23 @@
 			return i->second;
 		else return NULL;
 	}
-	void DefineMacro(std::string name,std::string definition)
+	void DefineMacro(std::string name,std::string params,std::string definition)
 	{
 		macros[name]=new MacroDefinition;
 		macros[name]->definition=definition;
+		if(params.length())
+		{
+			int start=0;
+			while(start<(int)params.length())
+			{
+				int i=(int)params.find(",",start);
+				if(i<start)
+					i=params.length();
+				string param=params.substr(start,i-start);
+				macros[name]->parameters.push_back(param);
+				start=i+1;
+			}
+		}
 	}
 	void UndefineMacro(std::string name)
 	{
@@ -128,6 +142,46 @@
 			macros.erase(i);
 		}
 		currentBuffer=NULL;
+	}
+	string ProcessMacro(string id,string params)
+	{
+		MacroMap::iterator i=macros.find(id);
+		if(i==macros.end())
+		{
+			return ((id+"(")+params)+")";
+		}
+		string def=i->second->definition;
+		vector<string> replacements;
+		if(params.length())
+		{
+			int start=0;
+			while(start<(int)params.length())
+			{
+				int i=(int)params.find(",",start);
+				if(i<0)
+					i=params.length();
+				string param=params.substr(start,i-start);
+				replacements.push_back(param);
+				start=i;
+			}
+		}
+
+		if(replacements.size()!=i->second->parameters.size())
+		{
+			prepro_error("Wrong number of arguments to macro");
+			return id;
+		}
+		for(int j=0;j<(int)i->second->parameters.size();j++)
+		{
+			string param=i->second->parameters[j];
+			int pos=def.find(param);
+			while(pos<(int)def.length())
+			{
+				def=def.replace(pos,param.length(),replacements[j]);
+				pos=def.find(param,pos+1);
+			}
+		}
+		return def;
 	}
 %}
 
@@ -187,19 +241,22 @@ NUM_BLCK 0|([1-9][0-9]*)
 						return IDENTIFIER;
 					}
 <IF_STATEMENT>"defined" {
+						prepro_lval.str=yytext;
 						return DEFINED;
 					}
 <IF_STATEMENT>"||" {
+						prepro_lval.str=yytext;
 						return OR;
 					}
 <IF_STATEMENT>"&&" {
+						prepro_lval.str=yytext;
 						return AND;
 					}
-<IF_STATEMENT>"("	{
+<INITIAL,IF_STATEMENT>"("	{
 						prepro_lval.str=yytext;
 						return LEFT_BRACKET;
 					} 
-<IF_STATEMENT>")"	{
+<INITIAL,IF_STATEMENT>")"	{
 						prepro_lval.str=yytext;
 						return RIGHT_BRACKET;
 					}
@@ -213,9 +270,11 @@ NUM_BLCK 0|([1-9][0-9]*)
 							return NUMBER;
 						}
 <IF_STATEMENT>"!" {
+						prepro_lval.str=yytext;
 						return BOOLEAN_NOT;
 					}
 <IF_STATEMENT>"==" {
+						prepro_lval.str=yytext;
 						return IS_EQUAL;
 					}
 <IF_STATEMENT>\n {
@@ -276,6 +335,18 @@ NUM_BLCK 0|([1-9][0-9]*)
 				yyterminate();
 			}
 		}
+<INITIAL>{ID_BLCK}	{
+						prepro_lval.str=yytext;
+						return IDENTIFIER;
+					} 
+<INITIAL>","	{
+						prepro_lval.str=yytext;
+						return COMMA;
+					} 
+<INITIAL>{NUM_BLCK}	{
+						prepro_lval.str=yytext;
+						return NUMBER;
+					} 
 <INITIAL><<EOF>> {
 			if(!popfile())
 			{
@@ -293,23 +364,23 @@ NUM_BLCK 0|([1-9][0-9]*)
 
 <INITIAL>^\n {
 		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
+		if(inActiveBlock())
+			Write();
 	}
 
 
 <INITIAL>\n {
 		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
+		if(inActiveBlock())
+			Write();
 	}
 
 
 
 <INITIAL>. {
 		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
+		if(inActiveBlock())
+			Write();
 	}
 
 %%
@@ -407,7 +478,7 @@ void preprocess(const char *filenameUtf8, map<string, string> defines)
 	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
 	{
 		preproOutput << "#define " << i->first << " " << i->second << std::endl;
-		DefineMacro(i->first, i->second);
+		DefineMacro(i->first,"",i->second);
 	}
 	preproOutput.str("");
 	filenamesUtf8.clear();

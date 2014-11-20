@@ -59,6 +59,7 @@
 		else if(is_equal(str,"FALSE"))
 			return false;
 		else errSem("Expected boolean.");
+		return false;
 	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{

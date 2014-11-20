@@ -5980,17 +5980,17 @@ glfxlval.boolean=false;		return GROUP;
 case 10:
 YY_RULE_SETUP
 #line 93 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext; return SHADER;
+glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext;	return SHADER;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 94 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-glfxlval.lineno=glfxlineno;	return INTERFACE;
+glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext;	return INTERFACE;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 95 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext; return SAMPLER;
+glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext;	return SAMPLER;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP

@@ -90,9 +90,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"technique"							glfxlval.boolean=false;		return TECHNIQUE;
 <INITIAL>"pass"									glfxlval.boolean=false;		return PASS;
 <INITIAL>"group"								glfxlval.boolean=false;		return GROUP;
-<INITIAL>"shader"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return SHADER;
-<INITIAL>"interface"							glfxlval.lineno=yylineno;	return INTERFACE;
-<INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext; return SAMPLER;
+<INITIAL>"shader"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SHADER;
+<INITIAL>"interface"							glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return INTERFACE;
+<INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SAMPLER;
 <INITIAL>"profile"								{
 													BEGIN IN_SHADER_COMPILE;
 													return PROFILE;
