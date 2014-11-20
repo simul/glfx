@@ -88,6 +88,17 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="src\Preprocessor.lpp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_flex.exe" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/PreprocessorLexer.cpp</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="src\Preprocessor.ypp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" -v -x "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/PreprocessorParser.cpp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" "%(FullPath)"</Message>
+    </CustomBuild>
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
     <None Include="test\shaders\light_pass.glsl" />

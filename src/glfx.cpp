@@ -55,7 +55,9 @@ typedef int errno_t;
 #include "StringToWString.h"
 #include "StringFunctions.h"
 #include "FileLoader.h"
-#pragma optimize("",off);
+
+#pragma optimize("",off)
+
 vector<string> shaderPathsUtf8;
 FileLoader fileLoader;
 

@@ -15,14 +15,14 @@
     using namespace glfxParser;
     
     #ifdef _MSC_VER
-    // MS's C++ compiler is more strict than gcc
+		// MS's C++ compiler is more strict than gcc
     
-    // bison related
-    // Disable the warning about default being present but no other cases in switch
-    #pragma warning( disable:4065 )
+		// bison related
+		// Disable the warning about default being present but no other cases in switch
+		#pragma warning( disable:4065 )
 
-    // No unistd.h (for flex)
-    #define YY_NO_UNISTD_H
+		// No unistd.h (for flex)
+		#define YY_NO_UNISTD_H
 		#define YYERROR_VERBOSE
     #endif
     #include "glfxScanner.h"

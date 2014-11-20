@@ -3,7 +3,7 @@
 %option noyywrap
 %option prefix="prepro_"
 %option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
-%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 DEFINING5 IF_STATEMENT
+%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 DEFINING5 IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO
 
 %{
     #ifdef _MSC_VER
@@ -99,6 +99,11 @@
 		MacroMap::iterator i=macros.find(name);
 		return (i!=macros.end());
 	}
+	bool HasParameters(std::string name)
+	{
+		MacroMap::iterator i=macros.find(name);
+		return (i!=macros.end()&&i->second->parameters.size()>0);
+	}
 	const MacroDefinition *GetMacro(std::string name)
 	{
 		MacroMap::iterator i=macros.find(name);
@@ -117,7 +122,7 @@
 			{
 				int i=(int)params.find(",",start);
 				if(i<start)
-					i=params.length();
+					i=(int)params.length();
 				string param=params.substr(start,i-start);
 				macros[name]->parameters.push_back(param);
 				start=i+1;
@@ -162,7 +167,7 @@
 					i=params.length();
 				string param=params.substr(start,i-start);
 				replacements.push_back(param);
-				start=i;
+				start=i+1;
 			}
 		}
 
@@ -174,11 +179,13 @@
 		for(int j=0;j<(int)i->second->parameters.size();j++)
 		{
 			string param=i->second->parameters[j];
-			int pos=def.find(param);
-			while(pos<(int)def.length())
+			size_t pos=def.find(param);
+			while(pos<def.length())
 			{
 				def=def.replace(pos,param.length(),replacements[j]);
 				pos=def.find(param,pos+1);
+				if(pos>def.length())
+					pos=def.length();
 			}
 		}
 		return def;
@@ -189,6 +196,10 @@ ID_BLCK [a-zA-Z_\.:][a-zA-Z0-9_\.:]*
 NUM_BLCK 0|([1-9][0-9]*)
 
 %%
+<INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
+							if (inActiveBlock())
+								Write();// Single line comment (with possible continuation)
+											}
 <INITIAL>"#"if {
 					BEGIN IF_STATEMENT;
 					prepro_lval.str=yytext;
@@ -236,37 +247,86 @@ NUM_BLCK 0|([1-9][0-9]*)
 				ClearMacros();
 				yyterminate();
 			}
+<INITIAL>{ID_BLCK}	{
+						prepro_lval.str = yytext;
+						if (IsDefined(prepro_lval.str.c_str()))
+						{
+							if(HasParameters(prepro_lval.str.c_str()))
+							{
+								BEGIN START_INSERTING_MACRO;
+								return MACRO_NAME;
+							}
+							string str=ProcessMacro(prepro_lval.str,"");
+							Write(str.c_str());
+						}
+						else
+						{
+							if (inActiveBlock())
+								Write();
+						}
+					}
 <PREPRO>{ID_BLCK}	{
-						prepro_lval.str=yytext;
+						prepro_lval.str = yytext;
 						return IDENTIFIER;
 					}
+<START_INSERTING_MACRO>"("	{
+								prepro_lval.str = yytext;
+								BEGIN INSERTING_MACRO;
+								return LEFT_BRACKET;
+							}
+<START_INSERTING_MACRO>.	{		// anything but open-bracket? this wasn't a macro.
+								if (inActiveBlock())
+								{
+									prepro_lval.str = yytext;
+									Write(prepro_lval.str.c_str());
+									Write();
+								}
+								BEGIN INITIAL;
+							}
+<INSERTING_MACRO>{ID_BLCK}	{
+								prepro_lval.str = yytext;
+								return IDENTIFIER;
+							}
+<INSERTING_MACRO>{NUM_BLCK}	{
+								prepro_lval.str = yytext;
+								return NUMBER;
+						}
+<INSERTING_MACRO>","	{
+							prepro_lval.str = yytext;
+							return COMMA;
+						}
+<INSERTING_MACRO>")"	{
+							prepro_lval.str = yytext;
+							BEGIN INITIAL;
+							return RIGHT_BRACKET;
+						}
 <IF_STATEMENT>"defined" {
-						prepro_lval.str=yytext;
-						return DEFINED;
-					}
-<IF_STATEMENT>"||" {
+							prepro_lval.str=yytext;
+							return DEFINED;
+						}
+<IF_STATEMENT>"||"	{
 						prepro_lval.str=yytext;
 						return OR;
 					}
-<IF_STATEMENT>"&&" {
-						prepro_lval.str=yytext;
-						return AND;
-					}
-<INITIAL,IF_STATEMENT>"("	{
-						prepro_lval.str=yytext;
-						return LEFT_BRACKET;
-					} 
-<INITIAL,IF_STATEMENT>")"	{
-						prepro_lval.str=yytext;
-						return RIGHT_BRACKET;
-					}
-<IF_STATEMENT>{ID_BLCK}	{
-							prepro_lval.str=yytext;
-							return IDENTIFIER;
-					}
+<IF_STATEMENT>"&&"			{
+								prepro_lval.str=yytext;
+								return AND;
+							}
+<IF_STATEMENT>"("	{
+								prepro_lval.str=yytext;
+								return LEFT_BRACKET;
+							} 
+<IF_STATEMENT>")"	{
+								prepro_lval.str=yytext;
+								return RIGHT_BRACKET;
+							}
+<IF_STATEMENT>{ID_BLCK}		{
+								prepro_lval.str=yytext;
+								return IDENTIFIER;
+							}
 <IF_STATEMENT>{NUM_BLCK} {
 							prepro_lval.str=yytext;
-							prepro_lval.num=atoi(yytext);
+							prepro_lval.num=atoi(prepro_lval.str.c_str());
 							return NUMBER;
 						}
 <IF_STATEMENT>"!" {
@@ -325,6 +385,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 					}
 <PREPRO,DEFINING,DEFINING2,DEFINING4,DEFINING5,IF_STATEMENT>\n	{
 				BEGIN INITIAL;
+				prepro_lval.str=yytext;
 				return EOL;
 			}
 <DEFINING,DEFINING2,PREPRO><<EOF>> {
@@ -335,18 +396,6 @@ NUM_BLCK 0|([1-9][0-9]*)
 				yyterminate();
 			}
 		}
-<INITIAL>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						return IDENTIFIER;
-					} 
-<INITIAL>","	{
-						prepro_lval.str=yytext;
-						return COMMA;
-					} 
-<INITIAL>{NUM_BLCK}	{
-						prepro_lval.str=yytext;
-						return NUMBER;
-					} 
 <INITIAL><<EOF>> {
 			if(!popfile())
 			{

@@ -25,6 +25,7 @@ struct MacroDefinition
 };
 
 #define YYSTYPE PreprocessorType
+#define YYDEBUG 1
 // These are the callback functions for file handling that we will send to the preprocessor.
 extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName);
 extern void (*prepro_close)(FILE *f);

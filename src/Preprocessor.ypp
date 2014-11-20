@@ -1,4 +1,6 @@
 %name-prefix "prepro_"
+%debug
+%error-verbose
 %output "src/PreprocessParser.cpp"
 %defines "src/PreprocessParser.h"
 %{
@@ -12,6 +14,8 @@
 		#pragma warning( disable: 4003 )
 		// Disable the warning about depracted naming of _read and friends
 		#pragma warning( disable: 4996 )
+		#define YY_NO_UNISTD_H
+		#define YYERROR_VERBOSE
 	#endif
 	#include <stdio.h>
 	#include <iostream>		// For std::cout and cerr
@@ -21,6 +25,7 @@
 	extern void prepro_error(const char *s);
 	#include "PreprocessLexer.h"
 	#define YYSTYPE PreprocessorType
+	#define YYDEBUG 1
 	using namespace std;
 	// We use a stack of booleans to handle #if #else #endif.
 	// At the top of the stack is a value that is TRUE is we are in an active block, and FALSE otherwise.
@@ -140,7 +145,7 @@
 /* declare tokens */
 %token NUMBER
 %token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR
-%token EOL
+%token EOL MACRO_NAME
 %%
 prog: prog prepr
     | /* nothing */// matches at beginning of input
@@ -155,34 +160,14 @@ prepr : IF if_conditions
 		Test test=$2.test;
 		apply_condition(var,$2.num!=0);
 	}
-	| IDENTIFIER optional_params
+	| MACRO_NAME optional_params
 	{
 		if(inActiveBlock())
 		{
-			string str=ProcessMacro($1.str,$2.str);
-			{
-				Write(str.c_str());
-			}
+			string macro_name=$1.str;
+			string str=ProcessMacro(macro_name,$2.str);
+			Write(str.c_str());
 		}
-	}
-	| EOL
-	{
-	}
-	| LEFT_BRACKET
-	{
-		Write($1.str.c_str());
-	}
-	| RIGHT_BRACKET
-	{
-		Write($1.str.c_str());
-	}
-	| COMMA
-	{
-		Write($1.str.c_str());
-	}
-	| NUMBER
-	{
-		Write($1.str.c_str());
 	}
 	| IFNDEF IDENTIFIER
 	{
@@ -202,7 +187,9 @@ prepr : IF if_conditions
 		if(inActiveBlock())
 			DefineMacro(id,params,def);
 		std::ostringstream definition;
-		definition<<"#define "<<id<<params;
+		definition<<"#define "<<id;
+		if(params.length())
+			definition<<"("<<params<<")";
 		if(def.length())
 			definition<<" "<<def;
 		definition<<"\n";
@@ -216,6 +203,29 @@ prepr : IF if_conditions
 	| ENDIF
 	{
 		endif();
+	}
+	| EOL
+	{
+	}
+	| NUMBER
+	{
+		Write($1.str.c_str());
+	}
+		| LEFT_BRACKET
+	{
+		Write($1.str.c_str());
+	}
+		| AND
+	{
+		Write($1.str.c_str());
+	}
+		| RIGHT_BRACKET
+	{
+		Write($1.str.c_str());
+	}
+		| COMMA
+	{
+		Write($1.str.c_str());
 	};
 optional_param_decls: LEFT_BRACKET param_decl_list RIGHT_BRACKET
 				 {
@@ -265,9 +275,9 @@ param_list : param_list COMMA param
 			 }
 			 |
 			 NUMBER
-		 {
+			 {
 				 $$.str=$1.str;
-		 }
+			}
 if_conditions: if_conditions OR if_condition
 			{
 				$$.num=$1.num|$3.num;
