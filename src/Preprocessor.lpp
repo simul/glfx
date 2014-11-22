@@ -180,10 +180,11 @@
 		{
 			string param=i->second->parameters[j];
 			size_t pos=def.find(param);
+			string rep = replacements[j];
 			while(pos<def.length())
 			{
-				def=def.replace(pos,param.length(),replacements[j]);
-				pos=def.find(param,pos+1);
+				def=def.replace(pos,param.length(),rep);
+				pos = def.find(param, pos + 1 + rep.length());
 				if(pos>def.length())
 					pos=def.length();
 			}
@@ -257,7 +258,8 @@ NUM_BLCK 0|([1-9][0-9]*)
 								return MACRO_NAME;
 							}
 							string str=ProcessMacro(prepro_lval.str,"");
-							Write(str.c_str());
+							if (inActiveBlock())
+								Write(str.c_str());
 						}
 						else
 						{

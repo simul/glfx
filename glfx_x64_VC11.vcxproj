@@ -92,12 +92,18 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_flex.exe" "%(FullPath)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/PreprocessorLexer.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">win_flex.exe "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">win_flex.exe "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">src/PreprocessLexer.cpp</Outputs>
     </CustomBuild>
     <CustomBuild Include="src\Preprocessor.ypp">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" -v -x "%(FullPath)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/PreprocessorParser.cpp</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">win_bison.exe "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">win_bison.exe "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">src/PreprocessParser.cpp</Outputs>
     </CustomBuild>
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
