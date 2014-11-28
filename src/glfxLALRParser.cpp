@@ -2223,7 +2223,7 @@ yyreduce:
 				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
 				if(i==gEffect->m_compiledShaders.end())
 				{
-					if(stricmp(compiledShaderName.c_str(),"NULL")==0)
+					if(_stricmp(compiledShaderName.c_str(),"NULL")==0)
 					{
 					}
 					else
@@ -2425,7 +2425,7 @@ yyreduce:
 							string value	=(yyvsp[(3) - (4)]).strs[0];
 							int index		=(yyvsp[(1) - (4)]).num;
 							int ival		=(yyvsp[(3) - (4)]).num;
-							float fval		=(yyvsp[(3) - (4)]).num;
+							float fval		=(yyvsp[(3) - (4)]).fnum;
 							bool bval		=(ival!=0);
 							if(renderState==RASTERIZER_STATE)
 							{

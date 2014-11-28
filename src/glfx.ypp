@@ -646,7 +646,7 @@ shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = V
 				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
 				if(i==gEffect->m_compiledShaders.end())
 				{
-					if(stricmp(compiledShaderName.c_str(),"NULL")==0)
+					if(_stricmp(compiledShaderName.c_str(),"NULL")==0)
 					{
 					}
 					else
@@ -801,7 +801,7 @@ render_state_command : render_state_identifier EQUALS render_state_rvalue SC
 							string value	=$3.strs[0];
 							int index		=$1.num;
 							int ival		=$3.num;
-							float fval		=$3.num;
+							float fval		=$3.fnum;
 							bool bval		=(ival!=0);
 							if(renderState==RASTERIZER_STATE)
 							{
