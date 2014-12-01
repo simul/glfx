@@ -114,10 +114,10 @@
 	#pragma optimize("",off)
 	bool is_equal(const string& a, const char * b)
 	{
-		unsigned int sz = a.size();
+		size_t sz = a.size();
 		if (strlen(b) != sz)
 			return false;
-		for (unsigned int i = 0; i < sz; ++i)
+		for (size_t i = 0; i < sz; ++i)
 			if (tolower(a[i]) != tolower(b[i]))
 				return false;
 		return true;
