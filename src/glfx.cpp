@@ -71,8 +71,8 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 	wstring filenamew=StringToWString(fullPathNameUtf8);
 	FILE *f=_wfopen(filenamew.c_str(),L"r");
 	string path=fullPathNameUtf8;
-	int last_slash=path.find_last_of("/");
-	int last_bslash=path.find_last_of("\\");
+	int last_slash=(int)path.find_last_of("/");
+	int last_bslash=(int)path.find_last_of("\\");
 	if(last_bslash>last_slash)
 		last_slash=last_bslash;
 	if(last_slash>0)
