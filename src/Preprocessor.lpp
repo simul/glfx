@@ -3,7 +3,7 @@
 %option noyywrap
 %option prefix="prepro_"
 %option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
-%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 DEFINING5 IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO
+%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 IN_MACRO_DEFINITION IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO
 
 %{
     #ifdef _MSC_VER
@@ -111,7 +111,7 @@
 			return i->second;
 		else return NULL;
 	}
-	void DefineMacro(std::string name,std::string params,std::string definition)
+	void DefineMacro(std::string name,std::string params,const std::vector<std::string> definition)
 	{
 		macros[name]=new MacroDefinition;
 		macros[name]->definition=definition;
@@ -155,7 +155,7 @@
 		{
 			return ((id+"(")+params)+")";
 		}
-		string def=i->second->definition;
+		vector<string> def=i->second->definition;
 		vector<string> replacements;
 		if(params.length())
 		{
@@ -176,20 +176,25 @@
 			prepro_error("Wrong number of arguments to macro");
 			return id;
 		}
-		for(int j=0;j<(int)i->second->parameters.size();j++)
+		string outp;
+		for(int j=0;j<def.size();j++)
 		{
-			string param=i->second->parameters[j];
-			size_t pos=def.find(param);
-			string rep = replacements[j];
-			while(pos<def.length())
+			string el=def[j];
+			bool found=false;
+			for(int k=0;k<(int)i->second->parameters.size();k++)
 			{
-				def=def.replace(pos,param.length(),rep);
-				pos = def.find(param, pos + 1 + rep.length());
-				if(pos>def.length())
-					pos=def.length();
+				string param=i->second->parameters[k];
+				if(el==param)
+				{
+					outp+=param;
+					found=true;
+					break;
+				}
 			}
+			if(!found)
+				outp+=el;
 		}
-		return def;
+		return outp;
 	}
 %}
 
@@ -285,17 +290,21 @@ NUM_BLCK 0|([1-9][0-9]*)
 								}
 								BEGIN INITIAL;
 							}
-<INSERTING_MACRO>{ID_BLCK}	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>{ID_BLCK}	{
 								prepro_lval.str = yytext;
 								return IDENTIFIER;
 							}
-<INSERTING_MACRO>{NUM_BLCK}	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>{NUM_BLCK}	{
 								prepro_lval.str = yytext;
 								return NUMBER;
 						}
-<INSERTING_MACRO>","	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>","	{
 							prepro_lval.str = yytext;
 							return COMMA;
+						}
+<IN_MACRO_DEFINITION>")"	{
+							prepro_lval.str = yytext;
+							return RIGHT_BRACKET;
 						}
 <INSERTING_MACRO>")"	{
 							prepro_lval.str = yytext;
@@ -368,7 +377,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 						prepro_lval.str=yytext;
 						return COMMA;
 					}  
-<DEFINING3>{ID_BLCK}	{
+<DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}	{
 						prepro_lval.str=yytext;
 						return IDENTIFIER;
 					} 
@@ -379,15 +388,14 @@ NUM_BLCK 0|([1-9][0-9]*)
 					}
 <DEFINING2,DEFINING4>[ \t]	{
 						prepro_lval.str=yytext;
-						BEGIN DEFINING5;
+						BEGIN IN_MACRO_DEFINITION;			// The ACTUAL macro definition follows,
+													// e.g. in #define texture_clamp(tex,texc) texture(tex,texc)
+													// this would be texture(tex,texc)
+					// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
 					}
-<DEFINING5>[^\n]+ {
-						prepro_lval.str=yytext;
-						return MACRO_DEFINITION;
-					}
-<PREPRO,DEFINING,DEFINING2,DEFINING4,DEFINING5,IF_STATEMENT>\n	{
-				BEGIN INITIAL;
+<PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT,IN_MACRO_DEFINITION>\n	{
 				prepro_lval.str=yytext;
+				BEGIN INITIAL;
 				return EOL;
 			}
 <DEFINING,DEFINING2,PREPRO><<EOF>> {
@@ -529,7 +537,9 @@ void preprocess(const char *filenameUtf8, map<string, string> defines)
 	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
 	{
 		preproOutput << "#define " << i->first << " " << i->second << std::endl;
-		DefineMacro(i->first,"",i->second);
+		vector<string> s;
+		s.push_back(i->second);
+		DefineMacro(i->first,"",s);
 	}
 	preproOutput.str("");
 	filenamesUtf8.clear();

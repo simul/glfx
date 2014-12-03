@@ -81,7 +81,7 @@
 			prepro_error(str.c_str());
 			return false;
 		}
-		int value=atoi(m->definition.c_str());
+		int value=atoi(m->definition[0].c_str());
 		bool result=false;
 		if(test==EQUALS)
 		{
@@ -144,7 +144,7 @@
 %}
 /* declare tokens */
 %token NUMBER
-%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER MACRO_DEFINITION IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR
 %token EOL MACRO_NAME
 %%
 prog: prog prepr
@@ -182,7 +182,7 @@ prepr : IF if_conditions
 	| DEFINE IDENTIFIER optional_param_decls optional_definition
 	{
 		string id=$2.str;
-		string def=$4.str;
+		vector<string> def=$4.strs;
 		string params=$3.str;
 		if(inActiveBlock())
 			DefineMacro(id,params,def);
@@ -190,8 +190,8 @@ prepr : IF if_conditions
 		definition<<"#define "<<id;
 		if(params.length())
 			definition<<"("<<params<<")";
-		if(def.length())
-			definition<<" "<<def;
+		for(int i=0;i<def.size();i++)
+			definition<<" "<<def[i];
 		definition<<"\n";
 		if(inActiveBlock())
 			Write(definition.str().c_str());
@@ -342,19 +342,40 @@ if_test: IS_EQUAL NUMBER
 						$$.test=NONZERO;
 					};
 
-optional_definition : MACRO_DEFINITION
+optional_definition : optional_definition definition_element
+					  {
+						  $$.strs.push_back($1.str);
+					  }
+					  |
+					  definition_element
+					  {
+						  $$.strs.clear();
+						  $$.strs.push_back($1.str);
+					  };
+					  |
+					  {
+						  $$.strs.clear();
+					  };
+definition_element: IDENTIFIER
 					  {
 						  $$.str=$1.str;
 					  }
-					  |
-					  NUMBER
+					 | LEFT_BRACKET
 					  {
 						  $$.str=$1.str;
 					  }
-					  |
+					 | RIGHT_BRACKET
 					  {
-						  $$.str="";
+						  $$.str=$1.str;
 					  }
+					 | COMMA
+					  {
+						  $$.str=$1.str;
+					  }
+					 | NUMBER
+					  {
+						  $$.str=$1.str;
+					  };
 %%
 
 extern std::string currentFilename;
