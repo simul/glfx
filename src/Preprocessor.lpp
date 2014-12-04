@@ -177,7 +177,7 @@
 			return id;
 		}
 		string outp;
-		for(int j=0;j<def.size();j++)
+		for(int j=0;j<(int)def.size();j++)
 		{
 			string el=def[j];
 			bool found=false;
