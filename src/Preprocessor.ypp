@@ -27,6 +27,7 @@
 	#define YYSTYPE PreprocessorType
 	#define YYDEBUG 1
 	using namespace std;
+	bool preproError=false;
 	// We use a stack of booleans to handle #if #else #endif.
 	// At the top of the stack is a value that is TRUE is we are in an active block, and FALSE otherwise.
 	// So: ifdef, if, and ifndef all add either TRUE or FALSE to the stack.
@@ -34,13 +35,15 @@
 	// and endif pops the stack.
 	vector<bool> activeBlockStack;
 	vector<string> blockTestStack;
+	extern int preproBracket;
 	// We pass-through #if blocks.
 	//vector<bool> passthroughBlockStack;
 	void ClearParserState()
 	{
 		activeBlockStack.clear();
 		blockTestStack.clear();
-	//	passthroughBlockStack.clear();
+		preproError=false;
+		preproBracket=0;
 	}
 	bool inActiveBlock()
 	{
@@ -144,7 +147,7 @@
 %}
 /* declare tokens */
 %token NUMBER
-%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR SYMBOL WHITESPACE
 %token EOL MACRO_NAME
 %%
 prog: prog prepr
@@ -165,7 +168,7 @@ prepr : IF if_conditions
 		if(inActiveBlock())
 		{
 			string macro_name=$1.str;
-			string str=ProcessMacro(macro_name,$2.str);
+			string str=ProcessMacro(macro_name,$2.strs);
 			Write(str.c_str());
 		}
 	}
@@ -205,28 +208,32 @@ prepr : IF if_conditions
 		endif();
 	}
 	| EOL
-	{
-	}
+		{
+		}
 	| NUMBER
-	{
-		Write($1.str.c_str());
-	}
+		{
+			Write($1.str.c_str());
+		}
 		| LEFT_BRACKET
-	{
-		Write($1.str.c_str());
-	}
+		{
+			Write($1.str.c_str());
+		}
 		| AND
-	{
-		Write($1.str.c_str());
-	}
+		{
+			Write($1.str.c_str());
+		}
 		| RIGHT_BRACKET
-	{
-		Write($1.str.c_str());
-	}
+		{
+			Write($1.str.c_str());
+		}
+		| SYMBOL
+		{
+			Write($1.str.c_str());
+		}
 		| COMMA
-	{
-		Write($1.str.c_str());
-	};
+		{
+			Write($1.str.c_str());
+		};
 optional_param_decls: LEFT_BRACKET param_decl_list RIGHT_BRACKET
 				 {
 					$$.str=$2.str;
@@ -248,36 +255,54 @@ param_decl_list : param_decl_list COMMA IDENTIFIER
 			 };
 optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
 				 {
-					$$.str=$2.str;
+					$$.str=$1.str+$2.str+$3.str;
+					$$.strs=$2.strs;
 				 }
 				 |
 				 {
 					$$.str="";
+					$$.strs.clear();
 				 };
-param_list : param_list COMMA param
+param_list : param_list COMMA rvalue
 			 {
-				string s=$1.str+",";
-				s+=$3.str;
-				$$.str=s;
+				string &el=$3.str;
+				vector<string> &defs=$$.strs;
+				defs=$1.strs;
+				defs.push_back(el);
+				$$.str=$1.str+$2.str+$3.str;
 			 }
 			 |
-			param
+			rvalue
 			 {
-				 $$.str=$1.str;
+				string &el=$1.str;
+				vector<string> &defs=$$.strs;
+				defs.clear();
+				defs.push_back(el);
+				$$.str=el;
 			 }
 			 |
 			 {
-				 $$.str="";
+				$$.str="";
+				 $$.strs.clear();
 			 };
- param: IDENTIFIER
+rvalue: IDENTIFIER optional_params
 			 {
-				 $$.str=$1.str;
+				 $$.str=$1.str+$2.str;
+			 }
+			 |
+			 rvalue SYMBOL rvalue
+			 {
+				string &r=$1.str;
+				string &s=$2.str;
+				string &v=$3.str;
+				$$.str=r+s+v;
 			 }
 			 |
 			 NUMBER
 			 {
 				 $$.str=$1.str;
-			}
+			};
+
 if_conditions: if_conditions OR if_condition
 			{
 				$$.num=$1.num|$3.num;
@@ -344,13 +369,18 @@ if_test: IS_EQUAL NUMBER
 
 optional_definition : optional_definition definition_element
 					  {
-						  $$.strs.push_back($1.str);
+							string &el=$2.str;
+							vector<string> &defs=$$.strs;
+							defs=$1.strs;
+							defs.push_back(el);
 					  }
 					  |
 					  definition_element
 					  {
-						  $$.strs.clear();
-						  $$.strs.push_back($1.str);
+							string &el=$1.str;
+							vector<string> &defs=$$.strs;
+							defs.clear();
+							defs.push_back(el);
 					  };
 					  |
 					  {
@@ -372,10 +402,18 @@ definition_element: IDENTIFIER
 					  {
 						  $$.str=$1.str;
 					  }
-					 | NUMBER
-					  {
+						| NUMBER
+						{
 						  $$.str=$1.str;
-					  };
+						}
+						| SYMBOL
+						{
+							$$.str=$1.str;
+						}
+						| WHITESPACE
+						{
+							$$.str=$1.str;
+						}
 %%
 
 extern std::string currentFilename;
@@ -388,4 +426,5 @@ void prepro_error(const char *errmsg)
     errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< prepro_get_text()<<"\" Preprocessor "<<errmsg;
 	std::cerr<<errMsg.str().c_str()<<std::endl;
   //  throw std::runtime_error(errMsg.str());
+	preproError=true;
 }

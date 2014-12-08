@@ -451,7 +451,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 			if(already>=0&&already<err_msg.length())
 			{
 				int numberpos=already+19;
-				int brack_pos=err_msg.find("(",numberpos);
+				int brack_pos=(int)err_msg.find("(",numberpos);
 				string first_def_file_no=err_msg.substr(numberpos,brack_pos-numberpos);
 				int already_filenumber=atoi(first_def_file_no.c_str());
 				string already_filename=sourceFilesUtf8[filenumber];
@@ -670,9 +670,11 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 			d++;
 		}
 		defines["GLFX"] = "1";
-		preprocess(file, defines);
+		retVal&=preprocess(file, defines);
 		src=preproOutput.str();
 		gEffects[effect]->SetFilenameList(GetPreprocessorFilenamesUtf8());
+		if(!retVal)
+			return false;
 	}
 	catch(...)
 	{

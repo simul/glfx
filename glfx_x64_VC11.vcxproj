@@ -43,6 +43,7 @@
     <ClInclude Include="src\glfxProgram.h" />
     <ClInclude Include="src\glfxScanner.h" />
     <ClInclude Include="src\PreprocessLexer.h" />
+    <ClInclude Include="src\Preprocessor.h" />
     <ClInclude Include="src\PreprocessParser.h" />
     <ClInclude Include="src\StringFunctions.h" />
     <ClInclude Include="src\StringToWString.h" />

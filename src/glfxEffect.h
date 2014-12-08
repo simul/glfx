@@ -68,6 +68,7 @@ namespace glfxParser
 		string& Filename();
 		~Effect();
 		Effect();
+		friend void ::glfxWrite(const char *);
 		friend int ::glfxparse();
 		friend int ::glfxlex();
 	};

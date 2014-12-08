@@ -28,6 +28,7 @@
 	int chars = 0;
 	int words = 0;
 	int lines = 0;
+	int preproBracket=0;
 	struct BufferStack
 	{
 		struct BufferStack *prev;	/* previous entry */
@@ -41,6 +42,7 @@
 	
 	int newfile(const char *fn);
 	int popfile(void);
+	extern bool preproError;
 	extern void prepro_error(const char *s);
 	FILE* (*prepro_open)(const char *filename_utf8,string &fullPathName)=NULL;
 	void (*prepro_close)(FILE *f)=NULL;
@@ -111,7 +113,7 @@
 			return i->second;
 		else return NULL;
 	}
-	void DefineMacro(std::string name,std::string params,const std::vector<std::string> definition)
+	void DefineMacro(std::string name,std::string params,const std::vector<std::string> &definition)
 	{
 		macros[name]=new MacroDefinition;
 		macros[name]->definition=definition;
@@ -148,28 +150,25 @@
 		}
 		currentBuffer=NULL;
 	}
-	string ProcessMacro(string id,string params)
+	string join(const vector<string> &replacements,string sep)
+	{
+		string str;
+		for(int i=0;i<replacements.size();i++)
+		{
+			if(i)
+				str+=sep;
+			str+=replacements[i];
+		}
+		return str;
+	}
+	string ProcessMacro(string id,const vector<string> &replacements)
 	{
 		MacroMap::iterator i=macros.find(id);
 		if(i==macros.end())
 		{
-			return ((id+"(")+params)+")";
+			return ((id+"(")+join(replacements,","))+")";
 		}
 		vector<string> def=i->second->definition;
-		vector<string> replacements;
-		if(params.length())
-		{
-			int start=0;
-			while(start<(int)params.length())
-			{
-				int i=(int)params.find(",",start);
-				if(i<0)
-					i=params.length();
-				string param=params.substr(start,i-start);
-				replacements.push_back(param);
-				start=i+1;
-			}
-		}
 
 		if(replacements.size()!=i->second->parameters.size())
 		{
@@ -184,15 +183,16 @@
 			for(int k=0;k<(int)i->second->parameters.size();k++)
 			{
 				string param=i->second->parameters[k];
+				string rep=replacements[k];
 				if(el==param)
 				{
-					outp+=param;
+					outp+=rep;//+" ";
 					found=true;
 					break;
 				}
 			}
 			if(!found)
-				outp+=el;
+				outp+=el;//+" ";
 		}
 		return outp;
 	}
@@ -200,6 +200,7 @@
 
 ID_BLCK [a-zA-Z_\.:][a-zA-Z0-9_\.:]*
 NUM_BLCK 0|([1-9][0-9]*)
+FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 %%
 <INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
@@ -232,7 +233,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 				return ENDIF;
 			}
 <INITIAL>^"#"include[ \t]*[\"<] {
-								BEGIN IFILE; /*match #include statement up through the quote or <*/
+									BEGIN IFILE; /*match #include statement up through the quote or <*/
 								}
 <IFILE>[^ \t\n\">]+ {
 						int c=0;
@@ -240,7 +241,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 						{
 							while((c = yyinput()) && c != '\n'&&c>=0) ;
 						}
-						//yylineno++;
+					
 						if(!newfile(yytext))
 						{
 							ClearMacros();
@@ -255,14 +256,14 @@ NUM_BLCK 0|([1-9][0-9]*)
 			}
 <INITIAL>{ID_BLCK}	{
 						prepro_lval.str = yytext;
-						if (IsDefined(prepro_lval.str.c_str()))
+						if(IsDefined(prepro_lval.str.c_str()))
 						{
 							if(HasParameters(prepro_lval.str.c_str()))
 							{
 								BEGIN START_INSERTING_MACRO;
 								return MACRO_NAME;
 							}
-							string str=ProcessMacro(prepro_lval.str,"");
+							string str=ProcessMacro(prepro_lval.str,vector<string>());
 							if (inActiveBlock())
 								Write(str.c_str());
 						}
@@ -279,6 +280,7 @@ NUM_BLCK 0|([1-9][0-9]*)
 <START_INSERTING_MACRO>"("	{
 								prepro_lval.str = yytext;
 								BEGIN INSERTING_MACRO;
+								preproBracket=1;
 								return LEFT_BRACKET;
 							}
 <START_INSERTING_MACRO>.	{		// anything but open-bracket? this wasn't a macro.
@@ -294,53 +296,78 @@ NUM_BLCK 0|([1-9][0-9]*)
 								prepro_lval.str = yytext;
 								return IDENTIFIER;
 							}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>{FLOAT_BLCK}	{
+								prepro_lval.str = yytext;
+								return NUMBER;
+							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{NUM_BLCK}	{
 								prepro_lval.str = yytext;
 								return NUMBER;
-						}
+							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>","	{
+								prepro_lval.str = yytext;
+								return COMMA;
+							}
+<IN_MACRO_DEFINITION,IF_STATEMENT>")"	{
+								prepro_lval.str = yytext;
+								return RIGHT_BRACKET;
+							}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+-=!~]	{
+								prepro_lval.str=yytext;
+								return SYMBOL;
+							}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"{"	{
+								prepro_lval.str=yytext;
+								return SYMBOL;
+							}
+<IN_MACRO_DEFINITION>"}"	{
+								prepro_lval.str=yytext;
+								return SYMBOL;
+							}
+<INSERTING_MACRO>"("	{
 							prepro_lval.str = yytext;
-							return COMMA;
-						}
-<IN_MACRO_DEFINITION>")"	{
-							prepro_lval.str = yytext;
-							return RIGHT_BRACKET;
+							preproBracket++;
+							return LEFT_BRACKET;
 						}
 <INSERTING_MACRO>")"	{
 							prepro_lval.str = yytext;
-							BEGIN INITIAL;
+							preproBracket--;
+							if(preproBracket<=0)
+							{
+								BEGIN INITIAL;
+							}
 							return RIGHT_BRACKET;
 						}
 <IF_STATEMENT>"defined" {
 							prepro_lval.str=yytext;
 							return DEFINED;
 						}
-<IF_STATEMENT>"||"	{
+<IF_STATEMENT,IN_MACRO_DEFINITION>"||"	{
 						prepro_lval.str=yytext;
 						return OR;
 					}
-<IF_STATEMENT>"&&"			{
-								prepro_lval.str=yytext;
-								return AND;
-							}
-<IF_STATEMENT>"("	{
-								prepro_lval.str=yytext;
-								return LEFT_BRACKET;
-							} 
-<IF_STATEMENT>")"	{
-								prepro_lval.str=yytext;
-								return RIGHT_BRACKET;
-							}
-<IF_STATEMENT>{ID_BLCK}		{
+<IF_STATEMENT,IN_MACRO_DEFINITION>"&&"	{
+											prepro_lval.str=yytext;
+											return AND;
+										}
+<IF_STATEMENT,IN_MACRO_DEFINITION>"("	{
+											prepro_lval.str=yytext;
+											return LEFT_BRACKET;
+										} 
+<IF_STATEMENT,DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}		{
 								prepro_lval.str=yytext;
 								return IDENTIFIER;
 							}
-<IF_STATEMENT>{NUM_BLCK} {
+<IF_STATEMENT,IN_MACRO_DEFINITION>{NUM_BLCK} {
 							prepro_lval.str=yytext;
 							prepro_lval.num=atoi(prepro_lval.str.c_str());
 							return NUMBER;
 						}
-<IF_STATEMENT>"!" {
+<IN_MACRO_DEFINITION>[ \t]	{
+								prepro_lval.str=yytext;
+								return WHITESPACE;
+							}
+<IF_STATEMENT>"!"	{
 						prepro_lval.str=yytext;
 						return BOOLEAN_NOT;
 					}
@@ -377,10 +404,6 @@ NUM_BLCK 0|([1-9][0-9]*)
 						prepro_lval.str=yytext;
 						return COMMA;
 					}  
-<DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}	{
-						prepro_lval.str=yytext;
-						return IDENTIFIER;
-					} 
 <DEFINING3>")"		{
 						prepro_lval.str=yytext;
 						BEGIN DEFINING4;
@@ -392,8 +415,9 @@ NUM_BLCK 0|([1-9][0-9]*)
 													// e.g. in #define texture_clamp(tex,texc) texture(tex,texc)
 													// this would be texture(tex,texc)
 					// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
+						return WHITESPACE;
 					}
-<PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT,IN_MACRO_DEFINITION>\n	{
+<PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT>\n	{
 				prepro_lval.str=yytext;
 				BEGIN INITIAL;
 				return EOL;
@@ -415,10 +439,10 @@ NUM_BLCK 0|([1-9][0-9]*)
 		}
 
 <INITIAL>^. {
-		current_state=YY_START;
-	if(inActiveBlock())
-		Write();
-	}
+				current_state=YY_START;
+				if(inActiveBlock())
+					Write();
+			}
 
 
 <INITIAL>^\n {
@@ -529,7 +553,7 @@ vector<string> GetPreprocessorFilenamesUtf8()
 	}
 	return newvec;
 }
-void preprocess(const char *filenameUtf8, map<string, string> defines)
+bool preprocess(const char *filenameUtf8, map<string, string> defines)
 {
 	ClearParserState();
 	BEGIN INITIAL;
@@ -547,4 +571,5 @@ void preprocess(const char *filenameUtf8, map<string, string> defines)
 	newfile(filenameUtf8);
 	//	prepro__scan_string(newsrc.c_str());
 	prepro_parse();
+	return !preproError;
 }

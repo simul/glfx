@@ -98,6 +98,20 @@ prog : prog tok
 	| line_statement
 	{
 	}
+	| LAYOUT cs_layout_spec IDENTIFIER SC
+	{
+		currentCsLayout="";
+		currentCsLayout+=$1.strs[0];
+		currentCsLayout+=$2.strs[0];
+		currentCsLayout+=$3.strs[0];
+		currentCsLayout+=$4.strs[0];
+	}
+	| LAYOUT normal_layout_spec
+	{
+		string str=$1.strs[0]+" "+$2.strs[0];
+		glfxWrite(str.c_str());
+		glfxPopState();
+	}
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
@@ -168,9 +182,9 @@ prog : prog tok
 		}
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 	}
-	| line_statement
+	/*| line_statement
 	{
-	}
+	}*/
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
 		currentCsLayout="";
@@ -247,6 +261,24 @@ layout_params:LP NUM COMMA NUM COMMA NUM RP
 	ret+=")";
 	$$.strs[0]=ret;
 };
+cs_layout_spec: LP cs_layout RP
+		  {
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		  };
+normal_layout_spec: LP IDENTIFIER RP
+		 {
+				$$.layoutType=NORMAL_LAYOUT_TYPE;
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		 };
+cs_layout: layout_el COMMA layout_el COMMA layout_el
+		  {
+				$$.layoutType=CS_LAYOUT_TYPE;
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+		  };
+layout_el: IDENTIFIER EQUALS NUM
+		   {
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		   };
 lex_fx :
 { /* Switch lex to fx scanning */
 	read_shader=false;
@@ -259,34 +291,22 @@ shader_fx :
     gLexPassthrough=false;
 };
 
-number_or_filename : NUM
-					 {
-						 $$.num=$1.num;
-						 $$.strs[0]=$1.strs[0];
-					 }
-					 | QUOTED_STRING
-					 {
-						 $$.strs[0]=$1.strs[0];
-					 };
 lex_passthrough :
 { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
-}
-;
+};
 
 read_block : { /* Read next block */
     $$.strs[0]= glfxreadblock('{', '}');
     $$.lineno= glfxget_lineno();
-}
-;
-
+};
+/*
 samplerClass : IDENTIFIER {
     $$.strs[0]=$1.strs[0];
 }
     | {
     $$.strs[0]="";
-}
-;
+};
 
 samplerVars : samplerVars COMMA samplerVar {
     $$.texNames=$1.texNames;
@@ -302,8 +322,7 @@ samplerVars : samplerVars COMMA samplerVar {
     sv.binding=$1.strs[0];
     sv.name=$1.strs[1];
     $$.texNames->push_back(sv);
-}
-;
+};
 
 samplerVar : IDENTIFIER location {
     ostringstream prepend;
@@ -364,7 +383,6 @@ samplerParam : IDENTIFIER EQUALS IDENTIFIER {
     $$.num=$3.num;
     $$.samplerParamType=SAMPLER_PARAM_INT;
 };
-
 num_list : num_list COMMA NUM
 	{
 		$$.vars=$1.vars;
@@ -378,8 +396,8 @@ num_list : num_list COMMA NUM
 		var.identifier=$1.strs[0];
 		$$.vars = new vector<YYSTYPE::variable>;
 		$$.vars->push_back(var);
-	}
-;
+	};
+*/
 param_declaration_list : param_declaration_list COMMA param_declaration
 	{
 		$$.vars=$1.vars;
@@ -404,8 +422,7 @@ param_declaration_list : param_declaration_list COMMA param_declaration
     |
 	{
 		$$.vars = new vector<YYSTYPE::variable>;
-	}
-;
+	};
 
 param_declaration : param opt_sq location
 {
@@ -451,7 +468,7 @@ param : opt_storage IDENTIFIER IDENTIFIER
 		$$.strs[1]		= type		;
 		$$.strs[2]		= id		;
 	};
-	opt_storage : STORAGEQ
+opt_storage : STORAGEQ
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -728,12 +745,12 @@ shader_lvalue : SHADER_TYPE LP NUM RP
 					$$.num	=$3.num;
 					$$.sType=$1.sType;
 				};
-shader_variable:NUM COMMA IDENTIFIER
+/*shader_variable:NUM COMMA IDENTIFIER
 				{
 					$$.strs[0]=$3.strs[0];
 					$$.num=$1.num;
 					$$.lineno=$3.lineno;
-				};
+				};*/
 shader_rvalue : IDENTIFIER LP RP shader_layout
 				{
 					$$.lineno=$1.lineno;

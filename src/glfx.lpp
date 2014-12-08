@@ -7,6 +7,7 @@ the last is C code to be copied verbatim to the output.
 */
 %option yylineno
 %option noyywrap
+%option stack
 %option fast
 %option ecs
 %option prefix="glfx"
@@ -50,6 +51,10 @@ the last is C code to be copied verbatim to the output.
     using namespace glfxParser;
 	static int brace=0;
 	#pragma optimize("",off)
+	void glfxWrite(const char *txt)
+	{
+		gEffect->m_sharedCode<<txt;
+	}
 %}
 
 %x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE
@@ -61,28 +66,30 @@ STR_BLCK \"[^"\n]*\"
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
-<INITIAL>"patch"|"centroid"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.strs[0]=yytext; return STORAGET;}*/
+<INITIAL>"patch"|"centroid"						if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.strs[0]=yytext; return STORAGET;}*/
 %%
 <INITIAL>"#"define								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext; 
+														glfxWrite(yytext); 
 													BEGIN IN_DEFINE;
 													return DEFINE;
 												}
 <IN_DEFINE>[^\n]+								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext; 
+														glfxWrite(yytext); 
 													return MACRO_DEFINITION;
 												}
 <IN_DEFINE>\n									{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext; 
+														glfxWrite(yytext); 
 													BEGIN INITIAL;
 													return EOL;
 												}
-<INITIAL>CS_LAYOUT								{
+<INITIAL>"layout"								{
+													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
+													BEGIN IN_SHADER_COMPILE;
 													return LAYOUT;
 												}
 <INITIAL>"program"								glfxlval.boolean=false;		return PROGRAM;
@@ -110,12 +117,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
 													return INCLUDE;
 												}
-<INITIAL>"vs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
-<INITIAL>"tc"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
-<INITIAL>"te"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
-<INITIAL>"gs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
-<INITIAL>"fs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
-<INITIAL>"cs"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
+<INITIAL>"vs"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
+<INITIAL>"tc"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=TESSELATION_CONTROL_SHADER; return SHADER_TYPE;}
+<INITIAL>"te"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; return SHADER_TYPE;}
+<INITIAL>"gs"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=GEOMETRY_SHADER; return SHADER_TYPE;}
+<INITIAL>"fs"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=FRAGMENT_SHADER; return SHADER_TYPE;}
+<INITIAL>"cs"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=COMPUTE_SHADER; return SHADER_TYPE;}
 
 <INITIAL>"RasterizerState"						{
 													glfxlval.lineno=yylineno;
@@ -143,7 +150,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetVertexShader"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=VERTEX_SHADER; 					
@@ -154,7 +161,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetHullShader"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=TESSELATION_CONTROL_SHADER;
@@ -165,7 +172,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetDomainShader"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
@@ -176,7 +183,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetGeometryShader"					{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=GEOMETRY_SHADER; 				
@@ -187,7 +194,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetPixelShader"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
@@ -198,7 +205,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetFragmentShader"					{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
@@ -209,7 +216,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetComputeShader"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sType=COMPUTE_SHADER;	 				
@@ -220,7 +227,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetRasterizerState"					{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sCommand=SetRasterizerState;
@@ -229,7 +236,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetDepthStencilState"					{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sCommand=SetDepthStencilState;
@@ -238,7 +245,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"SetBlendState"						{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.sCommand=SetBlendState;
@@ -269,24 +276,44 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.fnum=(float)atof(yytext);
 													return FLOAT;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"("			return LP;
-<IN_SHADER_COMPILE,IN_RENDER_STATE>")"			return RP;
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"["			return LEFT_SQ;
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"			return RIGHT_SQ;
-<IN_SHADER_COMPILE,IN_RENDER_STATE>","			return COMMA;
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"="			return EQUALS;
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"("			{
+													glfxlval.strs[0]=yytext;
+													return LP;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>")"			{
+													glfxlval.strs[0]=yytext;
+													return RP;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"["			{
+													glfxlval.strs[0]=yytext;
+													return LEFT_SQ;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"			{
+													glfxlval.strs[0]=yytext;
+													return RIGHT_SQ;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>","			{
+													glfxlval.strs[0]=yytext;
+													return COMMA;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE>"="			{
+													glfxlval.strs[0]=yytext;
+													return EQUALS;
+												}
 <IN_SHADER_COMPILE>";"							{
+													glfxlval.strs[0]=yytext;
 													BEGIN INITIAL;
 													return SC;
 												}
 <IN_RENDER_STATE>";"							{
+													glfxlval.strs[0]=yytext;
 													if(!brace)
 														BEGIN INITIAL;
 													return SC;
 												}
 <INITIAL>{STR_BLCK}								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.lineno=yylineno;
@@ -296,7 +323,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>{HEX_BLCK}								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.lineno=yylineno;
@@ -307,7 +334,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>{NUM_BLCK}								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.lineno=yylineno;
@@ -316,14 +343,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														return NUM;
 													}
 												}
-<INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
-<INITIAL>"in"|"out"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
-<INITIAL>"gl_FragDepth"							if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
-<INITIAL>"true"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=1; return NUM;}
-<INITIAL>"false"								if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {glfxlval.num=0; return NUM;}
+<INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.fnum=(float)atof(yytext); return FLOAT;}
+<INITIAL>"in"|"out"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return STORAGEQ;}
+<INITIAL>"gl_FragDepth"							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; return GL_FRAGDEPTH;}
+<INITIAL>"true"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=1; return NUM;}
+<INITIAL>"false"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=0; return NUM;}
 <INITIAL>{ID_BLCK}								{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.lineno=yylineno;
@@ -333,7 +360,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>{ID_BLCK}"::"{ID_BLCK}					{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														glfxlval.lineno=yylineno;
@@ -341,11 +368,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														return IDENTIFIER;
 													}
 												}
-<INITIAL>"("									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LP;}
-<INITIAL>")"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RP;}
+<INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {return LP;}
+<INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {return RP;}
 <INITIAL>"{"									{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														if(read_shader)
@@ -358,31 +385,31 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"}"									{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext;
+														glfxWrite(yytext);
 													else
 													{
 														return RB;
-													}//"["[\t ]*"]"						if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EMPTY_ARRAY_BRACKETS;}
+													}//"["[\t ]*"]"						if(gLexPassthrough) glfxWrite(yytext); else {return EMPTY_ARRAY_BRACKETS;}
 												}
-<INITIAL>"["									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return LEFT_SQ;}
-<INITIAL>"]"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return RIGHT_SQ;}
-<INITIAL>","									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COMMA;}
-<INITIAL>"="									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return EQUALS;}
-<INITIAL>";"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return SC;}
-<INITIAL>":"									if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {return COLON;}
+<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {return LEFT_SQ;}
+<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {return RIGHT_SQ;}
+<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {return COMMA;}
+<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {return EQUALS;}
+<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return SC;}
+<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return COLON;}
 <INITIAL,IN_RENDER_STATE>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext; // Single line comment (with possible continuation)
+														glfxWrite(yytext); // Single line comment (with possible continuation)
 												}
 <INITIAL,IN_RENDER_STATE>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
 													if(gLexPassthrough)
-														gEffect->m_sharedCode<<yytext; // Multiline comment
+														glfxWrite(yytext); // Multiline comment
 												}
 <INITIAL>[\t\n ]								{
-													if(gLexPassthrough) gEffect->m_sharedCode<<yytext;
+													if(gLexPassthrough) glfxWrite(yytext);
 												}
 <IN_RENDER_STATE>[\t\n ]						{}// Without this line, the yylineno would get out of whack.
-<INITIAL>.										if(gLexPassthrough) gEffect->m_sharedCode<<yytext; else {errLex(yytext);}
+<INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE>"{"					{
 													glfxlval.strs[0]=yytext;
 													brace++;
@@ -408,6 +435,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													return SHADER_LINE;
 												}
 %%
+
+void glfxPopState()
+{
+	yy_pop_state();
+}
 void resetGlfxParse()
 {
 	brace=0;

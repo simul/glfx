@@ -33,6 +33,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 using namespace std;
 using namespace glfxParser;
+/// Values that represent LayoutType.
+enum LayoutType
+{
+    CS_LAYOUT_TYPE,
+	NORMAL_LAYOUT_TYPE
+};
 
 /// Values that represent SamplerParam.
 enum SamplerParam
@@ -116,6 +122,7 @@ struct glfxstype
         ShaderType			sType;
 		ShaderCommand		sCommand;
         RegisterParamType	rType;
+		LayoutType			layoutType;
     };
 
     // Carrying these around is bad luck, or more like bad performance. But whatever...
@@ -156,3 +163,4 @@ extern void resetGlfxParse();
 extern void glfxWarning(const char* e);
 extern bool is_equal(const string& a, const char * b);
 
+extern void glfxPopState();

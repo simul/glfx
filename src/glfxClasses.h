@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include <sstream>
 #include <vector>
 
+void glfxWrite(const char *);
 int glfxparse();
 int glfxlex();
 typedef unsigned GLenum;

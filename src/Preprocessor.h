@@ -31,7 +31,7 @@ struct MacroDefinition
 extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName);
 extern void (*prepro_close)(FILE *f);
 extern std::ostringstream preproOutput;
-extern void preprocess(const char *file, std::map<std::string, std::string> defines = std::map<std::string, std::string>());
+extern bool preprocess(const char *file, std::map<std::string, std::string> defines = std::map<std::string, std::string>());
 // Are we in an active  #if #endif block?
 extern bool inActiveBlock();
 extern std::vector<std::string> GetPreprocessorFilenamesUtf8();
@@ -39,10 +39,10 @@ extern void Write(const char *);
 extern void WriteLineNumber();
 extern void WriteLineNumber(int);
 extern bool IsDefined(std::string name);
-extern void DefineMacro(std::string name,std::string params,const std::vector<std::string> definition);
+extern void DefineMacro(std::string name,std::string params,const std::vector<std::string> &definition);
 extern const MacroDefinition *GetMacro(std::string name);
 extern void UndefineMacro(std::string name);
-extern std::string ProcessMacro(std::string id,std::string params);
+extern std::string ProcessMacro(std::string id,const std::vector<std::string> &params);
 extern void ClearParserState();
 extern void Skip();
 #endif
