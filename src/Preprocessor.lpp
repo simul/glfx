@@ -198,7 +198,7 @@
 	}
 %}
 
-ID_BLCK [a-zA-Z_\.:][a-zA-Z0-9_\.:]*
+ID_BLCK [a-zA-Z_:][a-zA-Z0-9_:]*
 NUM_BLCK 0|([1-9][0-9]*)
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
@@ -312,7 +312,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 								prepro_lval.str = yytext;
 								return RIGHT_BRACKET;
 							}
-<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+-=!~]	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+-=!~\.]	{
 								prepro_lval.str=yytext;
 								return SYMBOL;
 							}

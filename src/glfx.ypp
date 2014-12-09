@@ -265,11 +265,27 @@ cs_layout_spec: LP cs_layout RP
 		  {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		  };
-normal_layout_spec: LP IDENTIFIER RP
+normal_layout_spec: LP tx_layout RP
 		 {
 				$$.layoutType=NORMAL_LAYOUT_TYPE;
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		 };
+tx_layout: tx_layout COMMA layout_s
+				{
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
+					| layout_s
+				{
+				$$.strs[0]=$1.strs[0];
+				};
+layout_s: layout_el
+	   {
+				$$.strs[0]=$1.strs[0];
+	   }
+		   | IDENTIFIER
+	   {
+				$$.strs[0]=$1.strs[0];
+	   };
 cs_layout: layout_el COMMA layout_el COMMA layout_el
 		  {
 				$$.layoutType=CS_LAYOUT_TYPE;
@@ -976,7 +992,7 @@ void errSyn(const char* e)
     ostringstream errMsg;
 	int lex_linenumber=glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx syntax error: \""<<glfxget_text()<<"\" "<<e;
+    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx syntax error: \""<<glfxget_text()<<"\" "<<e<<" in "<<glfxGetStateText();
     throw std::runtime_error(errMsg.str());
 }
 
@@ -987,6 +1003,6 @@ void errSem(const string& str, int lex_linenumber)
     if(lex_linenumber==-1)
         lex_linenumber= glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filenumber<<"("<<true_linenumber<<") : psfx error: "<<str;
+    errMsg<<current_filenumber<<"("<<true_linenumber<<") : glfx error: "<<str<<" in "<<glfxGetStateText();
     throw errMsg.str();
 }

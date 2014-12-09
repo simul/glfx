@@ -71,7 +71,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"#"define								{
 													if(gLexPassthrough)
 														glfxWrite(yytext); 
-													BEGIN IN_DEFINE;
+													glfxPushState(IN_DEFINE);
 													return DEFINE;
 												}
 <IN_DEFINE>[^\n]+								{
@@ -82,14 +82,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_DEFINE>\n									{
 													if(gLexPassthrough)
 														glfxWrite(yytext); 
-													BEGIN INITIAL;
+													glfxPopState();
 													return EOL;
 												}
 <INITIAL>"layout"								{
 													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
-													BEGIN IN_SHADER_COMPILE;
+													glfxPushState(IN_SHADER_COMPILE);
 													return LAYOUT;
 												}
 <INITIAL>"program"								glfxlval.boolean=false;		return PROGRAM;
@@ -101,7 +101,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"interface"							glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return INTERFACE;
 <INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SAMPLER;
 <INITIAL>"profile"								{
-													BEGIN IN_SHADER_COMPILE;
+													glfxPushState(IN_SHADER_COMPILE);
 													return PROFILE;
 												}
 <INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE>"#line"	{
@@ -127,25 +127,25 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"RasterizerState"						{
 													glfxlval.lineno=yylineno;
 													renderState=RASTERIZER_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"DepthStencilState"					{
 													glfxlval.lineno=yylineno;
 													renderState=DEPTHSTENCIL_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"BlendState"							{
 													glfxlval.lineno=yylineno;
 													renderState=BLEND_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"SamplerState"							{
 													glfxlval.lineno=yylineno;
 													renderState=SAMPLER_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 <INITIAL>"SetVertexShader"						{
@@ -155,7 +155,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=VERTEX_SHADER; 					
 														glfxlval.sCommand=SetVertexShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -166,7 +166,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=TESSELATION_CONTROL_SHADER;
 														glfxlval.sCommand=SetHullShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -177,7 +177,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
 														glfxlval.sCommand=SetDomainShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -188,7 +188,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=GEOMETRY_SHADER; 				
 														glfxlval.sCommand=SetGeometryShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -199,7 +199,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
 														glfxlval.sCommand=SetFragmentShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -210,7 +210,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
 														glfxlval.sCommand=SetFragmentShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -221,7 +221,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													{
 														glfxlval.sType=COMPUTE_SHADER;	 				
 														glfxlval.sCommand=SetComputeShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -253,9 +253,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 												}
 
-<INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
-<INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
-<INITIAL>"FragmentShader"						{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
+<INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
+<INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
+<INITIAL>"FragmentShader"						{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
 <IN_SHADER_COMPILE>"CompileShader"				{
 													glfxlval.lineno=yylineno;
 													return COMPILE_SHADER;
@@ -302,13 +302,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <IN_SHADER_COMPILE>";"							{
 													glfxlval.strs[0]=yytext;
-													BEGIN INITIAL;
+													glfxPopState();
 													return SC;
 												}
 <IN_RENDER_STATE>";"							{
 													glfxlval.strs[0]=yytext;
 													if(!brace)
-														BEGIN INITIAL;
+														glfxPopState();
 													return SC;
 												}
 <INITIAL>{STR_BLCK}								{
@@ -378,7 +378,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														if(read_shader)
 														{
 															brace++;
-															BEGIN IN_SHADER;
+															glfxPushState(IN_SHADER);
 														}
 														return LB;
 													}
@@ -420,7 +420,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													brace--;
 													if(!brace)
 													{
-														BEGIN INITIAL;
+														glfxPopState();
 														return RB;
 													}
 													return RB;
@@ -435,16 +435,43 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													return SHADER_LINE;
 												}
 %%
-
+void glfxPushState(int s)
+{
+	yy_push_state(s);
+}
 void glfxPopState()
 {
-	yy_pop_state();
+	if(yy_start_stack_ptr<=0)
+		glfxerror("Stack underflow");
+	else
+		yy_pop_state();
+}
+void glfxPopAllStates()
+{
+	while(yy_start_stack_ptr>0)
+		yy_pop_state();
+}
+const char *glfxGetStateText()
+{
+	switch(YYSTATE)
+	{
+	case IN_SHADER:
+		return "shader";
+	case IN_DEFINE:
+		return "macro definition";
+	case IN_SHADER_COMPILE:
+		return "shader compile";
+	case IN_RENDER_STATE:
+		return "render state def";
+	default:
+		return "default state";
+	};
 }
 void resetGlfxParse()
 {
 	brace=0;
 	glfxset_lineno(1);
-	BEGIN INITIAL;
+	glfxPopAllStates();
 }
 
 void errLex(const char* tok)

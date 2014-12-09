@@ -163,4 +163,6 @@ extern void resetGlfxParse();
 extern void glfxWarning(const char* e);
 extern bool is_equal(const string& a, const char * b);
 
+extern void glfxPushState(int s);
 extern void glfxPopState();
+extern const char *glfxGetStateText();

@@ -5401,7 +5401,7 @@ YY_RULE_SETUP
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); 
-													BEGIN IN_DEFINE;
+													glfxPushState(IN_DEFINE);
 													return DEFINE;
 												}
 	YY_BREAK
@@ -5421,7 +5421,7 @@ YY_RULE_SETUP
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); 
-													BEGIN INITIAL;
+													glfxPopState();
 													return EOL;
 												}
 	YY_BREAK
@@ -5432,7 +5432,7 @@ YY_RULE_SETUP
 													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
-													BEGIN IN_SHADER_COMPILE;
+													glfxPushState(IN_SHADER_COMPILE);
 													return LAYOUT;
 												}
 	YY_BREAK
@@ -5480,7 +5480,7 @@ case 13:
 YY_RULE_SETUP
 #line 103 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
-													BEGIN IN_SHADER_COMPILE;
+													glfxPushState(IN_SHADER_COMPILE);
 													return PROFILE;
 												}
 	YY_BREAK
@@ -5542,7 +5542,7 @@ YY_RULE_SETUP
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=RASTERIZER_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 	YY_BREAK
@@ -5552,7 +5552,7 @@ YY_RULE_SETUP
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=DEPTHSTENCIL_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 	YY_BREAK
@@ -5562,7 +5562,7 @@ YY_RULE_SETUP
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=BLEND_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 	YY_BREAK
@@ -5572,7 +5572,7 @@ YY_RULE_SETUP
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=SAMPLER_STATE;
-													BEGIN IN_RENDER_STATE;
+													glfxPushState(IN_RENDER_STATE);
 													return RENDER_STATE_DECL;
 												}
 	YY_BREAK
@@ -5586,7 +5586,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=VERTEX_SHADER; 					
 														glfxlval.sCommand=SetVertexShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5601,7 +5601,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=TESSELATION_CONTROL_SHADER;
 														glfxlval.sCommand=SetHullShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5616,7 +5616,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=TESSELATION_EVALUATION_SHADER; 	
 														glfxlval.sCommand=SetDomainShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5631,7 +5631,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=GEOMETRY_SHADER; 				
 														glfxlval.sCommand=SetGeometryShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5646,7 +5646,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
 														glfxlval.sCommand=SetFragmentShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5661,7 +5661,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=FRAGMENT_SHADER; 				
 														glfxlval.sCommand=SetFragmentShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5676,7 +5676,7 @@ YY_RULE_SETUP
 													{
 														glfxlval.sType=COMPUTE_SHADER;	 				
 														glfxlval.sCommand=SetComputeShader;
-														BEGIN IN_SHADER_COMPILE;
+														glfxPushState(IN_SHADER_COMPILE);
 														return SHADER_COMMAND;
 													}
 												}
@@ -5723,17 +5723,17 @@ YY_RULE_SETUP
 case 36:
 YY_RULE_SETUP
 #line 256 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=VERTEX_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=VERTEX_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 257 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 258 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	BEGIN IN_SHADER_COMPILE; return DECL_SHADER;}
+{glfxlval.lineno=glfxlineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); return DECL_SHADER;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
@@ -5824,7 +5824,7 @@ YY_RULE_SETUP
 #line 303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
-													BEGIN INITIAL;
+													glfxPopState();
 													return SC;
 												}
 	YY_BREAK
@@ -5834,7 +5834,7 @@ YY_RULE_SETUP
 {
 													glfxlval.strs[0]=glfxtext;
 													if(!brace)
-														BEGIN INITIAL;
+														glfxPopState();
 													return SC;
 												}
 	YY_BREAK
@@ -5956,7 +5956,7 @@ YY_RULE_SETUP
 														if(read_shader)
 														{
 															brace++;
-															BEGIN IN_SHADER;
+															glfxPushState(IN_SHADER);
 														}
 														return LB;
 													}
@@ -6058,7 +6058,7 @@ YY_RULE_SETUP
 													brace--;
 													if(!brace)
 													{
-														BEGIN INITIAL;
+														glfxPopState();
 														return RB;
 													}
 													return RB;
@@ -7140,16 +7140,43 @@ void glfxfree (void * ptr )
 #line 437 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
-
+void glfxPushState(int s)
+{
+	yy_push_state(s);
+}
 void glfxPopState()
 {
-	yy_pop_state();
+	if(yy_start_stack_ptr<=0)
+		glfxerror("Stack underflow");
+	else
+		yy_pop_state();
+}
+void glfxPopAllStates()
+{
+	while(yy_start_stack_ptr>0)
+		yy_pop_state();
+}
+const char *glfxGetStateText()
+{
+	switch(YYSTATE)
+	{
+	case IN_SHADER:
+		return "shader";
+	case IN_DEFINE:
+		return "macro definition";
+	case IN_SHADER_COMPILE:
+		return "shader compile";
+	case IN_RENDER_STATE:
+		return "render state def";
+	default:
+		return "default state";
+	};
 }
 void resetGlfxParse()
 {
 	brace=0;
 	glfxset_lineno(1);
-	BEGIN INITIAL;
+	glfxPopAllStates();
 }
 
 void errLex(const char* tok)

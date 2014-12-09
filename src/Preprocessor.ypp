@@ -297,6 +297,10 @@ rvalue: IDENTIFIER optional_params
 				string &v=$3.str;
 				$$.str=r+s+v;
 			 }
+				| LEFT_BRACKET rvalue RIGHT_BRACKET
+			 {
+				 $$.str=$1.str+$2.str+$3.str;
+			 }
 			 |
 			 NUMBER
 			 {
