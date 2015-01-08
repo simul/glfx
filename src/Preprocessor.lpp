@@ -237,12 +237,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 								}
 <IFILE>[^ \t\n\">]+ {
 						int c=0;
+						string add;
 						/*handle filename up to the closing quote, >, or end of line*/
 						{
-							while((c = yyinput()) && c != '\n'&&c>=0) ;
+							while((c = yyinput()) && c != '\n'&&c>=0)
+							{
+								add+=c;
+							}
 						}
-					
-						if(!newfile(yytext))
+						const char *fn=yytext;
+						if(!newfile(fn))
 						{
 							ClearMacros();
 							yyterminate(); /* no such file */
@@ -480,7 +484,7 @@ int newfile(const char *fn)
 	/* die if no file or no room */
 	if(!f)
 	{
-		prepro_error(fn);
+		prepro_error((string("File not found ")+fn).c_str());
 		return 0;
 	}
 	BufferStack *bs		=new BufferStack;

@@ -138,6 +138,16 @@ namespace glfxParser
 		GLenum	AddressV;
 		GLenum	AddressW;
 	};
+	struct StructMember
+	{
+		string type;
+		string name;
+		string semantic;
+	};
+	struct Struct
+	{
+		vector< StructMember>     m_structMembers;
+	};
 	class Sampler
 	{
 		map<string, string>     m_stringParams;

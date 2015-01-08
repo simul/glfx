@@ -57,7 +57,7 @@ the last is C code to be copied verbatim to the output.
 	}
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -73,6 +73,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext); 
 													glfxPushState(IN_DEFINE);
 													return DEFINE;
+												}
+<INITIAL>"[numthreads("{NUM_BLCK}","{NUM_BLCK}","{NUM_BLCK}")]" {
+													glfxlval.strs[0]=yytext;
+													return CS_LAYOUT;
 												}
 <IN_DEFINE>[^\n]+								{
 													if(gLexPassthrough)
@@ -92,6 +96,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_SHADER_COMPILE);
 													return LAYOUT;
 												}
+<INITIAL>"struct"								{
+													glfxPushState(IN_STRUCT);
+													return STRUCT;
+												}
+<INITIAL>"SV_DispatchThreadID"					glfxlval.strs[0]=yytext;		return INPUT_SEMANTIC;
+<INITIAL>"gl_GlobalInvocationID"				glfxlval.strs[0]=yytext;		return INPUT_SEMANTIC;
 <INITIAL>"program"								glfxlval.boolean=false;		return PROGRAM;
 <INITIAL>"stages"								glfxlval.boolean=true;		return PROGRAM;
 <INITIAL>"technique"							glfxlval.boolean=false;		return TECHNIQUE;
@@ -260,7 +270,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno;
 													return COMPILE_SHADER;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>{ID_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_STRUCT>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
@@ -305,7 +315,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPopState();
 													return SC;
 												}
-<IN_RENDER_STATE>";"							{
+<IN_RENDER_STATE,IN_STRUCT>";"							{
 													glfxlval.strs[0]=yytext;
 													if(!brace)
 														glfxPopState();
@@ -397,6 +407,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {return EQUALS;}
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return SC;}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return COLON;}
+<IN_STRUCT>":"									return COLON;
 <INITIAL,IN_RENDER_STATE>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
@@ -410,7 +421,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <IN_RENDER_STATE>[\t\n ]						{}// Without this line, the yylineno would get out of whack.
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
-<IN_SHADER,IN_RENDER_STATE>"{"					{
+<IN_SHADER,IN_RENDER_STATE,IN_STRUCT>"{"		{
 													glfxlval.strs[0]=yytext;
 													brace++;
 													return LB;
@@ -425,7 +436,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 													return RB;
 												}
-<IN_RENDER_STATE>"}"							{
+<IN_RENDER_STATE,IN_STRUCT>"}"					{
 													glfxlval.strs[0]=yytext;
 													brace--;
 													return RB;

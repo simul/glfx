@@ -427,7 +427,11 @@ void prepro_error(const char *errmsg)
     ostringstream errMsg;
 	int lex_linenumber=prepro_get_lineno();
 	int true_linenumber=lex_linenumber;//+last_linenumber-global_linenumber;
-    errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< prepro_get_text()<<"\" Preprocessor "<<errmsg;
+	const char *txt=prepro_get_text();
+	if(*txt)
+		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< txt<<"\" Preprocessor "<<errmsg;
+	else
+		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \Preprocessor "<<errmsg;
 	std::cerr<<errMsg.str().c_str()<<std::endl;
   //  throw std::runtime_error(errMsg.str());
 	preproError=true;

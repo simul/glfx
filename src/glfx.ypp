@@ -31,6 +31,7 @@
     static void errSyn(const char *e);
     static void errSem(const string& str, int line=-1);
 	RasterizerState buildRasterizerState;
+	Struct buildStruct;
 	BlendState buildBlendState;
 	DepthStencilState buildDepthStencilState;
 	SamplerState buildSamplerState;
@@ -77,9 +78,9 @@
 %}
 
 %token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token	LP RP LB RB SC COMMA COLON EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
-%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER
-%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE
+%token	LP RP LB RB SC COMMA COLON INPUT_SEMANTIC EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
+%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT INPUT_SEMANTIC
 
 %%
 
@@ -98,6 +99,10 @@ prog : prog tok
 	| line_statement
 	{
 	}
+	| CS_LAYOUT
+	{
+		currentCsLayout=$1.strs[0];
+	}
 	| LAYOUT cs_layout_spec IDENTIFIER SC
 	{
 		currentCsLayout="";
@@ -114,6 +119,23 @@ prog : prog tok
 	}
 	| DEFINE MACRO_DEFINITION EOL
 	{
+	}
+	| STRUCT IDENTIFIER LB struct_members RB SC
+	{
+		Struct *rs=new Struct;
+		*rs=buildStruct;
+		string name=$2.strs[0];
+		gEffect->m_structs[name]=rs;
+		// Set to default:
+		buildStruct=Struct();
+		gEffect->m_sharedCode<<"struct "<<$2.strs[0]<<"\n{\n";
+		for(int i=0;i<rs->m_structMembers.size();i++)
+		{
+			const StructMember &m=rs->m_structMembers[i];
+			gEffect->m_sharedCode<<m.type<<" "<<m.name<<";\n";
+		
+		}
+		gEffect->m_sharedCode<<"};\n"<<endl;
 	}
 	| RENDER_STATE_DECL IDENTIFIER LB render_state_list RB SC
 	{
@@ -200,18 +222,37 @@ prog : prog tok
 		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
 			string type(it->type);
+			map<string,Struct*>::const_iterator u=gEffect->m_structs.find(type);
 			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
 			int lineno;
-			if(varType!=gEffect->m_interfaces.end())
+			if(u!=gEffect->m_structs.end())
+			{
+				const Struct *s=u->second;
+				for(int i=0;i<s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					//shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
+					shaderCode<<it->storage<<' '<<m.type<<' '<<m.name<<';'<<endl;
+				}
+				continue;
+			}
+			else if(varType!=gEffect->m_interfaces.end())
 			{
 				type+=varType->second.id;
 				lineno=varType->second.atLine;
 			}
 			else
 				lineno=$1.lineno;
-		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
-			shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-			shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';'<<endl;
+			if(it->semantic.length()>0)
+			{
+				shaderCode<<"#define "<<it->identifier<<" "<<it->semantic<<endl;
+			}
+			else
+			{
+			// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
+				shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
+				shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';'<<endl;
+			}
 		}
 		delete $5.vars;
 		std::string shaderName=$4.strs[0];
@@ -422,6 +463,7 @@ param_declaration_list : param_declaration_list COMMA param_declaration
 		var.storage=$3.strs[0];
 		var.type=$3.strs[1];
 		var.identifier=$3.strs[2];
+		var.semantic=$3.strs[4];
     
 		$$.vars->push_back(var);
 	}
@@ -431,6 +473,7 @@ param_declaration_list : param_declaration_list COMMA param_declaration
 		var.storage=$1.strs[0];
 		var.type=$1.strs[1];
 		var.identifier=$1.strs[2];
+		var.semantic=$1.strs[4];
     
 		$$.vars = new vector<YYSTYPE::variable>;
 		$$.vars->push_back(var);
@@ -443,6 +486,7 @@ param_declaration_list : param_declaration_list COMMA param_declaration
 param_declaration : param opt_sq location
 {
     ostringstream prepend;
+	string semantic;
     switch($3.rType)
 	{
     case REGISTER_INT:
@@ -450,6 +494,9 @@ param_declaration : param opt_sq location
         break;
     case REGISTER_NAME:
         prepend<<"layout(location="<<$3.strs[0]<<") ";
+        break;
+    case SEMANTIC:
+		semantic=$3.strs[0];
         break;
     }
     prepend<<$1.strs[0];
@@ -464,6 +511,7 @@ param_declaration : param opt_sq location
 
     $$.strs[3]=$2.strs[0];
     $$.strs[3]+=$3.strs[0];
+    $$.strs[4]=semantic;
 };
 
 opt_sq: LEFT_SQ RIGHT_SQ
@@ -496,6 +544,11 @@ location : COLON NUM
 	{
 		$$.num=$2.num;
 		$$.rType=REGISTER_INT;
+	}
+    | COLON INPUT_SEMANTIC
+	{
+		$$.strs[0]=$2.strs[0];
+		$$.rType=SEMANTIC;
 	}
     | COLON IDENTIFIER
 	{
@@ -816,7 +869,35 @@ read_parenthesis :
 	{ /* read parenthesis */
 		$$.strs[0]=glfxreadblock('(', ')');
 	};
-
+struct_member : IDENTIFIER IDENTIFIER optional_semantic SC
+					   {
+							$$.lineno		=$3.lineno;
+							string name		=$2.strs[0];
+							string type		=$1.strs[0];
+							string sem		=$3.strs[0];
+							StructMember s;
+							s.type		=type;
+							s.semantic	=sem;
+							s.name		=name;
+							buildStruct.m_structMembers.push_back(s);
+					}
+optional_semantic: COLON IDENTIFIER
+					{
+						$$.strs[0]		=$2.strs[0];
+					}
+					|
+					{
+						$$.strs[0]="";
+					}
+struct_members: struct_members struct_member
+					{
+						$$.lineno		=$2.lineno;
+					}
+					|
+					struct_member
+					{
+						$$.lineno		=$1.lineno;
+					};
 // render_state_list must pass up an array of commands. Each command has a name, a number, and a value.
 render_state_list : render_state_list render_state_command
 					{

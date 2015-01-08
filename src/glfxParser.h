@@ -53,7 +53,8 @@ enum RegisterParamType
 {
     REGISTER_NONE,
     REGISTER_INT,
-    REGISTER_NAME
+    REGISTER_NAME,
+	SEMANTIC
 };
 
 struct ShaderParameterType
@@ -126,7 +127,7 @@ struct glfxstype
     };
 
     // Carrying these around is bad luck, or more like bad performance. But whatever...
-    string strs[4];
+    string strs[5];
 };
 
 namespace glfxParser

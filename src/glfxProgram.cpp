@@ -88,12 +88,6 @@ unsigned Program::CompileAndLink(string& log) const
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
 	
     glLinkProgram(programId);
-	
-    for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
-	{
-        glDetachShader(programId, *it);
-        glDeleteShader(*it);
-    }
     
     if(res)
 	{
@@ -110,6 +104,12 @@ unsigned Program::CompileAndLink(string& log) const
 			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
 		}
 	}
+	
+    for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
+	{
+        glDetachShader(programId, *it);
+        glDeleteShader(*it);
+    }
 	
     log=sLog.str();
 

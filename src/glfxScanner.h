@@ -215,6 +215,7 @@ extern char *glfxtext;
 #define IN_DEFINE 2
 #define IN_SHADER_COMPILE 3
 #define IN_RENDER_STATE 4
+#define IN_STRUCT 5
 
 #endif
 
@@ -318,9 +319,9 @@ extern int glfxlex (void);
 #undef YY_DECL
 #endif
 
-#line 437 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 448 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
-#line 325 "src/glfxScanner.h"
+#line 326 "src/glfxScanner.h"
 #undef glfxIN_HEADER
 #endif /* glfxHEADER_H */
