@@ -349,7 +349,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPopState();
 													return SC;
 												}
-<IN_RENDER_STATE,IN_STRUCT>";"							{
+<IN_RENDER_STATE,IN_STRUCT>";"					{
 													glfxlval.strs[0]=yytext;
 													if(!brace)
 														glfxPopState();
