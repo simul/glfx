@@ -57,7 +57,7 @@ the last is C code to be copied verbatim to the output.
 	}
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -67,6 +67,30 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
 <INITIAL>"patch"|"centroid"						if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.strs[0]=yytext; return STORAGET;}*/
+/*
+<INITIAL>"uniform"								{
+													glfxPushState(IN_UNIFORM_DECL);
+													return UNIFORM;
+												}
+<IN_UNIFORM_DECL>"Texture2DMS"					{
+													glfxlval.num=TEXTURE2DMS;
+													return TEXTURE2DMS;
+												}
+<IN_UNIFORM_DECL>"<"							{
+													return LESS_THAN;
+												}
+<IN_UNIFORM_DECL>">"							{
+													return GRTR_THAN;
+												}
+<IN_UNIFORM_DECL>{ID_BLCK}						{
+													glfxlval.strs[0]=yytext;
+													return IDENTIFIER;
+												}
+<IN_UNIFORM_DECL>";"							{
+													glfxPopState();
+													return SC;
+												}
+*/
 %%
 <INITIAL>"#"define								{
 													if(gLexPassthrough)
@@ -114,6 +138,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_SHADER_COMPILE);
 													return PROFILE;
 												}
+
 <INITIAL>"RW_TEXTURE3D_FLOAT4"					{
 													glfxPushState(IN_TEXTURE_DECL);
 													return RW_TEXTURE3D_FLOAT4;

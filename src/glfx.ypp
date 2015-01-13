@@ -75,13 +75,21 @@
 	{
 		write_line_number_next=true;
 	}
+	static string GetLayoutForTemplateType(string s)
+	{
+		if(s==string("vec4"))
+		{
+			return "";
+		}
+		return "";
+	}
 %}
 
-%token 	SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token	LP RP LB RB SC COMMA COLON INPUT_SEMANTIC EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
-%token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
+%token UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token LP RP LB RB LESS_THAN GRTR_THAN SC COMMA COLON INPUT_SEMANTIC EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
+%token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT INPUT_SEMANTIC
-%token RW_TEXTURE3D_FLOAT4
+%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS
 %%
 
 prog : prog tok
@@ -98,6 +106,12 @@ prog : prog tok
 	}
 	| line_statement
 	{
+	}
+	| UNIFORM texture_type optional_templateval IDENTIFIER SC
+	{
+		ostringstream decl;
+		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$4.strs[0]<<";";
+		gEffect->m_sharedCode<<decl;
 	}
 	| CS_LAYOUT
 	{
@@ -303,6 +317,20 @@ prog : prog tok
 	{
 		$$.strs[0]=$1.strs[0];
 	};
+texture_type: TEXTURE2DMS
+	{
+		$$.num=$1.num;
+	};
+optional_templateval: LESS_THAN IDENTIFIER GRTR_THAN
+	{
+		$$.strs[0]=$2.strs[0];
+		$$.num=1;
+	}
+	|
+	{
+		$$.strs[0]="";
+		$$.num=0;
+	}
 layout_params:LP NUM COMMA NUM COMMA NUM RP
 {
 	std::string ret="(";
