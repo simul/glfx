@@ -87,7 +87,8 @@ extern int glfxdebug;
      EOL = 296,
      DECL_SHADER = 297,
      PROFILE = 298,
-     CS_LAYOUT = 299
+     CS_LAYOUT = 299,
+     RW_TEXTURE3D_FLOAT4 = 300
    };
 #endif
 

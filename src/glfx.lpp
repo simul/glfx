@@ -57,7 +57,7 @@ the last is C code to be copied verbatim to the output.
 	}
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL
 
 ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -113,6 +113,15 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"profile"								{
 													glfxPushState(IN_SHADER_COMPILE);
 													return PROFILE;
+												}
+<INITIAL>"RW_TEXTURE3D_FLOAT4"					{
+													glfxPushState(IN_TEXTURE_DECL);
+													return RW_TEXTURE3D_FLOAT4;
+												}
+<IN_TEXTURE_DECL>","			{
+													glfxlval.strs[0]=yytext;
+													glfxPopState();
+													return COMMA;
 												}
 <INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE>"#line"	{
 														glfxlval.lineno=yylineno;
@@ -270,7 +279,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno;
 													return COMPILE_SHADER;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_STRUCT>{ID_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
@@ -310,7 +319,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													return EQUALS;
 												}
-<IN_SHADER_COMPILE>";"							{
+<IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"			{
 													glfxlval.strs[0]=yytext;
 													glfxPopState();
 													return SC;

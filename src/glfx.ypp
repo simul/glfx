@@ -81,7 +81,7 @@
 %token	LP RP LB RB SC COMMA COLON INPUT_SEMANTIC EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token  LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT INPUT_SEMANTIC
-
+%token RW_TEXTURE3D_FLOAT4
 %%
 
 prog : prog tok
@@ -116,6 +116,18 @@ prog : prog tok
 		string str=$1.strs[0]+" "+$2.strs[0];
 		glfxWrite(str.c_str());
 		glfxPopState();
+	}
+	| RW_TEXTURE3D_FLOAT4 IDENTIFIER SC
+	{
+		string str="layout(rgba32f) uniform image3D ";
+		str+=$2.strs[0]+";";
+		glfxWrite(str.c_str());
+	}
+	| RW_TEXTURE3D_FLOAT4 IDENTIFIER COMMA
+	{
+		string str="layout(rgba32f) image3D ";
+		str+=$2.strs[0]+",";
+		glfxWrite(str.c_str());
 	}
 	| DEFINE MACRO_DEFINITION EOL
 	{
