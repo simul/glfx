@@ -71,6 +71,16 @@
 	{
 		const char *t=tt;
 		bool non_empty=false;
+		int num_lines=0;
+		while(*t)
+		{
+			if(*t=='\n')
+			{
+				num_lines++;
+			}
+			t++;
+		}
+		t=tt;
 		while(*t)
 		{
 			if(*t!='\n'&&*t!=' '&&*t!='\r'&&*t!='\t')
@@ -81,7 +91,7 @@
 			t++;
 		}
 		if(non_empty&&write_line_number_next)
-			WriteLineNumber();
+			WriteLineNumber(yylineno-num_lines);
 		current_state=YY_START;
 		preproOutput<<tt;
 	}

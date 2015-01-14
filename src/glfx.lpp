@@ -131,7 +131,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"technique"							glfxlval.boolean=false;		return TECHNIQUE;
 <INITIAL>"pass"									glfxlval.boolean=false;		return PASS;
 <INITIAL>"group"								glfxlval.boolean=false;		return GROUP;
-<INITIAL>"shader"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SHADER;
+<INITIAL>"shader"								{
+													glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SHADER;
+												}
 <INITIAL>"interface"							glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return INTERFACE;
 <INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	return SAMPLER;
 <INITIAL>"profile"								{
@@ -453,7 +455,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>[\t\n ]								{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
-<IN_RENDER_STATE>[\t\n ]						{}// Without this line, the yylineno would get out of whack.
+<IN_RENDER_STATE,IN_STRUCT>[\t\n ]				{}// Without this line, the yylineno would get out of whack.
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>"{"		{
 													glfxlval.strs[0]=yytext;

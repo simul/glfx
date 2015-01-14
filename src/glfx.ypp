@@ -239,9 +239,10 @@ prog : prog tok
 		currentCsLayout+=$1.strs[0];
 		currentCsLayout+=$3.strs[0];
 	}
-	// GL-style, e.g. shader VSMain(in type param,out type param)
+	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
 	{
+		std::string shaderName=$4.strs[0];
 		ostringstream shaderCode;
 		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
@@ -281,7 +282,6 @@ prog : prog tok
 			}
 		}
 		delete $5.vars;
-		std::string shaderName=$4.strs[0];
 		// Add definition and code
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<"void main()"<<endl<<$7.strs[0];
@@ -304,7 +304,7 @@ prog : prog tok
 	{
 		last_linenumber=$3.num;
 		current_filenumber=$4.num;
-		global_linenumber=$1.lineno;
+		global_linenumber=$1.lineno+1;// the line AFTER the #line directve.
 		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,last_linenumber);
 	}
 	ignore_line_statement: LINE NUM NUM
@@ -391,6 +391,11 @@ shader_fx :
 lex_passthrough :
 { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
+};
+
+function_content : LB statement_list RB { /* Read next block */
+    $$.strs[0]= $1.strs[0]+$2.strs[0]+$3.strs[0];
+    $$.lineno= glfxget_lineno();
 };
 
 read_block : { /* Read next block */
@@ -888,6 +893,52 @@ shader_layout_list : shader_layout_list COMMA layout
 				{
 					$$.strs[0]=$1.strs[0];
 				};
+statement_list: statement_list SC statement
+				{
+					$$.strs[0]=$1.strs[0]+";";
+					$$.strs[0]+=$3.strs[0];
+				}
+				|
+				statement
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+statement: expr optional_rhs
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
+				}
+optional_rhs: operator expr
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
+				}
+operator: EQUALS
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+expr: IDENTIFIER optional_params
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
+				}
+optional_params: LP param_list RP
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
+				 |
+				{
+					$$.strs[0]="";
+				}
+param_list: param_list COMMA expr
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
+				| expr
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+				|
+				{
+					$$.strs[0]="";
+				}
 
 layout : STORAGEQ read_parenthesis
 	{

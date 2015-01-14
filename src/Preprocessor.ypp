@@ -57,7 +57,7 @@
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifdef ")+id);
 //passthroughBlockStack.push_back(false);
-		//WriteLineNumber();
+		Skip();
 	}
 	void ifndef(string id)
 	{
@@ -65,7 +65,7 @@
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifndef ")+id);
 //		passthroughBlockStack.push_back(false);
-		//WriteLineNumber();
+		Skip();
 	}
 	bool hash_if(string id,Test test,int num=0)
 	{
