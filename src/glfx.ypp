@@ -243,6 +243,7 @@ prog : prog tok
     | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
 	{
 		std::string shaderName=$4.strs[0];
+		std::string returnType=$2.strs[0];
 		ostringstream shaderCode;
 		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
