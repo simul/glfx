@@ -86,10 +86,10 @@
 %}
 
 %token UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token LP RP LB RB LESS_THAN GRTR_THAN SC COMMA COLON INPUT_SEMANTIC EQUALS NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
+%token LP RP LB RB LESS_THAN GRTR_THAN SC COMMA COLON INPUT_SEMANTIC EQUALS DOT PLUS MINUS TIMES OVER NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
-%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT INPUT_SEMANTIC
-%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
+%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS KNOWN_TYPE
 %%
 
 prog : prog tok
@@ -148,14 +148,14 @@ prog : prog tok
 	}
 	| STRUCT IDENTIFIER LB struct_members RB SC
 	{
-		Struct *rs=new Struct;
-		*rs=buildStruct;
-		string name=$2.strs[0];
-		gEffect->m_structs[name]=rs;
+		Struct *rs					=new Struct;
+		*rs							=buildStruct;
+		string name					=$2.strs[0];
+		gEffect->m_structs[name]	=rs;
 		// Set to default:
-		buildStruct=Struct();
+		buildStruct					=Struct();
 		gEffect->m_sharedCode<<"struct "<<$2.strs[0]<<"\n{\n";
-		for(int i=0;i<rs->m_structMembers.size();i++)
+		for(int i=0;i<(int)rs->m_structMembers.size();i++)
 		{
 			const StructMember &m=rs->m_structMembers[i];
 			gEffect->m_sharedCode<<m.type<<" "<<m.name<<";\n";
@@ -240,7 +240,7 @@ prog : prog tok
 		currentCsLayout+=$3.strs[0];
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
-    | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP read_block lex_passthrough
+    | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP function_content lex_passthrough
 	{
 		std::string shaderName=$4.strs[0];
 		std::string returnType=$2.strs[0];
@@ -256,7 +256,7 @@ prog : prog tok
 			if(u!=gEffect->m_structs.end())
 			{
 				const Struct *s=u->second;
-				for(int i=0;i<s->m_structMembers.size();i++)
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
 					//shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
@@ -894,40 +894,87 @@ shader_layout_list : shader_layout_list COMMA layout
 				{
 					$$.strs[0]=$1.strs[0];
 				};
-statement_list: statement_list SC statement
+statement_list: statement_list statement
 				{
-					$$.strs[0]=$1.strs[0]+";";
-					$$.strs[0]+=$3.strs[0];
+					$$.strs[0]=$1.strs[0];
+					$$.strs[0]+=$2.strs[0];
 				}
 				|
 				statement
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-statement: expr optional_rhs
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
-				}
-optional_rhs: operator expr
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
-				}
-operator: EQUALS
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-expr: IDENTIFIER optional_params
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
-				}
-optional_params: LP param_list RP
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
-				 |
+				|
 				{
 					$$.strs[0]="";
 				}
+statement: expr SC 
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
+				}
+operator: EQUALS | DOT | PLUS | MINUS | TIMES | OVER
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+unary_operator: MINUS
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+expr:IDENTIFIER expr
+			{
+				$$.strs[0]=$1.strs[0]+$2.strs[0];
+			}
+		| expr params
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0];
+		}
+		|expr array_index
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0];
+		}
+		| initializer_list
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+		| unary_operator expr
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0];
+		}
+		| expr operator expr
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+		| IDENTIFIER
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+		| FLOAT
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+		| NUM
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+initializer_list: LB expr_list RB
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+expr_list: expr_list COMMA expr
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}| expr
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+array_index: LEFT_SQ expr RIGHT_SQ
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+params: LP param_list RP
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
 param_list: param_list COMMA expr
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];

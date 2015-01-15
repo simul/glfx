@@ -90,6 +90,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPopState();
 													return SC;
 												}
+<IN_SHADER>[^\n{}]*\n							{
+													glfxlval.strs[0]=yytext;
+													return SHADER_LINE;
+												}
 */
 %%
 <INITIAL>"#"define								{
@@ -306,46 +310,76 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno;
 													return COMPILE_SHADER;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
+<IN_SHADER>"vec2"	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>{NUM_BLCK}	{
+<IN_SHADER>";"									{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													return SC;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													return IDENTIFIER;
+												}
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													return NUM;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>{FLOAT_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{FLOAT_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.fnum=(float)atof(yytext);
 													return FLOAT;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"("			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"("			{
 													glfxlval.strs[0]=yytext;
 													return LP;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>")"			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>")"			{
 													glfxlval.strs[0]=yytext;
 													return RP;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"["			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"["			{
 													glfxlval.strs[0]=yytext;
 													return LEFT_SQ;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"]"			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"]"			{
 													glfxlval.strs[0]=yytext;
 													return RIGHT_SQ;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>","			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>","			{
 													glfxlval.strs[0]=yytext;
 													return COMMA;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE>"="			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"="			{
 													glfxlval.strs[0]=yytext;
 													return EQUALS;
 												}
+<IN_SHADER>"."			{
+													glfxlval.strs[0]=yytext;
+													return DOT;
+												} 
+<IN_SHADER>"+"			{
+													glfxlval.strs[0]=yytext;
+													return PLUS;
+												}  
+<IN_SHADER>"-"			{
+													glfxlval.strs[0]=yytext;
+													return MINUS;
+												}   
+<IN_SHADER>"*"			{
+													glfxlval.strs[0]=yytext;
+													return TIMES;
+												}    
+<IN_SHADER>"/"			{
+													glfxlval.strs[0]=yytext;
+													return OVER;
+												}    
 <IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"			{
 													glfxlval.strs[0]=yytext;
 													glfxPopState();
@@ -444,15 +478,15 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return SC;}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return COLON;}
 <IN_STRUCT>":"									return COLON;
-<INITIAL,IN_RENDER_STATE>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
+<INITIAL,IN_RENDER_STATE,IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
 												}
-<INITIAL,IN_RENDER_STATE>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
+<INITIAL,IN_RENDER_STATE,IN_SHADER>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Multiline comment
 												}
-<INITIAL>[\t\n ]								{
+<INITIAL,IN_SHADER>[\t\n ]								{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
 <IN_RENDER_STATE,IN_STRUCT>[\t\n ]				{}// Without this line, the yylineno would get out of whack.
@@ -476,10 +510,6 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													brace--;
 													return RB;
-												}
-<IN_SHADER>[^\n{}]*\n							{
-													glfxlval.strs[0]=yytext;
-													return SHADER_LINE;
 												}
 %%
 void glfxPushState(int s)
@@ -513,6 +543,7 @@ const char *glfxGetStateText()
 	default:
 		return "default state";
 	};
+	return "";
 }
 void resetGlfxParse()
 {
