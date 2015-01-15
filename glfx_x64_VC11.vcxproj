@@ -106,6 +106,7 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">win_bison.exe "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">src/PreprocessParser.cpp</Outputs>
     </CustomBuild>
+    <None Include="src\c_syntax.bnf" />
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
     <None Include="test\shaders\light_pass.glsl" />

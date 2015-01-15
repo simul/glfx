@@ -14,6 +14,9 @@ the last is C code to be copied verbatim to the output.
 %option outfile="src/glfxScanner.cpp" header-file="src/glfxScanner.h"
 
 %{
+
+	//#define YYFPRINTF glfxprintf
+	#define YYDEBUG 1
     #ifdef _MSC_VER
 		// MS's C++ compiler is more strict than gcc
 		// No unistd.h
@@ -37,6 +40,7 @@ the last is C code to be copied verbatim to the output.
     #include <iostream>
     #include <string>
     #include <sstream>
+#include <stdarg.h>
 
     #include "glfxParser.h"
     #include "glfxClasses.h"
@@ -55,11 +59,43 @@ the last is C code to be copied verbatim to the output.
 	{
 		gEffect->m_sharedCode<<txt;
 	}
+	int glfxprintf ( FILE * , const char * format_str, ... )
+	{
+		int size=strlen(format_str)+100;
+		std::string str;
+		va_list ap;
+		int n=-1;
+		while(n<0||n>=size)
+		{
+			str.resize(size);
+			va_start(ap, format_str);
+			//n = vsnprintf_s((char *)str.c_str(), size, size,format_str, ap);
+			n = vsnprintf((char *)str.c_str(), size,format_str, ap);
+			va_end(ap);
+			if(n> -1 && n < size)
+			{
+				str.resize(n);
+				break;
+			}
+			if (n > -1)
+				size=n+1;
+			else
+				size*=2;
+		}
+		std::cout<<str.c_str();
+		return strlen(str.c_str());
+	}
+	int stdReturn(int u)
+	{
+		glfxlval.lineno=yylineno;
+		glfxlval.strs[0]=yytext;
+		return u;
+	}
 %}
 
 %x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL
 
-ID_BLCK [a-zA-Z\.][a-zA-Z0-9_\.]*
+ID_BLCK [a-zA-Z][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
 HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*
 STR_BLCK \"[^"\n]*\"
@@ -77,10 +113,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													return TEXTURE2DMS;
 												}
 <IN_UNIFORM_DECL>"<"							{
-													return LESS_THAN;
+													return '<';
 												}
 <IN_UNIFORM_DECL>">"							{
-													return GRTR_THAN;
+													return '>';
 												}
 <IN_UNIFORM_DECL>{ID_BLCK}						{
 													glfxlval.strs[0]=yytext;
@@ -88,12 +124,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <IN_UNIFORM_DECL>";"							{
 													glfxPopState();
-													return SC;
+													return ';';
 												}
 <IN_SHADER>[^\n{}]*\n							{
 													glfxlval.strs[0]=yytext;
 													return SHADER_LINE;
 												}
+												 ',' ':' '=' '.' '+' '-' '*' '/' '[' ']'
 */
 %%
 <INITIAL>"#"define								{
@@ -152,9 +189,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_TEXTURE_DECL>","			{
 													glfxlval.strs[0]=yytext;
 													glfxPopState();
-													return COMMA;
+													return ',';
 												}
-<INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE>"#line"	{
+<INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"#line"	{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
 														return LINE;
@@ -315,15 +352,29 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													return IDENTIFIER;
 												}
+<IN_SHADER>"return"	{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													return RETURN;
+												}
+<IN_SHADER>"break"								return stdReturn(BREAK);
+<IN_SHADER>"continue"							return stdReturn(CONTINUE);
+<IN_SHADER>"do"									return stdReturn(DO);
+<IN_SHADER>"for"								return stdReturn(FOR);
+<IN_SHADER>"goto"								return stdReturn(GOTO);
+<IN_SHADER>"if"									return stdReturn(IF);
+<IN_SHADER>"while"								return stdReturn(WHILE);
+											
+
 <IN_SHADER>";"									{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
-													return SC;
+													return ';';
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{FLOAT_BLCK}	{
 													glfxlval.lineno=yylineno;
-													glfxlval.strs[0]=yytext;
-													return IDENTIFIER;
+													glfxlval.fnum=(float)atof(yytext);
+													return FLOAT;
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
@@ -331,65 +382,93 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													return NUM;
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{FLOAT_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
-													glfxlval.fnum=(float)atof(yytext);
-													return FLOAT;
+													glfxlval.strs[0]=yytext;
+													return IDENTIFIER;
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"("			{
 													glfxlval.strs[0]=yytext;
-													return LP;
+													return '(';
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>")"			{
 													glfxlval.strs[0]=yytext;
-													return RP;
+													return ')';
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"["			{
 													glfxlval.strs[0]=yytext;
-													return LEFT_SQ;
+													return '[';
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"]"			{
 													glfxlval.strs[0]=yytext;
-													return RIGHT_SQ;
+													return ']';
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>","			{
 													glfxlval.strs[0]=yytext;
-													return COMMA;
+													return ',';
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"="			{
 													glfxlval.strs[0]=yytext;
-													return EQUALS;
+													return '=';
 												}
+<IN_SHADER>"<"									return stdReturn('<');
+<IN_SHADER>">"									return stdReturn('>');
 <IN_SHADER>"."			{
 													glfxlval.strs[0]=yytext;
-													return DOT;
+													return '.';
 												} 
+
+<IN_SHADER>"*="									return stdReturn(TIMES_EQUALS);
+<IN_SHADER>"/="									return stdReturn(OVER_EQUALS);
+<IN_SHADER>"%="									return stdReturn(PERCENT_EQUALS);
+<IN_SHADER>"+="									return stdReturn(PLUS_EQUALS);
+<IN_SHADER>"-="									return stdReturn(MINUS_EQUALS);
+<IN_SHADER>"<<="								return stdReturn(LEFT_SHIFT_EQUALS);
+<IN_SHADER>">>="								return stdReturn(RIGHT_SHIFT_EQUALS);
+<IN_SHADER>"&="									return stdReturn(AND_EQUALS);
+<IN_SHADER>"^="									return stdReturn(XOR_EQUALS);
+<IN_SHADER>"|="									return stdReturn(OR_EQUALS);
+<IN_SHADER>"||"									return stdReturn(OR);
+<IN_SHADER>"&&"									return stdReturn(AND);
+
+<IN_SHADER>"<="									return stdReturn(LESS_EQ);
+<IN_SHADER>">="									return stdReturn(GRTR_EQ);
+
+<IN_SHADER>"<<"									return stdReturn(LEFT_SHIFT);
+<IN_SHADER>">>"									return stdReturn(RIGHT_SHIFT);
+
+<IN_SHADER>"++"									return stdReturn(PLUS_PLUS);
+<IN_SHADER>"--"									return stdReturn(MINUS_MINUS);
+<IN_SHADER>"=="									return stdReturn(EQ_EQ);
+<IN_SHADER>"!="									return stdReturn(NOT_EQ);
+
 <IN_SHADER>"+"			{
 													glfxlval.strs[0]=yytext;
-													return PLUS;
+													return '+';
 												}  
 <IN_SHADER>"-"			{
 													glfxlval.strs[0]=yytext;
-													return MINUS;
+													return '-';
 												}   
 <IN_SHADER>"*"			{
 													glfxlval.strs[0]=yytext;
-													return TIMES;
+													return '*';
 												}    
 <IN_SHADER>"/"			{
 													glfxlval.strs[0]=yytext;
-													return OVER;
-												}    
+													return '/';
+												}
+
 <IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"			{
 													glfxlval.strs[0]=yytext;
 													glfxPopState();
-													return SC;
+													return ';';
 												}
 <IN_RENDER_STATE,IN_STRUCT>";"					{
 													glfxlval.strs[0]=yytext;
 													if(!brace)
 														glfxPopState();
-													return SC;
+													return ';';
 												}
 <INITIAL>{STR_BLCK}								{
 													if(gLexPassthrough)
@@ -448,8 +527,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														return IDENTIFIER;
 													}
 												}
-<INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {return LP;}
-<INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {return RP;}
+<INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {return '(';}
+<INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {return ')';}
 <INITIAL>"{"									{
 													if(gLexPassthrough)
 														glfxWrite(yytext);
@@ -460,7 +539,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 															brace++;
 															glfxPushState(IN_SHADER);
 														}
-														return LB;
+														return '{';
 													}
 												}
 <INITIAL>"}"									{
@@ -468,16 +547,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext);
 													else
 													{
-														return RB;
+														return '}';
 													}//"["[\t ]*"]"						if(gLexPassthrough) glfxWrite(yytext); else {return EMPTY_ARRAY_BRACKETS;}
 												}
-<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {return LEFT_SQ;}
-<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {return RIGHT_SQ;}
-<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {return COMMA;}
-<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {return EQUALS;}
-<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return SC;}
-<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return COLON;}
-<IN_STRUCT>":"									return COLON;
+<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {return '[';}
+<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {return ']';}
+<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {return ',';}
+<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {return '=';}
+<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return ';';}
+<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return ':';}
+<IN_STRUCT>":"									return ':';
 <INITIAL,IN_RENDER_STATE,IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
@@ -486,7 +565,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Multiline comment
 												}
-<INITIAL,IN_SHADER>[\t\n ]								{
+<INITIAL,IN_SHADER>[\t\n ]						{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
 <IN_RENDER_STATE,IN_STRUCT>[\t\n ]				{}// Without this line, the yylineno would get out of whack.
@@ -494,7 +573,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>"{"		{
 													glfxlval.strs[0]=yytext;
 													brace++;
-													return LB;
+													return '{';
 												}
 <IN_SHADER>"}"									{
 													glfxlval.strs[0]=yytext;
@@ -502,14 +581,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													if(!brace)
 													{
 														glfxPopState();
-														return RB;
+														return '}';
 													}
-													return RB;
+													return '}';
 												}
 <IN_RENDER_STATE,IN_STRUCT>"}"					{
 													glfxlval.strs[0]=yytext;
 													brace--;
-													return RB;
+													return '}';
 												}
 %%
 void glfxPushState(int s)
@@ -547,6 +626,7 @@ const char *glfxGetStateText()
 }
 void resetGlfxParse()
 {
+	glfxdebug=0;
 	brace=0;
 	glfxset_lineno(1);
 	glfxPopAllStates();

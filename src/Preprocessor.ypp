@@ -431,7 +431,7 @@ void prepro_error(const char *errmsg)
 	if(*txt)
 		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< txt<<"\" Preprocessor "<<errmsg;
 	else
-		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \Preprocessor "<<errmsg;
+		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: Preprocessor "<<errmsg;
 	std::cerr<<errMsg.str().c_str()<<std::endl;
   //  throw std::runtime_error(errMsg.str());
 	preproError=true;

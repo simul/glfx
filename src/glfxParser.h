@@ -157,6 +157,7 @@ namespace glfxParser
 extern int glfxdebug;
 #endif
 
+extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
 extern void glfxerror(const char*);
 extern int glfxparse();

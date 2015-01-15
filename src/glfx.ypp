@@ -2,6 +2,8 @@
 %output "src/glfxLALRParser.cpp"
 %defines "src/glfxLALRParser.hpp"
 %{
+	//#define YYFPRINTF glfxprintf
+	#define YYDEBUG 1
     #include <iostream>
     #include <map>
     #include <string>
@@ -86,10 +88,15 @@
 %}
 
 %token UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token LP RP LB RB LESS_THAN GRTR_THAN SC COMMA COLON INPUT_SEMANTIC EQUALS DOT PLUS MINUS TIMES OVER NUM INCLUDE SAMPLER FLOAT LEFT_SQ RIGHT_SQ
+%token INPUT_SEMANTIC NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
 %token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS KNOWN_TYPE
+%token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE 
+%token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
+%token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
+
+
 %%
 
 prog : prog tok
@@ -97,7 +104,7 @@ prog : prog tok
 	    gEffect->m_sharedCode.str("");    // clear the stream
 	    gLexPassthrough=true;
 	};
-	tok : INTERFACE lex_fx IDENTIFIER read_block SC lex_passthrough
+	tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
 	{
 		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
 	}
@@ -107,7 +114,7 @@ prog : prog tok
 	| line_statement
 	{
 	}
-	| UNIFORM texture_type optional_templateval IDENTIFIER SC
+	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
 		ostringstream decl;
 		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$4.strs[0]<<";";
@@ -117,7 +124,7 @@ prog : prog tok
 	{
 		currentCsLayout=$1.strs[0];
 	}
-	| LAYOUT cs_layout_spec IDENTIFIER SC
+	| LAYOUT cs_layout_spec IDENTIFIER ';'
 	{
 		currentCsLayout="";
 		currentCsLayout+=$1.strs[0];
@@ -131,13 +138,13 @@ prog : prog tok
 		glfxWrite(str.c_str());
 		glfxPopState();
 	}
-	| RW_TEXTURE3D_FLOAT4 IDENTIFIER SC
+	| RW_TEXTURE3D_FLOAT4 IDENTIFIER ';'
 	{
 		string str="layout(rgba32f) uniform image3D ";
 		str+=$2.strs[0]+";";
 		glfxWrite(str.c_str());
 	}
-	| RW_TEXTURE3D_FLOAT4 IDENTIFIER COMMA
+	| RW_TEXTURE3D_FLOAT4 IDENTIFIER ','
 	{
 		string str="layout(rgba32f) image3D ";
 		str+=$2.strs[0]+",";
@@ -146,7 +153,7 @@ prog : prog tok
 	| DEFINE MACRO_DEFINITION EOL
 	{
 	}
-	| STRUCT IDENTIFIER LB struct_members RB SC
+	| STRUCT IDENTIFIER '{' struct_members '}' ';'
 	{
 		Struct *rs					=new Struct;
 		*rs							=buildStruct;
@@ -163,7 +170,7 @@ prog : prog tok
 		}
 		gEffect->m_sharedCode<<"};\n"<<endl;
 	}
-	| RENDER_STATE_DECL IDENTIFIER LB render_state_list RB SC
+	| RENDER_STATE_DECL IDENTIFIER '{' render_state_list '}' ';'
 	{
 		$$.lineno		=$4.lineno;
 		RenderState t=renderState;
@@ -203,7 +210,7 @@ prog : prog tok
 		int true_linenumber=$6.lineno+(last_linenumber-global_linenumber);
 	//	WriteLineNumber(true_linenumber);
 	}
-	| PROFILE IDENTIFIER LP NUM RP SC
+	| PROFILE IDENTIFIER '(' NUM ')' ';'
 	{
 		string profileName		=$2.strs[0];
 		int profileNum			=$4.num;
@@ -213,7 +220,7 @@ prog : prog tok
 		}
 		gEffect->m_profileToVersion[profileName]=profileNum;
 	}
-	| DECL_SHADER IDENTIFIER EQUALS shader_compile SC
+	| DECL_SHADER IDENTIFIER '=' shader_compile ';'
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
@@ -240,7 +247,7 @@ prog : prog tok
 		currentCsLayout+=$3.strs[0];
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
-    | shader_and_layout IDENTIFIER IDENTIFIER LP param_declaration_list RP function_content lex_passthrough
+    | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
 	{
 		std::string shaderName=$4.strs[0];
 		std::string returnType=$2.strs[0];
@@ -285,19 +292,19 @@ prog : prog tok
 		delete $5.vars;
 		// Add definition and code
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-		shaderCode<<"void main()"<<endl<<$7.strs[0];
+		shaderCode<<"void main()"<<endl<<$8.strs[0];
 		gEffect->m_shaderLayouts[shaderName]=currentCsLayout;
 		gEffect->m_shaders[shaderName]=shaderCode.str();
 		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 		
 		gEffect->m_sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
 	}
-    | PROGRAM lex_fx IDENTIFIER LB prog_def RB lex_passthrough
+    | PROGRAM lex_fx IDENTIFIER '{' prog_def '}' lex_passthrough
 	{
 		$5.prog->m_separable=$1.boolean;
 		gEffect->m_programs[$3.strs[0]]=$5.prog;
 	}
-	| TECHNIQUE lex_fx IDENTIFIER LB tech_def RB lex_passthrough
+	| TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
 	{
 		gEffect->m_techniques[$3.strs[0]] = $5.tech;
 	};
@@ -322,7 +329,7 @@ texture_type: TEXTURE2DMS
 	{
 		$$.num=$1.num;
 	};
-optional_templateval: LESS_THAN IDENTIFIER GRTR_THAN
+optional_templateval: '<' IDENTIFIER '>'
 	{
 		$$.strs[0]=$2.strs[0];
 		$$.num=1;
@@ -332,7 +339,7 @@ optional_templateval: LESS_THAN IDENTIFIER GRTR_THAN
 		$$.strs[0]="";
 		$$.num=0;
 	}
-layout_params:LP NUM COMMA NUM COMMA NUM RP
+layout_params:'(' NUM ',' NUM ',' NUM ')'
 {
 	std::string ret="(";
 	ret+=$2.strs[0];
@@ -343,16 +350,16 @@ layout_params:LP NUM COMMA NUM COMMA NUM RP
 	ret+=")";
 	$$.strs[0]=ret;
 };
-cs_layout_spec: LP cs_layout RP
+cs_layout_spec: '(' cs_layout ')'
 		  {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		  };
-normal_layout_spec: LP tx_layout RP
+normal_layout_spec: '(' tx_layout ')'
 		 {
 				$$.layoutType=NORMAL_LAYOUT_TYPE;
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		 };
-tx_layout: tx_layout COMMA layout_s
+tx_layout: tx_layout ',' layout_s
 				{
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
@@ -368,12 +375,12 @@ layout_s: layout_el
 	   {
 				$$.strs[0]=$1.strs[0];
 	   };
-cs_layout: layout_el COMMA layout_el COMMA layout_el
+cs_layout: layout_el ',' layout_el ',' layout_el
 		  {
 				$$.layoutType=CS_LAYOUT_TYPE;
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
 		  };
-layout_el: IDENTIFIER EQUALS NUM
+layout_el: IDENTIFIER '=' NUM
 		   {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		   };
@@ -394,8 +401,10 @@ lex_passthrough :
     gLexPassthrough=true;
 };
 
-function_content : LB statement_list RB { /* Read next block */
+function_content : '{' statement_list '}' { /* Read next block */
     $$.strs[0]= $1.strs[0]+$2.strs[0]+$3.strs[0];
+	// string 1 is the return value, if present.
+	$$.strs[1]= $2.strs[1];
     $$.lineno= glfxget_lineno();
 };
 
@@ -403,6 +412,13 @@ read_block : { /* Read next block */
     $$.strs[0]= glfxreadblock('{', '}');
     $$.lineno= glfxget_lineno();
 };
+
+optional_return_semantic: ':' IDENTIFIER
+ {
+ }
+ |
+ {
+ }
 /*
 samplerClass : IDENTIFIER {
     $$.strs[0]=$1.strs[0];
@@ -411,7 +427,7 @@ samplerClass : IDENTIFIER {
     $$.strs[0]="";
 };
 
-samplerVars : samplerVars COMMA samplerVar {
+samplerVars : samplerVars ',' samplerVar {
     $$.texNames=$1.texNames;
     
     YYSTYPE::samplerVar sv;
@@ -442,7 +458,7 @@ samplerVar : IDENTIFIER location {
     $$.strs[1]=$1.strs[0];
 };
     
-samplerParamList : samplerParamList samplerParam SC {
+samplerParamList : samplerParamList samplerParam ';' {
     $$.samp=$1.samp;
     switch($2.samplerParamType) {
     case SAMPLER_PARAM_STRING:
@@ -456,7 +472,7 @@ samplerParamList : samplerParamList samplerParam SC {
         break;
     }
 }
-    | samplerParam SC {
+    | samplerParam ';' {
     $$.samp=new Sampler();
     switch($1.samplerParamType) {
     case SAMPLER_PARAM_STRING:
@@ -471,22 +487,22 @@ samplerParamList : samplerParamList samplerParam SC {
     }
 };
 
-samplerParam : IDENTIFIER EQUALS IDENTIFIER {
+samplerParam : IDENTIFIER '=' IDENTIFIER {
     $$.strs[0]=$1.strs[0];
     $$.strs[1]=$3.strs[0];
     $$.samplerParamType=SAMPLER_PARAM_STRING;
 }
-    | IDENTIFIER EQUALS FLOAT {
+    | IDENTIFIER '=' FLOAT {
     $$.strs[0]=$1.strs[0];
     $$.fnum=$3.fnum;
     $$.samplerParamType=SAMPLER_PARAM_FLOAT;
 }
-    | IDENTIFIER EQUALS NUM {
+    | IDENTIFIER '=' NUM {
     $$.strs[0]=$1.strs[0];
     $$.num=$3.num;
     $$.samplerParamType=SAMPLER_PARAM_INT;
 };
-num_list : num_list COMMA NUM
+num_list : num_list ',' NUM
 	{
 		$$.vars=$1.vars;
 		YYSTYPE::variable var;
@@ -501,7 +517,7 @@ num_list : num_list COMMA NUM
 		$$.vars->push_back(var);
 	};
 */
-param_declaration_list : param_declaration_list COMMA param_declaration
+param_declaration_list : param_declaration_list ',' param_declaration
 	{
 		$$.vars=$1.vars;
 
@@ -560,7 +576,7 @@ param_declaration : param opt_sq location
     $$.strs[4]=semantic;
 };
 
-opt_sq: LEFT_SQ RIGHT_SQ
+opt_sq: '[' ']'
 				{
 					$$.strs[0]="[]";
 				}
@@ -586,17 +602,17 @@ opt_storage : STORAGEQ
 	{
 		$$.strs[0]="";
 	}
-location : COLON NUM
+location : ':' NUM
 	{
 		$$.num=$2.num;
 		$$.rType=REGISTER_INT;
 	}
-    | COLON INPUT_SEMANTIC
+    | ':' INPUT_SEMANTIC
 	{
 		$$.strs[0]=$2.strs[0];
 		$$.rType=SEMANTIC;
 	}
-    | COLON IDENTIFIER
+    | ':' IDENTIFIER
 	{
 		$$.strs[0]=$2.strs[0];
 		$$.rType=REGISTER_NAME;
@@ -639,7 +655,7 @@ pass_list: pass_list pass_def
 	delete p;
 };
 
-pass_def: PASS IDENTIFIER LB prog_def RB
+pass_def: PASS IDENTIFIER '{' prog_def '}'
 {
 	$4.prog->m_separable = $1.boolean;
 	$$.prog = $4.prog;
@@ -691,7 +707,7 @@ shaders_list : shaders_list shader_def
 		$$.strs[1]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
-vec4: IDENTIFIER LP FLOAT COMMA FLOAT COMMA FLOAT COMMA FLOAT RP
+vec4: IDENTIFIER '(' FLOAT ',' FLOAT ',' FLOAT ',' FLOAT ')'
 	  {
 		  $$.strs[0]=$1.strs[0]+"(";
 		  $$.strs[0]+=$3.strs[0]+",";
@@ -700,23 +716,23 @@ vec4: IDENTIFIER LP FLOAT COMMA FLOAT COMMA FLOAT COMMA FLOAT RP
 		  $$.strs[0]+=$9.strs[0]+")";
 	  };
 	
-shader_fn : SET_RASTERIZER_COMMAND LP IDENTIFIER RP SC
+shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 			 {
 				 string rast_name=$3.strs[0];
 			 }
-			 | SET_DEPTH_COMMAND LP IDENTIFIER COMMA NUM RP SC
+			 | SET_DEPTH_COMMAND '(' IDENTIFIER ',' NUM ')' ';'
 			 {
 				 string depth_name=$3.strs[0];
 				 int index=$5.num;
 			 }
-			 | SET_BLEND_COMMAND LP IDENTIFIER COMMA vec4 COMMA NUM RP SC
+			 | SET_BLEND_COMMAND '(' IDENTIFIER ',' vec4 ',' NUM ')' ';'
 			 {
 				 string blend_name=$3.strs[0];
 				 string vec4text=$5.strs[0];
 				 unsigned mask=$7.unum;
 			 };
 
-shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = VS_Main();
+shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_Main();
 			{
 				$$.strs[1]="";
 				$$.strs[0]="";
@@ -765,7 +781,7 @@ shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = V
 				$$.sType=$1.sType;
 			}
 			// For example: SetVertexShader(vs_main);
-			| SHADER_COMMAND LP shader_compile RP SC
+			| SHADER_COMMAND '(' shader_compile ')' ';'
 			{
 				$$.strs[1]="";
 				$$.strs[0]="";
@@ -829,7 +845,7 @@ shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = V
 			$$.num						=0;
 			$$.lineno					=$1.lineno;
 		}
-		| COMPILE_SHADER LP IDENTIFIER COMMA IDENTIFIER LP RP RP 
+		| COMPILE_SHADER '(' IDENTIFIER ',' IDENTIFIER '(' ')' ')' 
 		{
 			$$.lineno					=$5.lineno;
 			string profileName								=$3.strs[0];
@@ -855,18 +871,18 @@ shader_def : shader_lvalue EQUALS shader_rvalue SC	// Something like vs(430) = V
 			compiledShader->shaderType						=$1.sType;
 			compiledShader->version							=$$.num=version_num;
 		};
-shader_lvalue : SHADER_TYPE LP NUM RP
+shader_lvalue : SHADER_TYPE '(' NUM ')'
 				{
 					$$.num	=$3.num;
 					$$.sType=$1.sType;
 				};
-/*shader_variable:NUM COMMA IDENTIFIER
+/*shader_variable:NUM ',' IDENTIFIER
 				{
 					$$.strs[0]=$3.strs[0];
 					$$.num=$1.num;
 					$$.lineno=$3.lineno;
 				};*/
-shader_rvalue : IDENTIFIER LP RP shader_layout
+shader_rvalue : IDENTIFIER '(' ')' shader_layout
 				{
 					$$.lineno=$1.lineno;
 					$$.strs[0]=$1.strs[0];
@@ -876,7 +892,7 @@ shader_rvalue : IDENTIFIER LP RP shader_layout
 				{
 					$$.num=0;
 				};
-shader_layout : COLON shader_layout_list
+shader_layout : ':' shader_layout_list
 				{
 					$$.strs[0]=$2.strs[0];
 				}
@@ -885,7 +901,7 @@ shader_layout : COLON shader_layout_list
 					$$.strs[0]="";
 				};
 
-shader_layout_list : shader_layout_list COMMA layout
+shader_layout_list : shader_layout_list ',' layout
 				{
 					$$.strs[0]=$1.strs[0];
 					$$.strs[0]+=$3.strs[0];
@@ -898,96 +914,202 @@ statement_list: statement_list statement
 				{
 					$$.strs[0]=$1.strs[0];
 					$$.strs[0]+=$2.strs[0];
+					$$.strs[1]=$1.strs[1]+$2.strs[1];
 				}
 				|
 				statement
 				{
 					$$.strs[0]=$1.strs[0];
+					$$.strs[1]=$1.strs[1];
 				}
 				|
 				{
 					$$.strs[0]="";
+					$$.strs[1]="";
 				}
-statement: expr SC 
+line_statement_in_shader: LINE NUM NUM 
+	{
+		last_linenumber=$2.num;
+		current_filenumber=$3.num;
+		global_linenumber=$1.lineno+1;
+		$$.strs[0]=$1.strs[0]+" ";
+		$$.strs[0]+=$2.strs[0]+" ";
+		$$.strs[0]+=$3.strs[0];
+	}
+		/*
+		THE FOLLOWING IS BASED ON THE K&R BNF for C:
+		*/
+declaration	: type_spec init_declarator_list
+			;
+init_declarator_list	: init_declarator
+			| init_declarator_list ',' init_declarator
+			;
+init_declarator		: declarator
+			| declarator '=' initializer
+			;
+declarator	: IDENTIFIER
+			| '(' declarator ')'
+			| declarator '[' NUM ']'
+			| declarator '['		']'
+			| declarator '('		')'
+			;
+type_spec	: IDENTIFIER
+			;
+statement	:  expression ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0];
 				}
-operator: EQUALS | DOT | PLUS | MINUS | TIMES | OVER
+			   |  ';'
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-unary_operator: MINUS
-				{
-					$$.strs[0]=$1.strs[0];
-				}
-expr:IDENTIFIER expr
+			| declaration ';'
+			| compound_statement
+			| IF '(' expression ')' statement
+			| IF '(' expression ')' statement IF statement
+			| WHILE '(' expression ')' statement
+			| DO statement WHILE '(' expression ')' ';'
+			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
+			| GOTO IDENTIFIER ';'
+			| CONTINUE ';'
+			| BREAK ';'
+			| RETURN optional_expression ';'
 			{
-				$$.strs[0]=$1.strs[0]+$2.strs[0];
+				$$.strs[0]="";
+				$$.strs[1]=$2.strs[0];
 			}
-		| expr params
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0];
-		}
-		|expr array_index
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0];
-		}
-		| initializer_list
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-		| unary_operator expr
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0];
-		}
-		| expr operator expr
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}
-		| IDENTIFIER
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-		| FLOAT
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-		| NUM
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-initializer_list: LB expr_list RB
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}
-expr_list: expr_list COMMA expr
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}| expr
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-array_index: LEFT_SQ expr RIGHT_SQ
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}
-params: LP param_list RP
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}
-param_list: param_list COMMA expr
+			| line_statement_in_shader
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+for_init_statement: expression
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+			| declaration
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+			|
+			{}
+
+optional_expression: expression
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+			|
+			{
+				$$.strs[0]="";
+			}
+/* multiple statements in braces*/
+compound_statement	: '{' statement_list '}'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
-				| expr
+
+expression	: assignment_exp
+			| expression ',' assignment_exp
+			;
+assignment_exp		: conditional_exp
+			| unary_exp assignment_operator assignment_exp
+			;
+assignment_operator	: '='	| TIMES_EQUALS
+							| OVER_EQUALS
+							| PERCENT_EQUALS
+							| PLUS_EQUALS
+							| MINUS_EQUALS
+							| LEFT_SHIFT_EQUALS
+							| RIGHT_SHIFT_EQUALS
+							| AND_EQUALS
+							| XOR_EQUALS
+							| OR_EQUALS
+{
+}
+conditional_exp		: logical_or_exp
+			| logical_or_exp '?' expression ':' conditional_exp
+			;
+const_exp		: conditional_exp
+			;
+logical_or_exp		: logical_and_exp
+			| logical_or_exp OR logical_and_exp
+			;
+logical_and_exp		: inclusive_or_exp
+			| logical_and_exp AND inclusive_or_exp
+			;
+inclusive_or_exp	: exclusive_or_exp
+			| inclusive_or_exp '|' exclusive_or_exp
+			;
+exclusive_or_exp	: and_exp
+			| exclusive_or_exp '^' and_exp
+			;
+and_exp			: equality_exp
+			| and_exp '&' equality_exp
+			;
+equality_exp		: relational_exp
+			| equality_exp EQ_EQ relational_exp
+			| equality_exp NOT_EQ relational_exp
+			;
+relational_exp		: shift_expression
+			| relational_exp '<' shift_expression
+			| relational_exp '>' shift_expression
+			| relational_exp LESS_EQ shift_expression
+			| relational_exp GRTR_EQ shift_expression
+			;
+shift_expression	: additive_exp
+			| shift_expression LEFT_SHIFT additive_exp
+			| shift_expression RIGHT_SHIFT additive_exp
+			;
+additive_exp		: mult_exp
+			| additive_exp '+' mult_exp
+			| additive_exp '-' mult_exp
+			;
+mult_exp		: cast_exp
+			| mult_exp '*' cast_exp
+			| mult_exp '/' cast_exp
+			| mult_exp '%' cast_exp
+			;
+cast_exp		: unary_exp;
+unary_exp		: postfix_exp
+			| PLUS_PLUS unary_exp
+			| MINUS_MINUS unary_exp
+			| unary_operator cast_exp
+			;
+unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
+			;
+postfix_exp		: primary_exp
+			| postfix_exp '[' expression ']'
+			| postfix_exp '(' argument_exp_list ')'
+			| postfix_exp '('			')'
+			| postfix_exp '.' IDENTIFIER
+			| postfix_exp PLUS_PLUS
+			| postfix_exp MINUS_MINUS
+			;
+argument_exp_list	: assignment_exp
+			| argument_exp_list ',' assignment_exp
+			;
+initializer		: assignment_exp
+			| '{' initializer_list '}'
+			| '{' initializer_list ',' '}'
+			;
+initializer_list: initializer
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-				|
+			| initializer_list ',' initializer
 				{
-					$$.strs[0]="";
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
-
+assignment_exp: primary_exp
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+primary_exp	: IDENTIFIER
+			| const
+			| '(' expression ')'
+			;
+const		: NUM
+			| FLOAT
+			;
 layout : STORAGEQ read_parenthesis
 	{
 		ostringstream layoutDef;
@@ -1008,7 +1130,7 @@ read_parenthesis :
 	{ /* read parenthesis */
 		$$.strs[0]=glfxreadblock('(', ')');
 	};
-struct_member : IDENTIFIER IDENTIFIER optional_semantic SC
+struct_member : IDENTIFIER IDENTIFIER optional_semantic ';'
 					   {
 							$$.lineno		=$3.lineno;
 							string name		=$2.strs[0];
@@ -1020,7 +1142,7 @@ struct_member : IDENTIFIER IDENTIFIER optional_semantic SC
 							s.name		=name;
 							buildStruct.m_structMembers.push_back(s);
 					}
-optional_semantic: COLON IDENTIFIER
+optional_semantic: ':' IDENTIFIER
 					{
 						$$.strs[0]		=$2.strs[0];
 					}
@@ -1047,7 +1169,7 @@ render_state_list : render_state_list render_state_command
 					{
 						$$.lineno		=$1.lineno;
 					};
-render_state_command : render_state_identifier EQUALS render_state_rvalue SC
+render_state_command : render_state_identifier '=' render_state_rvalue ';'
 					   {
 							$$.lineno		=$3.lineno;
 							string name		=$1.strs[0];
@@ -1167,7 +1289,7 @@ render_state_identifier : IDENTIFIER optional_index
 							$$.strs[0]	=$1.strs[0];
 							$$.num		=$2.num;
 						};
-optional_index : LEFT_SQ NUM RIGHT_SQ
+optional_index : '[' NUM ']'
 						{
 							 $$.num=$2.num;
 							 $$.fnum=$2.fnum;
