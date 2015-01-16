@@ -198,10 +198,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 <INITIAL>^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
 													string tmp(yytext);
-													size_t firstLoc=tmp.find('"')+1;
+													size_t firstLoc	=tmp.find('"')+1;
 													size_t secondLoc=tmp.find('"', firstLoc);
 													glfxlval.strs[0]=tmp.substr(firstLoc, secondLoc-firstLoc);
-													glfxlval.lineno=yylineno-1; // flex has already jumped one line, since \n was eaten
+													glfxlval.lineno	=yylineno-1; // flex has already jumped one line, since \n was eaten
 													return INCLUDE;
 												}
 <INITIAL>"vs"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.sType=VERTEX_SHADER; return SHADER_TYPE;}
