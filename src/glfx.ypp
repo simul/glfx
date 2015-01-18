@@ -87,7 +87,7 @@
 	}
 %}
 
-%token UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token INPUT_SEMANTIC NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
@@ -249,26 +249,33 @@ prog : prog tok
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
 	{
-		std::string shaderName		=$4.strs[0];
+		std::string shaderName		=$3.strs[0];
 		std::string returnType		=$2.strs[0];
 		std::string shaderContent	=$8.strs[0];
 		ostringstream shaderCode;
+		ostringstream extraDeclarations;
 		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
 		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
+			string structInstanceName=it->identifier;
 			string type(it->type);
 			map<string,Struct*>::const_iterator u=gEffect->m_structs.find(type);
 			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
 			int lineno;
 			if(u!=gEffect->m_structs.end())
 			{
+				extraDeclarations<<type<<" "<<structInstanceName<<";\n";
 				const Struct *s=u->second;
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
+					string sem=m.name;
+					if(m.semantic.length())
+						sem=m.semantic;
 					//shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-					shaderCode<<it->storage<<' '<<m.type<<' '<<m.name<<';'<<endl;
+					shaderCode<<it->storage<<' '<<m.type<<' '<<sem<<"_;"<<endl;
+					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<"_;\n";
 				}
 				continue;
 			}
@@ -293,7 +300,10 @@ prog : prog tok
 		delete $5.vars;
 		// Add definition and code
 		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
-		shaderCode<<"void main()"<<endl<<shaderContent;
+		shaderCode<<"void main()\n{\n";
+		if(extraDeclarations.str().length())
+			shaderCode<<extraDeclarations.str()<<"\n";
+		shaderCode<<shaderContent<<"\n}\n";
 		gEffect->m_shaderLayouts[shaderName]	=currentCsLayout;
 		gEffect->m_shaders[shaderName]			=shaderCode.str();
 		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
@@ -403,7 +413,7 @@ lex_passthrough :
 };
 
 function_content : '{' statement_list '}' { /* Read next block */
-    $$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+    $$.strs[0]=$2.strs[0];
 	// string 1 is the return value, if present.
 	$$.strs[1]= $2.strs[1];
     $$.lineno= glfxget_lineno();
@@ -914,7 +924,6 @@ shader_layout_list : shader_layout_list ',' layout
 statement_list: statement_list statement
 				{
 					$$.strs[0]	=$1.strs[0];
-					$$.strs[0]	+='\n';
 					$$.strs[0]	+=$2.strs[0];
 					$$.strs[1]	=$1.strs[1]+$2.strs[1];
 				}
@@ -922,7 +931,6 @@ statement_list: statement_list statement
 				statement
 				{
 					$$.strs[0]	=$1.strs[0];
-					$$.strs[0]	+='\n';
 					$$.strs[1]	=$1.strs[1];
 				}
 				|
@@ -968,17 +976,26 @@ declarator	: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0];
 		}
-			| '(' declarator ')'
+		| '(' declarator ')'
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
 		| declarator '=' initializer
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-			| declarator '[' NUM ']'
+		| declarator '[' NUM ']'
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+		}
 		| declarator '=' initializer
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
 			| declarator '['		']'
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
 			| declarator '('		')'
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1028,6 +1045,9 @@ statement	:  expression ';'
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
 			| CONTINUE ';'
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
+				}
 			| BREAK ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -1108,50 +1128,75 @@ const_exp		: conditional_exp
 	$$.strs[0]=$1.strs[0];
 }
 			;
-logical_or_exp		: logical_and_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
+logical_or_exp: logical_and_exp
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| logical_or_exp OR logical_and_exp
-			;
-logical_and_exp		: inclusive_or_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
+logical_and_exp: inclusive_or_exp
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| logical_and_exp AND inclusive_or_exp
-			;
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
 inclusive_or_exp	: exclusive_or_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| inclusive_or_exp '|' exclusive_or_exp
-			;
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
 exclusive_or_exp	: and_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| exclusive_or_exp '^' and_exp
-			;
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
 and_exp			: equality_exp
 {
 	$$.strs[0]=$1.strs[0];
 }
 			| and_exp '&' equality_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			;
 equality_exp		: relational_exp
 {
 	$$.strs[0]=$1.strs[0];
 }
 			| equality_exp EQ_EQ relational_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| equality_exp NOT_EQ relational_exp
-			;
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 relational_exp		: shift_expression
 {
 	$$.strs[0]=$1.strs[0];
 }
 			| relational_exp '<' shift_expression
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| relational_exp '>' shift_expression
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| relational_exp LESS_EQ shift_expression
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| relational_exp GRTR_EQ shift_expression
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1161,6 +1206,9 @@ shift_expression	: additive_exp
 	$$.strs[0]=$1.strs[0];
 }
 			| shift_expression LEFT_SHIFT additive_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| shift_expression RIGHT_SHIFT additive_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1170,6 +1218,9 @@ additive_exp		: mult_exp
 	$$.strs[0]=$1.strs[0];
 }
 			| additive_exp '+' mult_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| additive_exp '-' mult_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1179,7 +1230,13 @@ mult_exp		: cast_exp
 	$$.strs[0]=$1.strs[0];
 }
 			| mult_exp '*' cast_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| mult_exp '/' cast_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| mult_exp '%' cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1193,7 +1250,13 @@ unary_exp		: postfix_exp
 	$$.strs[0]=$1.strs[0];
 }
 			| PLUS_PLUS unary_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0];
+}
 			| MINUS_MINUS unary_exp
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0];
+}
 			| unary_operator cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -1207,8 +1270,17 @@ postfix_exp		: primary_exp
 	$$.strs[0]=$1.strs[0];
 }
 			| postfix_exp '[' expression ']'
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+}
 			| postfix_exp '(' argument_exp_list ')'
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+}
 			| postfix_exp '('			')'
+{
+	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
 			| postfix_exp '.' IDENTIFIER
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -1260,6 +1332,9 @@ primary_exp	: IDENTIFIER
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
 const		: NUM
+{
+	$$.strs[0]=$1.strs[0];
+}
 			| FLOAT
 {
 	$$.strs[0]=$1.strs[0];
