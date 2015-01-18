@@ -9135,10 +9135,10 @@ YY_RULE_SETUP
 #line 199 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													string tmp(glfxtext);
-													size_t firstLoc=tmp.find('"')+1;
+													size_t firstLoc	=tmp.find('"')+1;
 													size_t secondLoc=tmp.find('"', firstLoc);
 													glfxlval.strs[0]=tmp.substr(firstLoc, secondLoc-firstLoc);
-													glfxlval.lineno=glfxlineno-1; // flex has already jumped one line, since \n was eaten
+													glfxlval.lineno	=glfxlineno-1; // flex has already jumped one line, since \n was eaten
 													return INCLUDE;
 												}
 	YY_BREAK
