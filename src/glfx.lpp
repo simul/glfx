@@ -387,27 +387,27 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													stdReturn(IDENTIFIER);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"("			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"("[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('(');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>")"			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*")"[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(')');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"["			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"["[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('[');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"]"			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"]"[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(']');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>","			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*","[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(',');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"="			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"="[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('=');
 												}
@@ -542,7 +542,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														stdReturn('{');
 													}
 												}
-<INITIAL>[ \t\n]*"}"[ \t\n]*									{
+<INITIAL>[ \t\n]*"}"[ \t\n]*					{
 													if(gLexPassthrough)
 														glfxWrite(yytext);
 													else
@@ -568,7 +568,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>[\t\n ]						{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
-<IN_RENDER_STATE,IN_STRUCT>[\t\n ]				{}// Without this line, the yylineno would get out of whack.
+<IN_RENDER_STATE,IN_STRUCT,IN_SHADER>[\t\n ]	{}// Without this line, the yylineno would get out of whack.
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>[ \t\n]*"{"[ \t\n]*		{
 													glfxlval.strs[0]=yytext;

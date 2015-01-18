@@ -168,7 +168,8 @@ prog : prog tok
 			gEffect->m_sharedCode<<m.type<<" "<<m.name<<";\n";
 		
 		}
-		gEffect->m_sharedCode<<"};\n"<<endl;
+		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,$6.lineno+last_linenumber-global_linenumber);
+		gEffect->m_sharedCode<<"};";
 	}
 	| RENDER_STATE_DECL IDENTIFIER '{' render_state_list '}' ';'
 	{
@@ -254,7 +255,8 @@ prog : prog tok
 		std::string shaderContent	=$8.strs[0];
 		ostringstream shaderCode;
 		ostringstream extraDeclarations;
-		int true_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		int main_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		int content_linenumber=$8.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
 		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
@@ -273,7 +275,7 @@ prog : prog tok
 					string sem=m.name;
 					if(m.semantic.length())
 						sem=m.semantic;
-					//shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
+					//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 					shaderCode<<it->storage<<' '<<m.type<<' '<<sem<<"_;"<<endl;
 					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<"_;\n";
 				}
@@ -293,16 +295,17 @@ prog : prog tok
 			else
 			{
 			// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
-				shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
+				shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 				shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';'<<endl;
 			}
 		}
 		delete $5.vars;
 		// Add definition and code
-		shaderCode<<"#line "<<true_linenumber<<" "<<current_filenumber<<endl;
+		shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<"void main()\n{\n";
 		if(extraDeclarations.str().length())
 			shaderCode<<extraDeclarations.str()<<"\n";
+		shaderCode<<"#line "<<content_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<shaderContent<<"\n}\n";
 		gEffect->m_shaderLayouts[shaderName]	=currentCsLayout;
 		gEffect->m_shaders[shaderName]			=shaderCode.str();
@@ -335,12 +338,13 @@ prog : prog tok
 	shader_and_layout: SHADER shader_fx
 	{
 		$$.strs[0]=$1.strs[0];
+		$$.lineno=$1.lineno;
 	};
-texture_type: TEXTURE2DMS
+	texture_type: TEXTURE2DMS
 	{
 		$$.num=$1.num;
 	};
-optional_templateval: '<' IDENTIFIER '>'
+	optional_templateval: '<' IDENTIFIER '>'
 	{
 		$$.strs[0]=$2.strs[0];
 		$$.num=1;
@@ -416,7 +420,7 @@ function_content : '{' statement_list '}' { /* Read next block */
     $$.strs[0]=$2.strs[0];
 	// string 1 is the return value, if present.
 	$$.strs[1]= $2.strs[1];
-    $$.lineno= glfxget_lineno();
+    $$.lineno= $2.lineno;
 };
 
 read_block : { /* Read next block */
@@ -940,13 +944,13 @@ statement_list: statement_list statement
 				}
 line_statement_in_shader: LINE NUM NUM 
 	{
-		last_linenumber=$2.num;
-		current_filenumber=$3.num;
-		global_linenumber=$1.lineno+1;
-		$$.strs[0]=$1.strs[0]+" ";
-		$$.strs[0]+=$2.strs[0]+" ";
-		$$.strs[0]+=$3.strs[0];
-		$$.strs[0]+='\n';
+		last_linenumber		=$2.num;
+		current_filenumber	=$3.num;
+		global_linenumber	=$1.lineno+1;
+		$$.strs[0]			=$1.strs[0]+" ";
+		$$.strs[0]			+=$2.strs[0]+" ";
+		$$.strs[0]			+=$3.strs[0];
+		$$.strs[0]			+='\n';
 	}
 		/*
 		THE FOLLOWING IS BASED ON THE K&R BNF for C:
@@ -1007,6 +1011,7 @@ type_spec	: IDENTIFIER
 statement	:  expression ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0];
+					$$.lineno=$1.lineno;
 				}
 			   |  ';'
 				{
@@ -1056,10 +1061,12 @@ statement	:  expression ';'
 			{
 				$$.strs[0]="";
 				$$.strs[1]=$2.strs[0];
+				$$.lineno=$1.lineno;
 			}
 			| line_statement_in_shader
 			{
 				$$.strs[0]=$1.strs[0];
+				$$.lineno=$1.lineno;
 			}
 for_init_statement: expression
 			{
