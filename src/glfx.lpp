@@ -363,6 +363,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER>"for"								return stdReturn(FOR);
 <IN_SHADER>"goto"								return stdReturn(GOTO);
 <IN_SHADER>"if"									return stdReturn(IF);
+<IN_SHADER>"else"								return stdReturn(ELSE);
 <IN_SHADER>"while"								return stdReturn(WHILE);
 											
 
@@ -527,8 +528,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														return IDENTIFIER;
 													}
 												}
-<INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {return '(';}
-<INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {return ')';}
+<INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('(');}
+<INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(')');}
 <INITIAL>"{"									{
 													if(gLexPassthrough)
 														glfxWrite(yytext);
@@ -539,7 +540,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 															brace++;
 															glfxPushState(IN_SHADER);
 														}
-														return '{';
+														stdReturn('{');
 													}
 												}
 <INITIAL>"}"									{
@@ -547,16 +548,16 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext);
 													else
 													{
-														return '}';
+														stdReturn('}');
 													}//"["[\t ]*"]"						if(gLexPassthrough) glfxWrite(yytext); else {return EMPTY_ARRAY_BRACKETS;}
 												}
-<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {return '[';}
-<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {return ']';}
-<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {return ',';}
-<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {return '=';}
-<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {return ';';}
-<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {return ':';}
-<IN_STRUCT>":"									return ':';
+<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('[');}
+<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(']');}
+<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(',');}
+<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
+<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
+<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
+<IN_STRUCT>":"									stdReturn(':');
 <INITIAL,IN_RENDER_STATE,IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
@@ -573,7 +574,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>"{"		{
 													glfxlval.strs[0]=yytext;
 													brace++;
-													return '{';
+													stdReturn('{');
 												}
 <IN_SHADER>"}"									{
 													glfxlval.strs[0]=yytext;
@@ -581,14 +582,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													if(!brace)
 													{
 														glfxPopState();
-														return '}';
+														stdReturn('}');
 													}
-													return '}';
+													stdReturn('}');
 												}
 <IN_RENDER_STATE,IN_STRUCT>"}"					{
 													glfxlval.strs[0]=yytext;
 													brace--;
-													return '}';
+													stdReturn('}');
 												}
 %%
 void glfxPushState(int s)
