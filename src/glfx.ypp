@@ -118,7 +118,13 @@ prog : prog tok
 	{
 		ostringstream decl;
 		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$4.strs[0]<<";";
-		gEffect->m_sharedCode<<decl;
+		gEffect->m_sharedCode<<decl.str();
+	}
+	| UNIFORM IDENTIFIER IDENTIFIER ';'
+	{
+		ostringstream decl;
+		decl<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<$3.strs[0]<<";";
+		gEffect->m_sharedCode<<decl.str();
 	}
 	| CS_LAYOUT
 	{
@@ -171,7 +177,7 @@ prog : prog tok
 		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,$6.lineno+last_linenumber-global_linenumber);
 		gEffect->m_sharedCode<<"};";
 	}
-	| RENDER_STATE_DECL IDENTIFIER '{' render_state_list '}' ';'
+	| RENDER_STATE_DECL IDENTIFIER optional_render_state_list ';'
 	{
 		$$.lineno		=$4.lineno;
 		RenderState t=renderState;
@@ -208,7 +214,7 @@ prog : prog tok
 			// Set to default:
 			buildSamplerState=SamplerState();
 		}
-		int true_linenumber=$6.lineno+(last_linenumber-global_linenumber);
+		int true_linenumber=$4.lineno+(last_linenumber-global_linenumber);
 	//	WriteLineNumber(true_linenumber);
 	}
 	| PROFILE IDENTIFIER '(' NUM ')' ';'
@@ -395,10 +401,19 @@ cs_layout: layout_el ',' layout_el ',' layout_el
 				$$.layoutType=CS_LAYOUT_TYPE;
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
 		  };
-layout_el: IDENTIFIER '=' NUM
+layout_el: IDENTIFIER '=' layout_def
 		   {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		   };
+
+layout_def: IDENTIFIER
+		   {
+				$$.strs[0]=$1.strs[0];
+		   }
+		   | NUM
+		   {
+				$$.strs[0]=$1.strs[0];
+		   }
 lex_fx :
 { /* Switch lex to fx scanning */
 	read_shader=false;
@@ -844,9 +859,13 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 								errSem(errMsg.str(), $3.lineno);
 							}
 							else
-							// Currently in case of error it never returns (throw)
-							// TODO: Handle continuation in case of error
-								theShader<<it->second;
+							{
+								if(shaderCommand==COMPUTE_SHADER)
+									theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
+								// Currently in case of error it never returns (throw)
+								// TODO: Handle continuation in case of error
+									theShader<<it->second;
+							}
 						}
 						$$.strs[1]=shaderName;
 						$$.strs[0]=theShader.str();
@@ -976,7 +995,7 @@ init_declarator		: declarator
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-declarator	: IDENTIFIER
+declarator: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0];
 		}
@@ -984,17 +1003,9 @@ declarator	: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-		| declarator '=' initializer
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-		}
 		| declarator '[' NUM ']'
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-		}
-		| declarator '=' initializer
-		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
 			| declarator '['		']'
 		{
@@ -1004,11 +1015,7 @@ declarator	: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-type_spec	: IDENTIFIER
-		{
-			$$.strs[0]=$1.strs[0];
-		}
-statement	:  expression ';'
+statement:  expression ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0];
 					$$.lineno=$1.lineno;
@@ -1102,14 +1109,18 @@ expression: assignment_exp
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
 assignment_exp: conditional_exp
+		{
+			$$.strs[0]=$1.strs[0];
+		}
+		| unary_exp assignment_operator assignment_exp
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+		}
+assignment_operator: '='	
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-				| unary_exp assignment_operator assignment_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-				}
-assignment_operator: '='	| TIMES_EQUALS
+				| TIMES_EQUALS
 							| OVER_EQUALS
 							| PERCENT_EQUALS
 							| PLUS_EQUALS
@@ -1119,22 +1130,18 @@ assignment_operator: '='	| TIMES_EQUALS
 							| AND_EQUALS
 							| XOR_EQUALS
 							| OR_EQUALS
-{
-	$$.strs[0]=$1.strs[0];
-}
-conditional_exp		: logical_or_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-			| logical_or_exp '?' expression ':' conditional_exp
-				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
-				}
-const_exp		: conditional_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-			;
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+	conditional_exp		: logical_or_exp
+	{
+		$$.strs[0]=$1.strs[0];
+	}
+| logical_or_exp '?' expression ':' conditional_exp
+	{
+		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+	}
+;
 logical_or_exp: logical_and_exp
 				{
 					$$.strs[0]=$1.strs[0];
@@ -1273,50 +1280,53 @@ unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
 	$$.strs[0]=$1.strs[0];
 }
 postfix_exp		: primary_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-			| postfix_exp '[' expression ']'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-}
-			| postfix_exp '(' argument_exp_list ')'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-}
-			| postfix_exp '('			')'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-			| postfix_exp '.' IDENTIFIER
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
-			| postfix_exp PLUS_PLUS
-			| postfix_exp MINUS_MINUS
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0];
-}
-argument_exp_list	: assignment_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
-			| argument_exp_list ',' assignment_exp
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
+					{
+						$$.strs[0]=$1.strs[0];
+					}
+					| postfix_exp '[' expression ']'
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+					}
+					| postfix_exp '(' argument_exp_list ')'
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+					}
+					| postfix_exp '('			')'
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+					}
+					| postfix_exp '.' IDENTIFIER
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+					}
+					| postfix_exp PLUS_PLUS
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0];
+					}
+					| postfix_exp MINUS_MINUS
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0];
+					}
+argument_exp_list	: argument_exp_list ',' assignment_exp
+					{
+						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+					}
+					| assignment_exp
+					{
+						$$.strs[0]=$1.strs[0];
+					}
 initializer		: assignment_exp
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| '{' initializer_list '}'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
 			| '{' initializer_list ',' '}'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+				}
 initializer_list: initializer
 				{
 					$$.strs[0]=$1.strs[0];
@@ -1325,27 +1335,26 @@ initializer_list: initializer
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
-assignment_exp: primary_exp
-		{
-			$$.strs[0]=$1.strs[0];
-		}
 primary_exp	: IDENTIFIER
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| const
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| '(' expression ')'
-{
-	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				}
 const		: NUM
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 			| FLOAT
-{
-	$$.strs[0]=$1.strs[0];
-}
+				{
+					$$.strs[0]=$1.strs[0];
+				}
 layout : STORAGEQ read_parenthesis
 	{
 		ostringstream layoutDef;
@@ -1395,6 +1404,12 @@ struct_members: struct_members struct_member
 					{
 						$$.lineno		=$1.lineno;
 					};
+optional_render_state_list:	'{' render_state_list '}'
+					{
+						$$.lineno		=$2.lineno;
+					}|
+					{
+					}
 // render_state_list must pass up an array of commands. Each command has a name, a number, and a value.
 render_state_list : render_state_list render_state_command
 					{
@@ -1549,6 +1564,10 @@ render_state_rvalue : IDENTIFIER
 							$$.lineno=$1.lineno;
 							$$.fnum=$1.fnum;
 						};
+type_spec: IDENTIFIER
+		{
+			$$.strs[0]=$1.strs[0];
+		}
 %%
 
 void glfxWarning(const char* e)

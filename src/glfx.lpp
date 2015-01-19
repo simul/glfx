@@ -105,33 +105,6 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
 <INITIAL>"patch"|"centroid"						if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.strs[0]=yytext; stdReturn(STORAGET);}*/
 /*
-<INITIAL>"uniform"								{
-													glfxPushState(IN_UNIFORM_DECL);
-													stdReturn(UNIFORM);
-												}
-<IN_UNIFORM_DECL>"Texture2DMS"					{
-													glfxlval.num=TEXTURE2DMS;
-													stdReturn(TEXTURE)2DMS;
-												}
-<IN_UNIFORM_DECL>"<"							{
-													stdReturn('<');
-												}
-<IN_UNIFORM_DECL>">"							{
-													stdReturn('>');
-												}
-<IN_UNIFORM_DECL>{ID_BLCK}						{
-													glfxlval.strs[0]=yytext;
-													stdReturn(IDENTIFIER);
-												}
-<IN_UNIFORM_DECL>";"							{
-													glfxPopState();
-													stdReturn(';');
-												}
-<IN_SHADER>[^\n{}]*\n							{
-													glfxlval.strs[0]=yytext;
-													stdReturn(SHADER_LINE);
-												}
-												 ',' ':' '=' '.' '+' '-' '*' '/' '[' ']'
 */
 %%
 <INITIAL>"#"define								{
@@ -154,6 +127,27 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext); 
 													glfxPopState();
 													stdReturn(EOL);
+												}
+<INITIAL>"uniform"								{
+													glfxPushState(IN_UNIFORM_DECL);
+													stdReturn(UNIFORM);
+												}
+<IN_UNIFORM_DECL>"Texture2DMS"					{
+													glfxlval.num=TEXTURE2DMS;
+													stdReturn(TEXTURE2DMS);
+												}
+<IN_UNIFORM_DECL>"<"							{
+													stdReturn('<');
+												}
+<IN_UNIFORM_DECL>">"							{
+													stdReturn('>');
+												}
+<IN_UNIFORM_DECL>{ID_BLCK}						{
+													stdReturn(IDENTIFIER);
+												}
+<IN_UNIFORM_DECL>";"							{
+													glfxPopState();
+													stdReturn(';');
 												}
 <INITIAL>"layout"								{
 													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
@@ -443,21 +437,20 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER>"!="									stdReturn(NOT_EQ);
 
 <IN_SHADER>"+"			{
-													glfxlval.strs[0]=yytext;
-													stdReturn('+');
-												}  
+							stdReturn('+');
+						}  
 <IN_SHADER>"-"			{
-													glfxlval.strs[0]=yytext;
-													stdReturn('-');
-												}   
+							stdReturn('-');
+						}   
 <IN_SHADER>"*"			{
-													glfxlval.strs[0]=yytext;
-													stdReturn('*');
-												}    
+							stdReturn('*');
+						}    
+<IN_SHADER>"%"			{
+							stdReturn('%');
+						}    
 <IN_SHADER>"/"			{
-													glfxlval.strs[0]=yytext;
-													stdReturn('/');
-												}
+							stdReturn('/');
+						}
 
 <IN_SHADER_COMPILE,IN_TEXTURE_DECL>";"			{
 													glfxlval.strs[0]=yytext;
@@ -556,8 +549,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
-<IN_STRUCT>":"									stdReturn(':');
-<INITIAL,IN_RENDER_STATE,IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
+<IN_STRUCT>":"									{
+													stdReturn(':');
+												}
+<INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
 												}
