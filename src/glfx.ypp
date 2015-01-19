@@ -91,7 +91,7 @@
 %token INPUT_SEMANTIC NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
-%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS KNOWN_TYPE
+%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -116,8 +116,14 @@ prog : prog tok
 	}
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
+		bool compute_only=($2.strs[0]==string("image3D"));
+
 		ostringstream decl;
-		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$4.strs[0]<<";";
+		if(compute_only)
+			decl<<"#ifdef USE_GL_COMPUTE_SHADER\n";
+		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$2.strs[0]<<" "<<$4.strs[0]<<";";
+		if(compute_only)
+			decl<<"\n#endif\n";
 		gEffect->m_sharedCode<<decl.str();
 	}
 	| UNIFORM IDENTIFIER IDENTIFIER ';'
@@ -346,8 +352,9 @@ prog : prog tok
 		$$.strs[0]=$1.strs[0];
 		$$.lineno=$1.lineno;
 	};
-	texture_type: TEXTURE2DMS
+	texture_type: TEXTURE2DMS|IMAGE3D
 	{
+		$$.strs[0]=$1.strs[0];
 		$$.num=$1.num;
 	};
 	optional_templateval: '<' IDENTIFIER '>'
