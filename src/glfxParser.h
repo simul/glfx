@@ -72,6 +72,7 @@ struct ShaderParameterType
 struct glfxstype
 {
     glfxstype() {}
+	std::vector<glfxstype> children;
 	// A structure for various things we will want to store lists of.
     struct variable
 	{

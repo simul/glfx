@@ -146,9 +146,13 @@
 	}
 %}
 /* declare tokens */
-%token NUMBER
-%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL COMMA LEFT_BRACKET RIGHT_BRACKET BOOLEAN_NOT DEFINED AND OR SYMBOL WHITESPACE
+%token NUMBER FLOAT
+%token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL BOOLEAN_NOT DEFINED AND OR WHITESPACE
 %token EOL MACRO_NAME
+%token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
+%token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
+
+
 %%
 prog: prog prepr
     | /* nothing */// matches at beginning of input
@@ -157,64 +161,64 @@ prog: prog prepr
 	};
 
 prepr : IF if_conditions
-	{
-		string var=$2.str;
-		int num=$2.num;
-		Test test=$2.test;
-		apply_condition(var,$2.num!=0);
-	}
-	| MACRO_NAME optional_params
-	{
-		if(inActiveBlock())
 		{
-			string macro_name=$1.str;
-			string str=ProcessMacro(macro_name,$2.strs);
-			Write(str.c_str());
+			string var=$2.str;
+			int num=$2.num;
+			Test test=$2.test;
+			apply_condition(var,$2.num!=0);
 		}
-	}
-	| IFNDEF IDENTIFIER
-	{
-		string id=$2.str;
-		ifndef(id);
-	}
-	| IFDEF IDENTIFIER
-	{
-		string id=$2.str;
-		ifdef(id);
-	}
-	| DEFINE IDENTIFIER optional_param_decls optional_definition
-	{
-		string id=$2.str;
-		vector<string> def=$4.strs;
-		string params=$3.str;
-		if(inActiveBlock())
-			DefineMacro(id,params,def);
-		std::ostringstream definition;
-		definition<<"#define "<<id;
-		if(params.length())
-			definition<<"("<<params<<")";
-		for(int i=0;i<def.size();i++)
-			definition<<" "<<def[i];
-		definition<<"\n";
-		if(inActiveBlock())
-			Write(definition.str().c_str());
-	}
-	| ELSE
-	{
-		hash_else();
-	}
-	| ENDIF
-	{
-		endif();
-	}
-	| EOL
+		| MACRO_NAME optional_params
+		{
+			if(inActiveBlock())
+			{
+				string macro_name=$1.str;
+				string str=ProcessMacro(macro_name,$2.strs);
+				Write(str.c_str());
+			}
+		}
+		| IFNDEF IDENTIFIER
+		{
+			string id=$2.str;
+			ifndef(id);
+		}
+		| IFDEF IDENTIFIER
+		{
+			string id=$2.str;
+			ifdef(id);
+		}
+		| DEFINE IDENTIFIER optional_param_decls optional_definition
+		{
+			string id=$2.str;
+			vector<string> def=$4.strs;
+			string params=$3.str;
+			if(inActiveBlock())
+				DefineMacro(id,params,def);
+			std::ostringstream definition;
+			definition<<"#define "<<id;
+			if(params.length())
+				definition<<"("<<params<<")";
+			for(int i=0;i<def.size();i++)
+				definition<<" "<<def[i];
+			definition<<"\n";
+			if(inActiveBlock())
+				Write(definition.str().c_str());
+		}
+		| ELSE
+		{
+			hash_else();
+		}
+		| ENDIF
+		{
+			endif();
+		}
+		| EOL
 		{
 		}
-	| NUMBER
+		| NUMBER
 		{
 			Write($1.str.c_str());
 		}
-		| LEFT_BRACKET
+		| '('
 		{
 			Write($1.str.c_str());
 		}
@@ -222,19 +226,59 @@ prepr : IF if_conditions
 		{
 			Write($1.str.c_str());
 		}
-		| RIGHT_BRACKET
+		| ')'
 		{
 			Write($1.str.c_str());
 		}
-		| SYMBOL
+		| symbol
 		{
 			Write($1.str.c_str());
 		}
-		| COMMA
+		| ','
 		{
 			Write($1.str.c_str());
-		};
-optional_param_decls: LEFT_BRACKET param_decl_list RIGHT_BRACKET
+		}
+symbol: '.'
+		{
+			$$.str=$1.str;
+		}
+		|'{'
+		{
+			$$.str=$1.str;
+		}
+		|'}'
+		{
+			$$.str=$1.str;
+		}
+		|','
+		{
+			$$.str=$1.str;
+		}
+		|';'
+		{
+			$$.str=$1.str;
+		}
+		|'='
+		{
+			$$.str=$1.str;
+		}
+		|'/'
+		{
+			$$.str=$1.str;
+		}
+		|'*'
+		{
+			$$.str=$1.str;
+		}
+		|'+'
+		{
+			$$.str=$1.str;
+		}
+		|'-'
+		{
+			$$.str=$1.str;
+		}
+optional_param_decls: '(' param_decl_list ')'
 				 {
 					$$.str=$2.str;
 				 }
@@ -242,18 +286,221 @@ optional_param_decls: LEFT_BRACKET param_decl_list RIGHT_BRACKET
 				 {
 					$$.str="";
 				 };
-param_decl_list : param_decl_list COMMA IDENTIFIER
+param_decl_list : param_decl_list ',' expression
 			 {
 				string s=$1.str+",";
 				s+=$3.str;
 				$$.str=s;
 			 }
 			 |
-			IDENTIFIER
+			expression
 			 {
 				 $$.str=$1.str;
 			 };
-optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
+expression:conditional_exp
+					{
+						$$.str=$1.str;
+					}
+	conditional_exp		: logical_or_exp
+	{
+		$$.str=$1.str;
+	}
+| logical_or_exp '?' expression ':' conditional_exp
+	{
+		$$.str=$1.str+$2.str+$3.str+$4.str+$5.str;
+	}
+;
+logical_or_exp: logical_and_exp
+				{
+					$$.str=$1.str;
+				}
+			| logical_or_exp OR logical_and_exp
+				{
+					$$.str=$1.str;
+				}
+logical_and_exp: inclusive_or_exp
+				{
+					$$.str=$1.str;
+				}
+			| logical_and_exp AND inclusive_or_exp
+				{
+					$$.str=$1.str+$2.str+$3.str;
+				}
+inclusive_or_exp	: exclusive_or_exp
+				{
+					$$.str=$1.str;
+				}
+			| inclusive_or_exp '|' exclusive_or_exp
+				{
+					$$.str=$1.str+$2.str+$3.str;
+				}
+exclusive_or_exp	: and_exp
+				{
+					$$.str=$1.str;
+				}
+			| exclusive_or_exp '^' and_exp
+				{
+					$$.str=$1.str+$2.str+$3.str;
+				}
+and_exp			: equality_exp
+{
+	$$.str=$1.str;
+}
+			| and_exp '&' equality_exp
+{
+	$$.str=$1.str+$2.str+$3.str;
+}
+			;
+equality_exp: relational_exp
+			{
+				$$.str=$1.str;
+			}
+			| equality_exp EQ_EQ relational_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| equality_exp NOT_EQ relational_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+relational_exp: shift_expression
+			{
+				$$.str=$1.str;
+			}
+			| relational_exp '<' shift_expression
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| relational_exp '>' shift_expression
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| relational_exp LESS_EQ shift_expression
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| relational_exp GRTR_EQ shift_expression
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+shift_expression: additive_exp
+			{
+				$$.str=$1.str;
+			}
+			| shift_expression LEFT_SHIFT additive_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| shift_expression RIGHT_SHIFT additive_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+additive_exp: mult_exp
+			{
+				$$.str=$1.str;
+			}
+			| additive_exp '+' mult_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| additive_exp '-' mult_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+mult_exp: cast_exp
+			{
+				$$.str=$1.str;
+			}
+			| mult_exp '*' cast_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| mult_exp '/' cast_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+			| mult_exp '%' cast_exp
+			{
+				$$.str=$1.str+$2.str+$3.str;
+			}
+cast_exp: unary_exp
+			{
+				$$.str=$1.str;
+			}
+unary_exp: postfix_exp
+			{
+				$$.str=$1.str;
+			}
+			| PLUS_PLUS unary_exp
+			{
+				$$.str=$1.str+$2.str;
+			}
+			| MINUS_MINUS unary_exp
+			{
+				$$.str=$1.str+$2.str;
+			}
+			| unary_operator cast_exp
+			{
+				$$.str=$1.str+$2.str;
+			}
+unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
+			{
+				$$.str=$1.str;
+			}
+postfix_exp		: primary_exp
+					{
+						$$.str=$1.str;
+					}
+					| postfix_exp '[' expression ']'
+					{
+						$$.str=$1.str+$2.str+$3.str+$4.str;
+					}
+					| postfix_exp '(' argument_exp_list ')'
+					{
+						$$.str=$1.str+$2.str+$3.str+$4.str;
+					}
+					| postfix_exp '('			')'
+					{
+						$$.str=$1.str+$2.str+$3.str;
+					}
+					| postfix_exp '.' IDENTIFIER
+					{
+						$$.str=$1.str+$2.str+$3.str;
+					}
+
+primary_exp	: IDENTIFIER
+				{
+					$$.str=$1.str;
+				}
+			| const
+				{
+					$$.str=$1.str;
+				}
+			| '(' expression ')'
+				{
+					$$.str=$1.str+$2.str+$3.str;
+				}
+const		: NUMBER
+				{
+					$$.str=$1.str;
+				}
+argument_exp_list	: argument_exp_list ',' conditional_exp
+					{
+				string &el=$3.str;
+				vector<string> &defs=$$.strs;
+				defs=$1.strs;
+				defs.push_back(el);
+				$$.str=$1.str+$2.str+$3.str;
+					}
+					| conditional_exp
+					{
+				string &el=$1.str;
+				vector<string> &defs=$$.strs;
+				defs.clear();
+				defs.push_back(el);
+				$$.str=el;
+					}
+optional_params: '(' argument_exp_list ')'
 				 {
 					$$.str=$1.str+$2.str+$3.str;
 					$$.strs=$2.strs;
@@ -263,7 +510,7 @@ optional_params: LEFT_BRACKET param_list RIGHT_BRACKET
 					$$.str="";
 					$$.strs.clear();
 				 };
-param_list : param_list COMMA rvalue
+param_list : param_list ',' rvalue
 			 {
 				string &el=$3.str;
 				vector<string> &defs=$$.strs;
@@ -290,14 +537,14 @@ rvalue: IDENTIFIER optional_params
 				 $$.str=$1.str+$2.str;
 			 }
 			 |
-			 rvalue SYMBOL rvalue
+			 rvalue symbol rvalue
 			 {
 				string &r=$1.str;
 				string &s=$2.str;
 				string &v=$3.str;
 				$$.str=r+s+v;
 			 }
-				| LEFT_BRACKET rvalue RIGHT_BRACKET
+				| '(' rvalue ')'
 			 {
 				 $$.str=$1.str+$2.str+$3.str;
 			 }
@@ -340,7 +587,7 @@ if_condition: IDENTIFIER if_test
 						$$.num=($1.num!=0);
 						$$.str=id;
 					};
-defined_test: DEFINED LEFT_BRACKET IDENTIFIER RIGHT_BRACKET
+defined_test: DEFINED '(' IDENTIFIER ')'
 					{
 						$$.str="defined(";
 						$$.str+=$3.str;
@@ -394,15 +641,15 @@ definition_element: IDENTIFIER
 					  {
 						  $$.str=$1.str;
 					  }
-					 | LEFT_BRACKET
+					 | '('
 					  {
 						  $$.str=$1.str;
 					  }
-					 | RIGHT_BRACKET
+					 | ')'
 					  {
 						  $$.str=$1.str;
 					  }
-					 | COMMA
+					 | ','
 					  {
 						  $$.str=$1.str;
 					  }
@@ -410,7 +657,7 @@ definition_element: IDENTIFIER
 						{
 						  $$.str=$1.str;
 						}
-						| SYMBOL
+						| symbol
 						{
 							$$.str=$1.str;
 						}

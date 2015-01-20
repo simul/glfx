@@ -130,6 +130,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">src/PreprocessParser.cpp</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">src/PreprocessParser.cpp</Outputs>
     </CustomBuild>
+    <None Include="src\c_syntax.bnf" />
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\lighting.glsl" />
     <None Include="test\shaders\light_pass.glsl" />
