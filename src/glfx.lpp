@@ -84,10 +84,14 @@ the last is C code to be copied verbatim to the output.
 		std::cout<<str.c_str();
 		return strlen(str.c_str());
 	}
+	std::string recent;
 	int stdReturn_(int u)
 	{
 		glfxlval.lineno=yylineno;
 		glfxlval.strs[0]=yytext;
+		recent+=glfxlval.strs[0]+" ";
+		while(recent.length()>100)
+			recent.erase(0,1);
 		return (u);
 	}
 #define stdReturn return stdReturn_

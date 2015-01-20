@@ -250,9 +250,6 @@ prog : prog tok
 		}
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 	}
-	/*| line_statement
-	{
-	}*/
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
 		currentCsLayout="";
@@ -336,9 +333,9 @@ prog : prog tok
 	};
 	line_statement: LINE lex_fx NUM NUM lex_passthrough
 	{
-		last_linenumber=$3.num;
-		current_filenumber=$4.num;
-		global_linenumber=$1.lineno+1;// the line AFTER the #line directve.
+		last_linenumber		=$3.num;
+		current_filenumber	=$4.num;
+		global_linenumber	=$1.lineno+1;// the line AFTER the #line directve.
 		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,last_linenumber);
 	}
 	ignore_line_statement: LINE NUM NUM
@@ -349,23 +346,23 @@ prog : prog tok
 	}
 	shader_and_layout: SHADER shader_fx
 	{
-		$$.strs[0]=$1.strs[0];
-		$$.lineno=$1.lineno;
+		$$.strs[0]	=$1.strs[0];
+		$$.lineno	=$1.lineno;
 	};
 	texture_type: TEXTURE2DMS|IMAGE3D
 	{
-		$$.strs[0]=$1.strs[0];
-		$$.num=$1.num;
+		$$.strs[0]	=$1.strs[0];
+		$$.num		=$1.num;
 	};
 	optional_templateval: '<' IDENTIFIER '>'
 	{
-		$$.strs[0]=$2.strs[0];
-		$$.num=1;
+		$$.strs[0]	=$2.strs[0];
+		$$.num		=1;
 	}
 	|
 	{
-		$$.strs[0]="";
-		$$.num=0;
+		$$.strs[0]	="";
+		$$.num		=0;
 	}
 layout_params:'(' NUM ',' NUM ',' NUM ')'
 {
