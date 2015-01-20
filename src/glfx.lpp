@@ -14,7 +14,6 @@ the last is C code to be copied verbatim to the output.
 %option outfile="src/glfxScanner.cpp" header-file="src/glfxScanner.h"
 
 %{
-
 	//#define YYFPRINTF glfxprintf
 	#define YYDEBUG 1
     #ifdef _MSC_VER

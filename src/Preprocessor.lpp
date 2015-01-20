@@ -206,6 +206,12 @@
 		}
 		return outp;
 	}
+	static int ppReturn_(int u)
+	{
+		prepro_lval.str=yytext;
+		return (u);
+	}
+	#define stdReturn(u) return ppReturn_(u)
 %}
 
 ID_BLCK [a-zA-Z_:][a-zA-Z0-9_:]*
@@ -214,33 +220,33 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 %%
 <INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
-							if (inActiveBlock())
-								Write();// Single line comment (with possible continuation)
+												if (inActiveBlock())
+													Write();// Single line comment (with possible continuation)
 											}
 <INITIAL>"#"if {
 					BEGIN IF_STATEMENT;
 					prepro_lval.str=yytext;
-					return IF;
+					stdReturn(IF);
 				}
 <INITIAL>"#"ifndef {
 						BEGIN PREPRO;
 						prepro_lval.str=yytext;
-						return IFNDEF;
+						stdReturn(IFNDEF);
 					}
 <INITIAL>"#"ifdef {
 					BEGIN PREPRO;
 					prepro_lval.str=yytext;
-					return IFDEF;
+					stdReturn(IFDEF);
 				}
 <INITIAL>"#"else {
 					BEGIN PREPRO;
 					prepro_lval.str=yytext;
-					return ELSE;
+					stdReturn(ELSE);
 				}
 <INITIAL>"#"endif {
 				BEGIN PREPRO;
 				prepro_lval.str=yytext;
-				return ENDIF;
+				stdReturn(ENDIF);
 			}
 <INITIAL>^"#"include[ \t]*[\"<] {
 									BEGIN IFILE; /*match #include statement up through the quote or <*/
@@ -275,7 +281,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 							if(HasParameters(prepro_lval.str.c_str()))
 							{
 								BEGIN START_INSERTING_MACRO;
-								return MACRO_NAME;
+								stdReturn(MACRO_NAME);
 							}
 							string str=ProcessMacro(prepro_lval.str,vector<string>());
 							if (inActiveBlock())
@@ -289,13 +295,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 					}
 <PREPRO>{ID_BLCK}	{
 						prepro_lval.str = yytext;
-						return IDENTIFIER;
+						stdReturn(IDENTIFIER);
 					}
 <START_INSERTING_MACRO>"("	{
 								prepro_lval.str = yytext;
 								BEGIN INSERTING_MACRO;
 								preproBracket=1;
-								return LEFT_BRACKET;
+								stdReturn('(');
 							}
 <START_INSERTING_MACRO>.	{		// anything but open-bracket? this wasn't a macro.
 								if (inActiveBlock())
@@ -308,40 +314,46 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{ID_BLCK}	{
 								prepro_lval.str = yytext;
-								return IDENTIFIER;
+								stdReturn(IDENTIFIER);
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{FLOAT_BLCK}	{
 								prepro_lval.str = yytext;
-								return NUMBER;
+								stdReturn(NUMBER);
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>{NUM_BLCK}	{
 								prepro_lval.str = yytext;
-								return NUMBER;
+								stdReturn(NUMBER);
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>","	{
 								prepro_lval.str = yytext;
-								return COMMA;
+								stdReturn(',');
 							}
 <IN_MACRO_DEFINITION,IF_STATEMENT>")"	{
 								prepro_lval.str = yytext;
-								return RIGHT_BRACKET;
+								stdReturn(')');
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>[;*/+-=!~\.]	{
 								prepro_lval.str=yytext;
-								return SYMBOL;
+								stdReturn(prepro_lval.str[0]);
 							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>"{"	{
 								prepro_lval.str=yytext;
-								return SYMBOL;
+								stdReturn('{');
 							}
 <IN_MACRO_DEFINITION>"}"	{
 								prepro_lval.str=yytext;
-								return SYMBOL;
+								stdReturn('}');
 							}
+<INSERTING_MACRO>"["	{
+							stdReturn('[');
+						}
+<INSERTING_MACRO>"]"	{
+							stdReturn(']');
+						}
 <INSERTING_MACRO>"("	{
 							prepro_lval.str = yytext;
 							preproBracket++;
-							return LEFT_BRACKET;
+							stdReturn('(');
 						}
 <INSERTING_MACRO>")"	{
 							prepro_lval.str = yytext;
@@ -350,78 +362,101 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 							{
 								BEGIN INITIAL;
 							}
-							return RIGHT_BRACKET;
+							stdReturn(')');
 						}
+<INSERTING_MACRO>"*="		stdReturn(TIMES_EQUALS);
+<INSERTING_MACRO>"/="		stdReturn(OVER_EQUALS);
+<INSERTING_MACRO>"%="		stdReturn(PERCENT_EQUALS);
+<INSERTING_MACRO>"+="		stdReturn(PLUS_EQUALS);
+<INSERTING_MACRO>"-="		stdReturn(MINUS_EQUALS);
+<INSERTING_MACRO>"<<="		stdReturn(LEFT_SHIFT_EQUALS);
+<INSERTING_MACRO>">>="		stdReturn(RIGHT_SHIFT_EQUALS);
+<INSERTING_MACRO>"&="		stdReturn(AND_EQUALS);
+<INSERTING_MACRO>"^="		stdReturn(XOR_EQUALS);
+<INSERTING_MACRO>"|="		stdReturn(OR_EQUALS);
+<INSERTING_MACRO>"||"		stdReturn(OR);
+<INSERTING_MACRO>"&&"		stdReturn(AND);
+
+<INSERTING_MACRO>"<="		stdReturn(LESS_EQ);
+<INSERTING_MACRO>">="		stdReturn(GRTR_EQ);
+
+<INSERTING_MACRO>"<<"		stdReturn(LEFT_SHIFT);
+<INSERTING_MACRO>">>"		stdReturn(RIGHT_SHIFT);
+
+<INSERTING_MACRO>"++"		stdReturn(PLUS_PLUS);
+<INSERTING_MACRO>"--"		stdReturn(MINUS_MINUS);
+<INSERTING_MACRO>"=="		stdReturn(EQ_EQ);
+<INSERTING_MACRO>"!="		stdReturn(NOT_EQ);
 <IF_STATEMENT>"defined" {
 							prepro_lval.str=yytext;
-							return DEFINED;
+							stdReturn(DEFINED);
 						}
 <IF_STATEMENT,IN_MACRO_DEFINITION>"||"	{
 						prepro_lval.str=yytext;
-						return OR;
+						stdReturn(OR);
 					}
 <IF_STATEMENT,IN_MACRO_DEFINITION>"&&"	{
 											prepro_lval.str=yytext;
-											return AND;
+											stdReturn(AND);
 										}
 <IF_STATEMENT,IN_MACRO_DEFINITION>"("	{
 											prepro_lval.str=yytext;
-											return LEFT_BRACKET;
+											stdReturn('(');
 										} 
 <IF_STATEMENT,DEFINING3,IN_MACRO_DEFINITION>{ID_BLCK}		{
 								prepro_lval.str=yytext;
-								return IDENTIFIER;
+								stdReturn(IDENTIFIER);
 							}
 <IF_STATEMENT,IN_MACRO_DEFINITION>{NUM_BLCK} {
 							prepro_lval.str=yytext;
 							prepro_lval.num=atoi(prepro_lval.str.c_str());
-							return NUMBER;
+							stdReturn(NUMBER);
 						}
 <IN_MACRO_DEFINITION>[ \t]	{
 								prepro_lval.str=yytext;
-								return WHITESPACE;
+								stdReturn(WHITESPACE);
 							}
 <IF_STATEMENT>"!"	{
 						prepro_lval.str=yytext;
-						return BOOLEAN_NOT;
+						stdReturn(BOOLEAN_NOT);
 					}
 <IF_STATEMENT>"==" {
 						prepro_lval.str=yytext;
-						return IS_EQUAL;
+						stdReturn(IS_EQUAL);
 					}
 <IF_STATEMENT>\n {
 						prepro_lval.str=yytext;
 						BEGIN INITIAL;
-						return EOL;
+						stdReturn(EOL);
 					}
 <IF_STATEMENT>"//"[^\n]+ {
 						prepro_lval.str=yytext;
 						BEGIN INITIAL;
-						return EOL;
+						stdReturn(EOL);
 					}
 <INITIAL>"#"define {
 						prepro_lval.str=yytext;
 						BEGIN DEFINING;
-						return DEFINE;
+						stdReturn(DEFINE);
 					}
 <DEFINING>{ID_BLCK}	{
 						prepro_lval.str=yytext;
 						BEGIN DEFINING2;
-						return IDENTIFIER;
+						stdReturn(IDENTIFIER);
 					}
 <DEFINING2>"("		{
 						BEGIN DEFINING3;
 						prepro_lval.str=yytext;
-						return LEFT_BRACKET;
+						stdReturn('(');
 					} 
 <DEFINING3>","		{
 						prepro_lval.str=yytext;
-						return COMMA;
+						stdReturn(',');
 					}  
 <DEFINING3>")"		{
 						prepro_lval.str=yytext;
 						BEGIN DEFINING4;
-						return RIGHT_BRACKET;
+						stdReturn(')');
 					}
 <DEFINING2,DEFINING4>[ \t]	{
 						prepro_lval.str=yytext;
@@ -429,12 +464,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 													// e.g. in #define texture_clamp(tex,texc) texture(tex,texc)
 													// this would be texture(tex,texc)
 					// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
-						return WHITESPACE;
+						stdReturn(WHITESPACE);
 					}
 <PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT>\n	{
 				prepro_lval.str=yytext;
 				BEGIN INITIAL;
-				return EOL;
+				stdReturn(EOL);
 			}
 <DEFINING,DEFINING2,PREPRO><<EOF>> {
 			BEGIN INITIAL;
