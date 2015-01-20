@@ -1228,14 +1228,14 @@ initializer		: assignment_exp
 				}
 			| '{' initializer_list '}'
 				{
-					vector<string> children = $$.children;
+					vector<glfxstype> children = $$.children;
 					children = $2.children;
 					string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0];
 					$$.strs[0] = initlist;
 				}
 			| '{' initializer_list ',' '}'
 			{
-					vector<string> children = $$.children;
+					vector<glfxstype> children = $$.children;
 					children = $2.children;
 					string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0] + $4.strs[0];
 					$$.strs[0] = initlist;
@@ -1246,7 +1246,7 @@ initializer_list: initializer
 				}
 			| initializer_list ',' initializer
 				{
-					vector<string> children = $$.children;
+					vector<glfxstype> children = $$.children;
 					children = $1.children;
 					children.push_back($3);
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];

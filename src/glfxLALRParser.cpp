@@ -3672,7 +3672,7 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 1230 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-					vector<string> children = (yyval).children;
+					vector<glfxstype> children = (yyval).children;
 					children = (yyvsp[(2) - (3)]).children;
 					string initlist = (yyvsp[(1) - (3)]).strs[0] + (yyvsp[(2) - (3)]).strs[0] + (yyvsp[(3) - (3)]).strs[0];
 					(yyval).strs[0] = initlist;
@@ -3683,7 +3683,7 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 1237 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-					vector<string> children = (yyval).children;
+					vector<glfxstype> children = (yyval).children;
 					children = (yyvsp[(2) - (4)]).children;
 					string initlist = (yyvsp[(1) - (4)]).strs[0] + (yyvsp[(2) - (4)]).strs[0] + (yyvsp[(3) - (4)]).strs[0] + (yyvsp[(4) - (4)]).strs[0];
 					(yyval).strs[0] = initlist;
@@ -3702,7 +3702,7 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 1248 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-					vector<string> children = (yyval).children;
+					vector<glfxstype> children = (yyval).children;
 					children = (yyvsp[(1) - (3)]).children;
 					children.push_back((yyvsp[(3) - (3)]));
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
