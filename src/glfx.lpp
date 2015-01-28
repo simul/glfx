@@ -143,6 +143,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_UNIFORM_DECL>"Texture2DMS"					{
 													stdReturn(TEXTURE2DMS);
 												}
+<IN_UNIFORM_DECL>"RWTexture3D"					{
+													stdReturn(RW_TEXTURE3D);
+												}
+<IN_UNIFORM_DECL>"RWTexture2D"					{
+													stdReturn(RW_TEXTURE2D);
+												}  
 <IN_UNIFORM_DECL>"image3D"						{
 													stdReturn(IMAGE3D);
 												}

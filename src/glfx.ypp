@@ -9,6 +9,7 @@
     #include <string>
     #include <vector>
     #include <sstream>
+    #include <algorithm>
     
     #include "glfxParser.h"
     #include "glfxClasses.h"
@@ -81,17 +82,32 @@
 	{
 		if(s==string("vec4"))
 		{
-			return "";
+			return "layout(rgba32f)";
+		}
+		if(s==string("float"))
+		{
+			return "layout(r32f)";
 		}
 		return "";
 	}
+	void stringReplaceAll(std::string& str, const std::string& from, const std::string& to)
+	{
+		if(from.empty())
+			return;
+		size_t start_pos = 0;
+		while((start_pos = str.find(from, start_pos)) != std::string::npos)
+		{
+			str.replace(start_pos, from.length(), to);
+			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
 %}
 
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token INPUT_SEMANTIC NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
-%token RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -116,15 +132,19 @@ prog : prog tok
 	}
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
-		bool compute_only=($2.strs[0]==string("image3D"));
-
+		string texture_type=$2.strs[0];
+		bool compute_only=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
+		
+		stringReplaceAll(texture_type,"RWTexture","image");
 		ostringstream decl;
 		if(compute_only)
-			decl<<"#ifdef USE_GL_COMPUTE_SHADER\n";
-		decl<<GetLayoutForTemplateType($3.strs[0])<<" uniform "<<$2.strs[0]<<" "<<$4.strs[0]<<";";
-		if(compute_only)
-			decl<<"\n#endif\n";
+			gEffect->m_sharedCode<<"#ifdef USE_GL_COMPUTE_SHADER\n";
+		string template_type=$3.strs[0];
+		string texture_name=$4.strs[0];
+		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<texture_type<<" "<<texture_name<<";\n";
 		gEffect->m_sharedCode<<decl.str();
+		if(compute_only)
+			gEffect->m_sharedCode<<"#endif\n";
 	}
 	| UNIFORM IDENTIFIER IDENTIFIER ';'
 	{
@@ -381,7 +401,7 @@ prog : prog tok
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
 	};
-	texture_type: TEXTURE2DMS|IMAGE3D
+	texture_type: TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
@@ -932,8 +952,11 @@ line_statement_in_shader: LINE NUM NUM
 		*/
 declaration	: type_spec init_declarator_list
 		{
-			$$.strs[0]=$1.strs[0]+" ";
-			$$.strs[0]+=$2.strs[0];
+			string type_spec=$1.strs[0];
+			$$.strs[0]=type_spec+" ";
+			string init_declarator_list=$2.strs[0];
+			stringReplaceAll(init_declarator_list,"%type%",type_spec);
+			$$.strs[0]+=init_declarator_list;
 		}
 init_declarator_list	: init_declarator
 		{
@@ -949,7 +972,41 @@ init_declarator		: declarator
 		}
 		| declarator '=' initializer
 		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+			// An expression of the form vec2 c=....;
+			// Pass-through normally, but most GLSL compilers cannot handle array initializers.
+			string initializer=$3.strs[0];
+			if($3.children.size()<=1)
+			{
+				$$.strs[0]=$1.strs[0]+$2.strs[0]+initializer;
+			}
+			else
+			{
+				ostringstream declare_lines;
+				declare_lines<<$1.strs[0]<<";\n";
+				/* Here we convert an expression of the form 
+										vec2 poss[2]=
+										{
+											{ 1.0,-1.0},
+											{ 1.0, 1.0},
+										};
+				to the form:
+										vec2 poss[2];
+										poss[0]=vec2(1.0,-1.0);
+										poss[1]=vec2(1.0, 1.0);
+				Only trouble is, we don't yet have the "vec2" or whatever the type is. So we will insert a special %type% wildcard for now.
+										*/
+				string name=$1.strs[0];
+				int sq_pos=name.find("[");
+				name=name.substr(0,sq_pos);
+				for(int i=0;i<$3.children.size();i++)
+				{
+					string c=$3.children[i].strs[0];
+					std::replace( c.begin(), c.end(), '{', '('); 
+					std::replace( c.begin(), c.end(), '}', ')'); 
+					declare_lines<<"\t"<<name<<"["<<i<<"]=%type%"<<c<<";\n";
+				}
+				$$.strs[0]=declare_lines.str();
+			}
 		}
 declarator: IDENTIFIER
 		{
@@ -961,13 +1018,14 @@ declarator: IDENTIFIER
 		}
 		| declarator '[' NUM ']'
 		{
+			$$.num=$3.num;
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
 		}
-			| declarator '['		']'
+		| declarator '['		']'
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-			| declarator '('		')'
+		| declarator '('		')'
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
@@ -986,7 +1044,8 @@ statement:  expression ';'
 				}
 			| compound_statement
 				{
-					$$.strs[0]=$1.strs[0];
+					string compound_statement=$1.strs[0];
+					$$.strs[0]=compound_statement;
 				}
 			| IF '(' expression ')' statement
 				{
@@ -1006,7 +1065,8 @@ statement:  expression ';'
 				}
 			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0];
+					string statement=$9.strs[0];
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;
 				}
 			| GOTO IDENTIFIER ';'
 				{
@@ -1022,8 +1082,17 @@ statement:  expression ';'
 				}
 			| RETURN optional_expression ';'
 			{
-				$$.strs[0]="";
-				$$.strs[1]=$2.strs[0];
+				string optional_expression=$2.strs[0];
+				if(optional_expression.length()>0)
+				{
+					$$.strs[0]="";
+					$$.strs[1]=optional_expression;
+				}
+				else
+				{
+					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[1]="";
+				}
 				$$.lineno=$1.lineno;
 			}
 			| line_statement_in_shader
@@ -1053,7 +1122,8 @@ optional_expression: expression
 /* multiple statements in braces*/
 compound_statement	: '{' statement_list '}'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+					string statement_list=$2.strs[0];
+					$$.strs[0]=$1.strs[0]+statement_list+$3.strs[0];
 				}
 
 expression: assignment_exp
@@ -1274,29 +1344,32 @@ argument_exp_list	: argument_exp_list ',' assignment_exp
 initializer		: assignment_exp
 				{
 					string assignment_exp = $1.strs[0];
-					$$.strs[0]=$1.strs[0];
+					$$.strs[0]=assignment_exp;
 				}
 			| '{' initializer_list '}'
 				{
-					vector<glfxstype> children = $$.children;
+					vector<glfxstype> &children = $$.children;
 					children = $2.children;
 					string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0];
 					$$.strs[0] = initlist;
 				}
 			| '{' initializer_list ',' '}'
 			{
-					vector<glfxstype> children = $$.children;
+					vector<glfxstype> &children = $$.children;
 					children = $2.children;
 					string initlist = $1.strs[0] + $2.strs[0] + $3.strs[0] + $4.strs[0];
 					$$.strs[0] = initlist;
 				}
 initializer_list: initializer
 				{
+					vector<glfxstype> &children = $$.children;
+					children.clear();
+					children.push_back($1);
 					$$.strs[0]=$1.strs[0];
 				}
 			| initializer_list ',' initializer
 				{
-					vector<glfxstype> children = $$.children;
+					vector<glfxstype> &children = $$.children;
 					children = $1.children;
 					children.push_back($3);
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
