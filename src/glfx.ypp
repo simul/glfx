@@ -262,8 +262,10 @@ prog : prog tok
 		std::string shaderName		=$3.strs[0];
 		std::string returnType		=$2.strs[0];
 		std::string shaderContent	=$8.strs[0];
+		std::string returnVariable	=$8.strs[1];
 		ostringstream shaderCode;
 		ostringstream extraDeclarations;
+		ostringstream finalCode;
 		int main_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		int content_linenumber=$8.lineno+(last_linenumber-global_linenumber);
 		// Add shader parameters
@@ -281,12 +283,14 @@ prog : prog tok
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
-					string sem=m.name;
+					string sem=(type+"_")+m.name;
 					if(m.semantic.length())
+						sem=(sem+"_")+m.semantic;
+					if(m.semantic==string("gl_VertexID"))
 						sem=m.semantic;
 					//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
-					shaderCode<<it->storage<<' '<<m.type<<' '<<sem<<"_;"<<endl;
-					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<"_;\n";
+					shaderCode<<"in "<<it->storage<<' '<<m.type<<' '<<sem<<";"<<endl;
+					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<";\n";
 				}
 				continue;
 			}
@@ -309,13 +313,39 @@ prog : prog tok
 			}
 		}
 		delete $5.vars;
+		// Add the return variable.
+		if(returnType!=string("void"))
+		{
+			map<string,Struct*>::const_iterator u=gEffect->m_structs.find(returnType);
+			if(u==gEffect->m_structs.end())
+			{
+				// if we're returning a simple type, we declare it as an output.
+				shaderCode<<"out "<<returnType<<" "<<returnVariable<<"_out;\n";
+				finalCode<<returnVariable<<"_out="<<returnVariable<<";"<<endl;
+			}
+			else
+			{
+				// if we're returning a struct, we declare outputs for each of its members,
+				// then fill in them all.
+				const Struct *s=u->second;
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					string sem=(returnType+"_")+m.name;
+					if(m.semantic.length())
+						sem=(sem+"_")+m.semantic;
+					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
+					finalCode<<sem<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+			}
+		}
 		// Add definition and code
 		shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 		shaderCode<<"void main()\n{\n";
 		if(extraDeclarations.str().length())
 			shaderCode<<extraDeclarations.str()<<"\n";
 		shaderCode<<"#line "<<content_linenumber<<" "<<current_filenumber<<endl;
-		shaderCode<<shaderContent<<"\n}\n";
+		shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
 		gEffect->m_shaderLayouts[shaderName]	=currentCsLayout;
 		gEffect->m_shaders[shaderName]			=shaderCode.str();
 		// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
@@ -327,9 +357,11 @@ prog : prog tok
 		$5.prog->m_separable=$1.boolean;
 		gEffect->m_programs[$3.strs[0]]=$5.prog;
 	}
-	| TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
+	| technique_decl
 	{
-		gEffect->m_techniques[$3.strs[0]] = $5.tech;
+	};
+	| GROUP lex_fx IDENTIFIER '{' technique_decls '}' lex_passthrough
+	{
 	};
 	line_statement: LINE lex_fx NUM NUM lex_passthrough
 	{
@@ -375,6 +407,21 @@ layout_params:'(' NUM ',' NUM ',' NUM ')'
 	ret+=")";
 	$$.strs[0]=ret;
 };
+technique_decls: technique_decls group_technique_decl
+			  {
+			  }
+			  |
+			  group_technique_decl
+			  {
+			  }
+group_technique_decl: TECHNIQUE IDENTIFIER '{' tech_def '}'
+	{
+		gEffect->m_techniques[$2.strs[0]] = $4.tech;
+	};
+technique_decl: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
+	{
+		gEffect->m_techniques[$3.strs[0]] = $5.tech;
+	};
 cs_layout_spec: '(' cs_layout ')'
 		  {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
@@ -804,7 +851,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 			string compiledShaderName						=ss.str();
 			$$.strs[0]										=compiledShaderName;
 
-			CompiledShader *compiledShader	=gEffect->m_compiledShaders[compiledShaderName];
+			CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
 
 			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
 			compiledShader->m_functionName					=$5.strs[0];
@@ -852,14 +899,17 @@ shader_layout_list : shader_layout_list ',' layout
 				};
 statement_list: statement_list statement
 				{
-					$$.strs[0]	=$1.strs[0];
-					$$.strs[0]	+=$2.strs[0];
+					string statement_list=$1.strs[0];
+					string statement=$2.strs[0];
+					$$.strs[0]	=statement_list;
+					$$.strs[0]	+=statement;
 					$$.strs[1]	=$1.strs[1]+$2.strs[1];
 				}
 				|
 				statement
 				{
-					$$.strs[0]	=$1.strs[0];
+					string statement=$1.strs[0];
+					$$.strs[0]	=statement;
 					$$.strs[1]	=$1.strs[1];
 				}
 				|

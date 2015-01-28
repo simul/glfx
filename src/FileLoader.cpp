@@ -109,7 +109,9 @@ const char *FileLoader::FindFileInPathStack(const char *filename_utf8,const std:
 {
 	static std::string fn;
 	if(FileExists(filename_utf8))
+	{
 		return filename_utf8;
+	}
 	for(int i=(int)path_stack_utf8.size()-1;i>=0;i--)
 	{
 		fn=(path_stack_utf8[i]+"/")+filename_utf8;

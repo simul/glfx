@@ -27,6 +27,7 @@ typedef int errno_t;
 #endif
 #include "glfxScanner.h"
 #include "glfxProgram.h"
+#include <set>
 
 Effect::Effect()
     : m_includes(0)
@@ -39,8 +40,11 @@ Effect::~Effect()
         delete it->second;
     for(map<string,Sampler*>::iterator it=m_samplers.begin(); it!=m_samplers.end(); ++it)
         delete it->second;
+	std::set<CompiledShader*> comp;
     for(CompiledShaderMap::iterator it=m_compiledShaders.begin(); it!=m_compiledShaders.end(); ++it)
-        delete it->second;
+        comp.insert(it->second);
+    for(std::set<CompiledShader*>::iterator it=comp.begin(); it!=comp.end(); ++it)
+        delete (*it);
 }
 
 bool& Effect::Active()

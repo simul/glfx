@@ -55,6 +55,7 @@ typedef int errno_t;
 #include "StringToWString.h"
 #include "StringFunctions.h"
 #include "FileLoader.h"
+#include <direct.h>
 
 #pragma optimize("",off)
 
@@ -68,6 +69,12 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 	fullPathNameUtf8	=fileLoader.FindFileInPathStack(filename_utf8,shaderPathsUtf8);
 	if(!fullPathNameUtf8.length())
 		return NULL;
+	if(fullPathNameUtf8.find(":")>=fullPathNameUtf8.length())
+	{
+		char pth[_MAX_PATH];
+		_getcwd(pth,_MAX_PATH);
+		fullPathNameUtf8=(string(pth)+"/")+fullPathNameUtf8;
+	}
 	wstring filenamew=StringToWString(fullPathNameUtf8);
 	FILE *f=_wfopen(filenamew.c_str(),L"r");
 	string path=fullPathNameUtf8;
