@@ -176,8 +176,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_STRUCT);
 													stdReturn(STRUCT);
 												}
-<INITIAL>"SV_DispatchThreadID"					glfxlval.strs[0]=yytext;		stdReturn(INPUT_SEMANTIC);
-<INITIAL>"gl_GlobalInvocationID"				glfxlval.strs[0]=yytext;		stdReturn(INPUT_SEMANTIC);
+<INITIAL>"SV_DispatchThreadID"					glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
+<INITIAL>"gl_GlobalInvocationID"				glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
+<INITIAL>"SV_GroupID"							glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPID);
+<INITIAL>"SV_GroupThreadID"						glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPTHREADID);
 <INITIAL>"program"								glfxlval.boolean=false;		stdReturn(PROGRAM);
 <INITIAL>"stages"								glfxlval.boolean=true;		stdReturn(PROGRAM);
 <INITIAL>"technique"							glfxlval.boolean=false;		stdReturn(TECHNIQUE);

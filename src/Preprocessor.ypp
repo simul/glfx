@@ -56,7 +56,6 @@
 		bool result	=IsDefined(id)&&inActiveBlock();
 		activeBlockStack.push_back(result);
 		blockTestStack.push_back(("#ifdef ")+id);
-//passthroughBlockStack.push_back(false);
 		Skip();
 	}
 	void ifndef(string id)

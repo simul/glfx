@@ -99,12 +99,13 @@
 		{
 			str.replace(start_pos, from.length(), to);
 			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
-    }
-}
+		}
+	}
+	string getGLInputSemantic(int s);
 %}
 
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token INPUT_SEMANTIC NUM INCLUDE SAMPLER FLOAT
+%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
 %token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE
@@ -138,7 +139,7 @@ prog : prog tok
 		stringReplaceAll(texture_type,"RWTexture","image");
 		ostringstream decl;
 		if(compute_only)
-			gEffect->m_sharedCode<<"#ifdef USE_GL_COMPUTE_SHADER\n";
+			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
 		string template_type=$3.strs[0];
 		string texture_name=$4.strs[0];
 		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<texture_type<<" "<<texture_name<<";\n";
@@ -323,13 +324,14 @@ prog : prog tok
 				lineno=$1.lineno;
 			if(it->semantic.length()>0)
 			{
-				shaderCode<<"#define "<<it->identifier<<" "<<it->semantic<<endl;
+				extraDeclarations<<it->type<<" "<<structInstanceName<<"="<<it->semantic<<";\n"<<endl;
+//				shaderCode<<"#define "<<it->identifier<<" "<<it->semantic<<endl;
 			}
 			else
 			{
 			// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
 				shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
-				shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';'<<endl;
+				shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';\n'<<endl;
 			}
 		}
 		delete $5.vars;
@@ -561,7 +563,7 @@ param_declaration : param opt_sq location
         prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     case SEMANTIC:
-		semantic=$3.strs[0];
+		semantic=getGLInputSemantic($3.num);//strs[0];
         break;
     }
     prepend<<$1.strs[0];
@@ -605,15 +607,31 @@ opt_storage : STORAGEQ
 	{
 		$$.strs[0]="";
 	}
+input_semantic:	SV_DISPATCHTHREADID
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=SV_DISPATCHTHREADID;
+	}
+	| SV_GROUPID 
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=SV_GROUPID;
+	}
+	| SV_GROUPTHREADID
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=SV_GROUPTHREADID;
+	}
 location : ':' NUM
 	{
 		$$.num=$2.num;
 		$$.rType=REGISTER_INT;
 	}
-    | ':' INPUT_SEMANTIC
+    | ':' input_semantic
 	{
 		$$.strs[0]=$2.strs[0];
 		$$.rType=SEMANTIC;
+		$$.num=$2.num;
 	}
     | ':' IDENTIFIER
 	{
@@ -750,7 +768,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 					theShader<<$3.strs[1];
 					// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
 					if(shaderType==COMPUTE_SHADER)
-						theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
+						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
 					string shaderName=($3.strs[0]);
 					if(_stricmp(shaderName.c_str(),"NULL")!=0)
 					{
@@ -817,7 +835,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
 					if(shaderCommand==COMPUTE_SHADER)
-						theShader<<"#define USE_GL_COMPUTE_SHADER 1"<<endl;
+						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
 					if(shaderCommand<NumShaderCommands)
 					{
 						string shaderName=compiledShader->m_functionName;
@@ -1609,6 +1627,20 @@ type_spec: IDENTIFIER
 		}
 %%
 
+	string getGLInputSemantic(int s)
+	{
+		switch(s)
+		{
+		case SV_DISPATCHTHREADID:
+			return "gl_GlobalInvocationID";
+		case SV_GROUPTHREADID:
+			return "gl_LocalInvocationID";
+		case SV_GROUPID:
+			return "gl_WorkGroupID";
+		break;
+		};
+		return "";
+	}
 void glfxWarning(const char* e)
 {
     ostringstream errMsg;
