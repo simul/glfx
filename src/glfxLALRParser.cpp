@@ -3217,7 +3217,7 @@ yyreduce:
 				Only trouble is, we don't yet have the "vec2" or whatever the type is. So we will insert a special %type% wildcard for now.
 										*/
 				string name=(yyvsp[(1) - (3)]).strs[0];
-				int sq_pos=name.find("[");
+				int sq_pos=(int)name.find("[");
 				name=name.substr(0,sq_pos);
 				for(int i=0;i<(yyvsp[(3) - (3)]).children.size();i++)
 				{
