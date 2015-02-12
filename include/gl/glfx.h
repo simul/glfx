@@ -116,6 +116,10 @@ GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
 
 //! Get the number of techniques in the effect
 GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect);
+GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect);
+GLFXAPI const char *GLFX_APIENTRY glfxGetTechniqueGroupName(int effect,int g);
+GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int effect,int g);
+
 //! Get the name of the technique at the given index.
 GLFXAPI const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum);
 //! Get the number of passes in the technique

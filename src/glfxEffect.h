@@ -20,8 +20,9 @@ namespace glfxParser
 	{
 		map<std::string,Program*>			m_programs;
 		vector<std::string>					m_programNames;
-		map<std::string,Technique*>			m_techniques;
+		map<std::string,TechniqueGroup*>	m_techniqueGroups;
 		vector<std::string>					m_techniqueNames;
+		vector<std::string>					m_techniqueGroupNames;
 		map<std::string,Sampler*>			m_samplers;
 		map<std::string,BlendState*>		m_blendStates;
 		map<std::string,DepthStencilState*>	m_depthStencilStates;
@@ -59,9 +60,12 @@ namespace glfxParser
 		//unsigned BuildProgram(const string& prog) const;
 		unsigned CreateSampler(const string& sampler) const;
 		const vector<string>& GetProgramList() const;
+		const vector<string>& GetTechniqueGroupList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
 		Technique *GetTechniqueByName(const char *name) ;
+		TechniqueGroup *GetTechniqueGroupByName(const char *name);
+		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
 		void SetFilenameList(const vector<string> &filenamesUtf8);
 		void PopulateProgramList();
 		bool& Active();
@@ -72,6 +76,7 @@ namespace glfxParser
 		friend void ::glfxWrite(const char *);
 		friend int ::glfxparse();
 		friend int ::glfxlex();
+		TechniqueGroup *current_group;
 	};
 	extern Effect *gEffect;
 }

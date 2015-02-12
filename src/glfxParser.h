@@ -101,7 +101,7 @@ struct glfxstype
         string	binding;
         string	name;
     };
-	
+	int								token;
 	int								lineno;
     union
 	{

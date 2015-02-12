@@ -33,11 +33,13 @@
 
     static void errSyn(const char *e);
     static void errSem(const string& str, int line=-1);
+
 	RasterizerState buildRasterizerState;
 	Struct buildStruct;
 	BlendState buildBlendState;
 	DepthStencilState buildDepthStencilState;
 	SamplerState buildSamplerState;
+	TechniqueGroup buildTechniqueGroup;
 	static int last_linenumber=0;
 	static int current_filenumber=0;
 	static int global_linenumber=0;
@@ -108,7 +110,7 @@
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
-%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -143,6 +145,32 @@ prog : prog tok
 		string template_type=$3.strs[0];
 		string texture_name=$4.strs[0];
 		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<texture_type<<" "<<texture_name<<";\n";
+		gEffect->m_sharedCode<<decl.str();
+		if(compute_only)
+			gEffect->m_sharedCode<<"#endif\n";
+	}
+	/*
+	Here we will transform from a HLSL-style templated uniform buffer:
+		RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
+
+	into a GLSL-style buffer:
+		layout(std430, binding = 2) buffer lightingQueryResults
+		{
+			LightingQueryResult lightingQueryResults[];
+		};
+	*/
+	| UNIFORM buffer_type optional_templateval IDENTIFIER ';'
+	{
+		string buffer_type=$2.strs[0];
+		bool compute_only=true;
+		ostringstream decl;
+		if(compute_only)
+			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
+		string template_type=$3.strs[0];
+		string buffer_name=$4.strs[0];
+		decl<<"layout(std430) buffer "<<buffer_name<<"_\n{\n\t";
+		decl<<template_type<<" "<<buffer_name<<"[];\n";
+		decl<<"};\n";
 		gEffect->m_sharedCode<<decl.str();
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -283,7 +311,7 @@ prog : prog tok
 		std::string shaderName		=$3.strs[0];
 		std::string returnType		=$2.strs[0];
 		std::string shaderContent	=$8.strs[0];
-		std::string returnVariable	=$8.strs[1];
+		std::string returnable		=$8.strs[1];
 		ostringstream shaderCode;
 		ostringstream extraDeclarations;
 		ostringstream finalCode;
@@ -341,9 +369,10 @@ prog : prog tok
 			map<string,Struct*>::const_iterator u=gEffect->m_structs.find(returnType);
 			if(u==gEffect->m_structs.end())
 			{
+				string returnVariable="returnVariable";
 				// if we're returning a simple type, we declare it as an output.
-				shaderCode<<"out "<<returnType<<" "<<returnVariable<<"_out;\n";
-				finalCode<<returnVariable<<"_out="<<returnVariable<<";"<<endl;
+				shaderCode<<"out "<<returnType<<" "<<returnVariable<<";\n";
+				finalCode<<returnVariable<<"="<<returnable<<";"<<endl;
 			}
 			else
 			{
@@ -356,8 +385,13 @@ prog : prog tok
 					string sem=(returnType+"_")+m.name;
 					if(m.semantic.length())
 						sem=(sem+"_")+m.semantic;
+					// Special outputs:
+					if(m.semantic==string("gl_VertexID")||m.semantic==string("SV_POSITION"))
+					{
+						sem="gl_Position";
+					}
 					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
-					finalCode<<sem<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+					finalCode<<sem<<"="<<returnable<<"."<<m.name<<";"<<endl;
 				}
 			}
 		}
@@ -384,6 +418,11 @@ prog : prog tok
 	};
 	| GROUP lex_fx IDENTIFIER '{' technique_decls '}' lex_passthrough
 	{
+		string groupName=$3.strs[0];
+		if(gEffect->m_techniqueGroups.find(groupName)==gEffect->m_techniqueGroups.end())
+			gEffect->m_techniqueGroups[groupName]=new TechniqueGroup;
+		*(gEffect->m_techniqueGroups[groupName])=buildTechniqueGroup;
+		buildTechniqueGroup.m_techniques.clear();
 	};
 	line_statement: LINE lex_fx NUM NUM lex_passthrough
 	{
@@ -407,6 +446,13 @@ prog : prog tok
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
+		$$.token	=$1.token;
+	};
+	buffer_type: STRUCTUREDBUFFER|RW_STRUCTUREDBUFFER
+	{
+		$$.strs[0]	=$1.strs[0];
+		$$.num		=$1.num;
+		$$.token	=$1.token;
 	};
 	optional_templateval: '<' IDENTIFIER '>'
 	{
@@ -438,11 +484,15 @@ technique_decls: technique_decls group_technique_decl
 			  }
 group_technique_decl: TECHNIQUE IDENTIFIER '{' tech_def '}'
 	{
-		gEffect->m_techniques[$2.strs[0]] = $4.tech;
+		buildTechniqueGroup.m_techniques[$2.strs[0]] = $4.tech;
 	};
 technique_decl: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
 	{
-		gEffect->m_techniques[$3.strs[0]] = $5.tech;
+		if(gEffect->m_techniqueGroups.find("")==gEffect->m_techniqueGroups.end())
+		{
+			gEffect->m_techniqueGroups[""]=new TechniqueGroup;
+		}
+		gEffect->m_techniqueGroups[""]->m_techniques[$3.strs[0]] = $5.tech;
 	};
 cs_layout_spec: '(' cs_layout ')'
 		  {
@@ -766,6 +816,8 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 					ostringstream theShader;
 					theShader<<"#version "<<$1.num<<endl;
 					theShader<<$3.strs[1];
+					// Because there's no such thing in GLSL:
+					theShader<<"#define SamplerState int\n";
 					// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
 					if(shaderType==COMPUTE_SHADER)
 						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
@@ -834,6 +886,12 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_
 					ostringstream theShader;
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
+					// Because there's no such thing in GLSL:
+					theShader<<"#define SamplerState int\n";
+					for(map<std::string,SamplerState*>::const_iterator i=gEffect->m_samplerStates.begin();i!=gEffect->m_samplerStates.end();i++)
+					{
+						theShader<<"int "<<i->first<<"=0;\n";
+					}
 					if(shaderCommand==COMPUTE_SHADER)
 						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
 					if(shaderCommand<NumShaderCommands)

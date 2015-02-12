@@ -804,9 +804,27 @@ size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
 	return (int)gEffects[effect]->GetTechniqueList().size();
 }
 
+size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect)
+{
+	return (int)gEffects[effect]->GetTechniqueList().size();
+}
+
+GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int effect,int g)
+{
+	gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByIndex(g);
+}
+const char* GLFX_APIENTRY glfxGetTechniqueGroupName(int effect, int g)
+{
+	const vector<string>& tmpList = gEffects[effect]->GetTechniqueGroupList();
+	if (g > (int)tmpList.size())
+		return "";
+	return tmpList[g].c_str();
+}
+
 const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
 {
-	const vector<string>& tmpList = gEffects[effect]->GetTechniqueList();
+	TechniqueGroup *g = gEffects[effect]->current_group;
+	const vector<string>& tmpList = g->GetTechniqueList();
 	if (technum > (int)tmpList.size())
 		return "";
 	return tmpList[technum].c_str();
@@ -814,7 +832,8 @@ const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
 
 size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
 {
-	 Technique *tech=gEffects[effect]->GetTechniqueByName(tech_name);
+	TechniqueGroup *g = gEffects[effect]->current_group;
+	 Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
 	return tech->GetPasses().size();
@@ -822,7 +841,8 @@ size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
 
 const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int pass_num)
 {
-	 Technique *tech = gEffects[effect]->GetTechniqueByName(tech_name);
+	TechniqueGroup *g = gEffects[effect]->current_group;
+	 Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
 	std::map<string, Program>::const_iterator i = tech->GetPasses().begin();
@@ -834,7 +854,8 @@ const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int
 
 GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name)
 {
-	 Technique *tech = gEffects[effect]->GetTechniqueByName(tech_name);
+	TechniqueGroup *g = gEffects[effect]->current_group;
+	Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
 	const Program &p = tech->GetPasses()[string(pass_name)];

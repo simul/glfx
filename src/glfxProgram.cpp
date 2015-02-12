@@ -20,6 +20,13 @@ typedef int errno_t;
 #endif
 #include "glfxScanner.h"
 #include "glfxProgram.h"
+vector<string> TechniqueGroup::GetTechniqueList()
+{
+	vector<string> m_techniqueNames;
+	for (map<string, Technique*>::const_iterator it = m_techniques.begin(); it != m_techniques.end(); ++it)
+		m_techniqueNames.push_back(it->first);
+	return m_techniqueNames;
+}
 
 Technique::Technique(const map<std::string, Program>& passes)
 	:m_passes(passes)

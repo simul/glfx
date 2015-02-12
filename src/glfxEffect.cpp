@@ -32,6 +32,7 @@ typedef int errno_t;
 Effect::Effect()
     : m_includes(0)
     , m_active(true)
+	,current_group(NULL)
 {}
 
 Effect::~Effect()
@@ -75,8 +76,9 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 	}
 	else
 	{
-		map<string, Technique*>::const_iterator it = m_techniques.find(tech);
-		if (it == m_techniques.end())
+		TechniqueGroup *group=m_techniqueGroups.find("")->second;
+		map<string, Technique*>::const_iterator it = group->m_techniques.find(tech);
+		if (it == group->m_techniques.end())
 			return 0;
 		Technique *tech = it->second;
 		map<string, Program>::const_iterator jt=tech->GetPasses().find(pass);
@@ -115,10 +117,35 @@ const vector<string>& Effect::GetTechniqueList() const
 	return m_techniqueNames;
 }
 
- Technique *Effect::GetTechniqueByName(const char *name) 
+const vector<string>& Effect::GetTechniqueGroupList() const
 {
-	return (m_techniques.find(string(name)))->second;
+	return m_techniqueGroupNames;
 }
+
+Technique *Effect::GetTechniqueByName(const char *name) 
+{
+	TechniqueGroup *group=m_techniqueGroups.find("")->second;
+	return (group->m_techniques.find(string(name)))->second;
+}
+TechniqueGroup *Effect::GetTechniqueGroupByIndex(int idx)
+{
+	int i=0;
+	map<string, TechniqueGroup*>::const_iterator it;
+	for (it = m_techniqueGroups.begin(); it != m_techniqueGroups.end()&&i<idx; ++it)
+	{
+		i++;
+	}
+	TechniqueGroup *group=it->second;
+	return group;
+}
+
+TechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
+{
+	map<string, TechniqueGroup*>::const_iterator jt=m_techniqueGroups.find(name);
+	TechniqueGroup *group=jt->second;
+	return group;
+}
+
 
 const vector<string>& Effect::GetFilenameList() const
 {
@@ -145,6 +172,10 @@ void Effect::PopulateProgramList()
     for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
 		m_programNames.push_back(it->first);
 	m_techniqueNames.clear();
-	for (map<string, Technique*>::const_iterator it = m_techniques.begin(); it != m_techniques.end(); ++it)
+	TechniqueGroup *group=m_techniqueGroups.find("")->second;
+	for (map<string, Technique*>::const_iterator it = group->m_techniques.begin(); it != group->m_techniques.end(); ++it)
 		m_techniqueNames.push_back(it->first);
+	m_techniqueGroupNames.clear();
+	for (map<string, TechniqueGroup*>::const_iterator it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
+		m_techniqueGroupNames.push_back(it->first);
 }

@@ -39,5 +39,11 @@ namespace glfxParser
 		map<string, Program>   m_passes;
 		friend int ::glfxparse();
 	};
+	class TechniqueGroup
+	{
+	public:
+		map<string,Technique*> m_techniques;
+		vector<string> GetTechniqueList();
+	};
 }
 #endif

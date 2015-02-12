@@ -92,6 +92,7 @@ the last is C code to be copied verbatim to the output.
 	}
 	int stdReturn_(int u)
 	{
+		glfxlval.token=u;
 		glfxlval.lineno=yylineno;
 		glfxlval.strs[0]=yytext;//accw
 		recent+=glfxlval.strs[0]+" ";
@@ -143,6 +144,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_UNIFORM_DECL>"Texture2DMS"					{
 													stdReturn(TEXTURE2DMS);
 												}
+<IN_UNIFORM_DECL>"sampler2DMS"					{
+													stdReturn(TEXTURE2DMS);
+												}
 <IN_UNIFORM_DECL>"RWTexture3D"					{
 													stdReturn(RW_TEXTURE3D);
 												}
@@ -151,6 +155,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}  
 <IN_UNIFORM_DECL>"image3D"						{
 													stdReturn(IMAGE3D);
+												}
+<IN_UNIFORM_DECL>"StructuredBuffer"				{
+													stdReturn(STRUCTUREDBUFFER);
+												}
+<IN_UNIFORM_DECL>"RWStructuredBuffer"			{
+													stdReturn(RW_STRUCTUREDBUFFER);
 												}
 <IN_UNIFORM_DECL>"<"							{
 													stdReturn('<');
@@ -243,7 +253,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_RENDER_STATE);
 													stdReturn(RENDER_STATE_DECL);
 												}
-<INITIAL>"SamplerState"							{
+<INITIAL>^[ \t]*"SamplerState"					{
 													glfxlval.lineno=yylineno;
 													renderState=SAMPLER_STATE;
 													glfxPushState(IN_RENDER_STATE);
