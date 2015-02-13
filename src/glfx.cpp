@@ -856,12 +856,13 @@ const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int
 
 GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name)
 {
-	TechniqueGroup *g = gEffects[effect]->current_group;
+	TechniqueGroup *g=gEffects[effect]->current_group;
 	Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
-	const Program &p = tech->GetPasses()[string(pass_name)];
-	return glfxCompileProgram(effect, tech_name, pass_name);
+	const Program &p=tech->GetPasses()[string(pass_name)];
+	GLuint pr=glfxCompileProgram(effect, tech_name, pass_name);
+	return pr;
 }
 GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass)
 {

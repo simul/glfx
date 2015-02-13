@@ -57,7 +57,7 @@ namespace glfxParser
     
 	public:
 		ostringstream& Log();
-		unsigned BuildProgram(const string& tech, const string& pass, string& log) const;
+		unsigned BuildProgram(const string& tech, const string& pass, string& log);
 		//unsigned BuildProgram(const string& prog) const;
 		unsigned CreateSampler(const string& sampler) const;
 		const vector<string>& GetProgramList() const;

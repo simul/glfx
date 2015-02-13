@@ -64,6 +64,8 @@ const Program& Program::operator=(const Program& prog)
 		m_shaders[i] = prog.m_shaders[i];
 	}
 	m_separable = prog.m_separable;
+	
+	passState = prog.passState;
 	return *this;
 }
 
@@ -134,7 +136,7 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
     glCompileShader(shader);
     
     GLint tmp,res;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &tmp);
+    glGetShaderiv(shader,GL_COMPILE_STATUS, &tmp);
     res=tmp;
     //if(!tmp)
 	{

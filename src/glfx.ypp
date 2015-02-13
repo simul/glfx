@@ -389,7 +389,9 @@ prog : prog tok
 					// Special outputs:
 					if(m.semantic==string("gl_VertexID")||m.semantic==string("SV_POSITION"))
 					{
-						sem="gl_Position";
+						string builtin_name="gl_Position";
+						shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
+						finalCode<<builtin_name<<"="<<returnable<<"."<<m.name<<";"<<endl;
 					}
 					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
 					finalCode<<sem<<"="<<returnable<<"."<<m.name<<";"<<endl;
@@ -706,18 +708,19 @@ tech_def : pass_list
 
 pass_list: pass_list pass_def
 {
-	$$.passes = $1.passes;
-	string name = $2.strs[0];
-	Program *p = $2.prog;
-	if (p)
+	$$.passes				=($1.passes);
+	map<string,Program> &passes=*$$.passes;
+	string name			=$2.strs[0];
+	Program *p			=$2.prog;
+	if(p)
 	{
-		(*$$.passes)[name] = *(p);
+		passes[name]	=*(p);
 	}
 	delete $2.prog;
 }
 | pass_def
 {
-	map < string, Program > *m=new map < string, Program >;
+	map<string,Program> *m=new map<string,Program>;
 	$$.passes = m;
 	string name = $1.strs[0];
 	Program *p = $1.prog;

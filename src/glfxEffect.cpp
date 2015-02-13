@@ -33,7 +33,8 @@ Effect::Effect()
     : m_includes(0)
     , m_active(true)
 	,current_group(NULL)
-{}
+{
+}
 
 Effect::~Effect()
 {
@@ -63,7 +64,7 @@ string& Effect::Dir()
     return m_dir;
 }
 
-unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log) const
+unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log)
 {
 	if (tech.length() == 0)
 	{
@@ -83,6 +84,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		Technique *tech = it->second;
 		map<string, Program>::const_iterator jt=tech->GetPasses().find(pass);
 		unsigned ret = jt->second.CompileAndLink(log);
+		passStates[ret]=jt->second.passState;
 		return ret;
 	}
 }

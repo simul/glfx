@@ -32,7 +32,7 @@ namespace glfxParser
 	{
 	public:
 		Technique(const map<std::string, Program>& passes);
-		 map<string, Program>   &GetPasses() 
+		map<string, Program> &GetPasses() 
 		{
 			return m_passes;
 		}
