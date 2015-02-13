@@ -801,12 +801,14 @@ size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
 
 size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
 {
-	return (int)gEffects[effect]->GetTechniqueList().size();
+	if(gEffects[effect]->current_group==NULL)
+		gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByName("");
+	return (int)gEffects[effect]->current_group->GetTechniqueList().size();
 }
 
 size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect)
 {
-	return (int)gEffects[effect]->GetTechniqueList().size();
+	return (int)gEffects[effect]->GetTechniqueGroupList().size();
 }
 
 GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int effect,int g)
