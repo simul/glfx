@@ -36,6 +36,7 @@
 
 	RasterizerState buildRasterizerState;
 	Struct buildStruct;
+	PassState buildPassState;
 	BlendState buildBlendState;
 	DepthStencilState buildDepthStencilState;
 	SamplerState buildSamplerState;
@@ -492,7 +493,9 @@ technique_decl: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
 		{
 			gEffect->m_techniqueGroups[""]=new TechniqueGroup;
 		}
-		gEffect->m_techniqueGroups[""]->m_techniques[$3.strs[0]] = $5.tech;
+		TechniqueGroup *g=gEffect->m_techniqueGroups[""];
+		string techname=$3.strs[0];
+		g->m_techniques[techname] = $5.tech;
 	};
 cs_layout_spec: '(' cs_layout ')'
 		  {
@@ -731,6 +734,8 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 	$4.prog->m_separable = $1.boolean;
 	$$.prog = $4.prog;
 	$$.strs[0] = $2.strs[0];
+	$$.prog->passState=buildPassState;
+	buildPassState=PassState();
 }
 
 prog_def : shaders_list
@@ -795,6 +800,7 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 			 {
 				 string depth_name=$3.strs[0];
 				 int index=$5.num;
+				 buildPassState.depthStencilState=depth_name;
 			 }
 			 | SET_BLEND_COMMAND '(' IDENTIFIER ',' vec4 ',' NUM ')' ';'
 			 {

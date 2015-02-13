@@ -863,6 +863,10 @@ GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const ch
 	const Program &p = tech->GetPasses()[string(pass_name)];
 	return glfxCompileProgram(effect, tech_name, pass_name);
 }
+GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass)
+{
+	gEffects[effect]->ApplyPassState(pass);
+}
 
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
 {

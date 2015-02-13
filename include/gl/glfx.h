@@ -128,6 +128,7 @@ GLFXAPI size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
 GLFXAPI const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name,int pass_num);
 //! Compile the pass and return its GLSL program identifier.
 GLFXAPI GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name);
+GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass);
 
 /**************************************************
 * glfxGenerateSampler

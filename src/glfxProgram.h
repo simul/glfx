@@ -1,12 +1,13 @@
 #ifndef GLFXPROGRAM_H
 #define GLFXPROGRAM_H
-
+#include "glfxClasses.h"
 namespace glfxParser
 {
 	//! A Program in glsl is equivalent to a Pass in hlsl.
 	class Program
 	{
 	public:
+		PassState passState;
 		struct Shader
 		{
 			string  name;
@@ -41,9 +42,10 @@ namespace glfxParser
 	};
 	class TechniqueGroup
 	{
+		vector<string> m_techniqueNames;
 	public:
 		map<string,Technique*> m_techniques;
-		vector<string> GetTechniqueList();
+		const vector<string> &GetTechniqueList();
 	};
 }
 #endif

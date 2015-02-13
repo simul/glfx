@@ -76,7 +76,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 	}
 	else
 	{
-		TechniqueGroup *group=m_techniqueGroups.find("")->second;
+		TechniqueGroup *group=current_group;
 		map<string, Technique*>::const_iterator it = group->m_techniques.find(tech);
 		if (it == group->m_techniques.end())
 			return 0;
@@ -124,8 +124,7 @@ const vector<string>& Effect::GetTechniqueGroupList() const
 
 Technique *Effect::GetTechniqueByName(const char *name) 
 {
-	TechniqueGroup *group=m_techniqueGroups.find("")->second;
-	return (group->m_techniques.find(string(name)))->second;
+	return (current_group->m_techniques.find(string(name)))->second;
 }
 TechniqueGroup *Effect::GetTechniqueGroupByIndex(int idx)
 {
@@ -178,4 +177,24 @@ void Effect::PopulateProgramList()
 	m_techniqueGroupNames.clear();
 	for (map<string, TechniqueGroup*>::const_iterator it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		m_techniqueGroupNames.push_back(it->first);
+}
+
+void Effect::ApplyPassState(unsigned pass)
+{
+	std::map<unsigned,PassState>::iterator i=passStates.find(pass);
+	if(i==passStates.end())
+		return;
+	PassState &passState=i->second;
+	if(passState.depthStencilState.length()>0)
+	{
+		DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
+		if(depthStencilState.DepthEnable)
+		{
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(depthStencilState.DepthWriteMask);
+			glDepthFunc(depthStencilState.DepthFunc);
+		}
+		else
+			glDisable(GL_DEPTH_TEST);
+	}
 }

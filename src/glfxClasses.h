@@ -72,7 +72,6 @@ namespace glfxParser
 		,NumShaderCommands
 	};
 }
-#include "glfxProgram.h"
 namespace glfxParser
 {
 	/*
@@ -168,5 +167,10 @@ namespace glfxParser
 		void SetParam(const string& param, float val);
 		unsigned CreateSamplerObject() const;
 	};
+	struct PassState
+	{
+		std::string depthStencilState;
+	};
 
 } // glfxParser
+#include "glfxProgram.h"

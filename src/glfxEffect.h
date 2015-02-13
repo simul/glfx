@@ -31,6 +31,7 @@ namespace glfxParser
 		map<std::string,Struct*>			m_structs;
 		map<std::string,std::string>		m_shaders;
 		map<std::string,std::string>		m_shaderLayouts;
+		std::map<unsigned,PassState> passStates;
 		//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 		//! We will use the keyword Profile.
 		//! e.g.
@@ -68,6 +69,7 @@ namespace glfxParser
 		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
 		void SetFilenameList(const vector<string> &filenamesUtf8);
 		void PopulateProgramList();
+		void ApplyPassState(unsigned pass);
 		bool& Active();
 		string& Dir();
 		string& Filename();
