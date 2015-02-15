@@ -181,6 +181,16 @@ void Effect::PopulateProgramList()
 		m_techniqueGroupNames.push_back(it->first);
 }
 
+void CheckGLError()
+{
+	int err=glGetError();
+	if(err)
+	{
+		printf("gl error");
+	}
+}
+#define GL_ERROR_CHECK CheckGLError();
+
 void Effect::ApplyPassState(unsigned pass)
 {
 	std::map<unsigned,PassState>::iterator i=passStates.find(pass);
@@ -198,5 +208,63 @@ void Effect::ApplyPassState(unsigned pass)
 		}
 		else
 			glDisable(GL_DEPTH_TEST);
+	}
+	if(passState.blendState.length()>0)
+	{
+		BlendState &blendState=*m_blendStates[passState.blendState];
+		int num=0;
+			GL_ERROR_CHECK
+		for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
+		{
+			if(i->second)
+				num++;
+			if(blendState.RenderTargetWriteMask.find(i->first)!=blendState.RenderTargetWriteMask.end())
+			{
+				unsigned m=blendState.RenderTargetWriteMask[i->first];
+				glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
+				GL_ERROR_CHECK
+			}
+			else glColorMaski(i->first,true,true,true,true);
+		}
+		if(!num)
+		{
+			glDisable(GL_BLEND);
+			GL_ERROR_CHECK
+		}
+		else
+		{
+			glEnable(GL_BLEND);
+			GL_ERROR_CHECK
+			for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
+			{
+				if(i->second)
+				{
+
+					glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
+			GL_ERROR_CHECK
+
+				
+
+
+					glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
+										   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
+			GL_ERROR_CHECK
+				}
+				else
+				{
+					glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
+			GL_ERROR_CHECK
+
+
+
+					glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
+										   GL_ONE, GL_ZERO);
+			GL_ERROR_CHECK
+				}
+			}
+			if(blendState.AlphaToCoverageEnable)
+				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			GL_ERROR_CHECK
+		}
 	}
 }

@@ -393,6 +393,20 @@ prog : prog tok
 						shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
 						finalCode<<builtin_name<<"="<<returnable<<"."<<m.name<<";"<<endl;
 					}
+					if(m.semantic.substr(0,9)==string("SV_TARGET"))
+					{
+						string numstr=m.semantic.substr(9,m.semantic.length()-9);
+						int num=0;
+						 char * pEnd;
+						num=strtol(numstr.c_str(),&pEnd,10);
+						if(num>=0)
+							shaderCode<<"layout(location = "<<num<<") ";
+					}
+					if(m.semantic.substr(0,9)==string("SV_DEPTH"))
+					{
+						sem="gl_FragDepth";
+					}
+					//out float gl_FragDepth;
 					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
 					finalCode<<sem<<"="<<returnable<<"."<<m.name<<";"<<endl;
 				}
@@ -809,6 +823,7 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 			 {
 				 string blend_name=$3.strs[0];
 				 string vec4text=$5.strs[0];
+				 buildPassState.blendState=blend_name;
 				 unsigned mask=$7.unum;
 			 };
 

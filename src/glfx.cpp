@@ -189,11 +189,9 @@ GLenum toBlendGLEnum(const std::string &str)
 GLenum toBlendOpGLEnum(const std::string &str)
 {
 	if(is_equal(str,"ADD"))
-		return GL_ADD;
+		return GL_FUNC_ADD;
 	else if(is_equal(str,"SUBTRACT"))
-		return GL_SUBTRACT;
-	else if(is_equal(str,"MULTIPLY"))
-		return GL_MULT;
+		return GL_FUNC_SUBTRACT;
 	else
 	{
 		ostringstream str;
@@ -340,10 +338,10 @@ GLenum toAddressModeGLEnum(const std::string &str)
 
 BlendState::BlendState():SrcBlend(GL_SRC_ALPHA)	
 					,DestBlend(GL_ONE_MINUS_SRC_ALPHA)
-					,BlendOp(GL_ADD)		
+					,BlendOp(GL_FUNC_ADD)		
 					,SrcBlendAlpha(GL_SRC_ALPHA)
 					,DestBlendAlpha(GL_ONE_MINUS_SRC_ALPHA)
-					,BlendOpAlpha(GL_ADD)	
+					,BlendOpAlpha(GL_FUNC_ADD)	
 					,AlphaToCoverageEnable(false)
 {
 }

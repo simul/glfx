@@ -170,6 +170,7 @@ namespace glfxParser
 	struct PassState
 	{
 		std::string depthStencilState;
+		std::string blendState;
 	};
 
 } // glfxParser
