@@ -173,9 +173,13 @@ void Effect::PopulateProgramList()
     for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
 		m_programNames.push_back(it->first);
 	m_techniqueNames.clear();
-	TechniqueGroup *group=m_techniqueGroups.find("")->second;
-	for (map<string, Technique*>::const_iterator it = group->m_techniques.begin(); it != group->m_techniques.end(); ++it)
-		m_techniqueNames.push_back(it->first);
+	map<string, TechniqueGroup*>::const_iterator ig=m_techniqueGroups.find("");
+	if(ig!=m_techniqueGroups.end())
+	{
+		TechniqueGroup *group=ig->second;
+		for (map<string, Technique*>::const_iterator it = group->m_techniques.begin(); it != group->m_techniques.end(); ++it)
+			m_techniqueNames.push_back(it->first);
+	}
 	m_techniqueGroupNames.clear();
 	for (map<string, TechniqueGroup*>::const_iterator it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		m_techniqueGroupNames.push_back(it->first);
