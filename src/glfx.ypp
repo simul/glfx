@@ -87,6 +87,10 @@
 		{
 			return "layout(rgba32f)";
 		}
+		if(s==string("uchar4"))
+		{
+			return "layout(rgba8)";
+		}
 		if(s==string("float"))
 		{
 			return "layout(r32f)";
