@@ -81,9 +81,9 @@ extern int glfxdebug;
      EOL = 290,
      DECL_SHADER = 291,
      PROFILE = 292,
-     CS_LAYOUT = 293,
-     RW_TEXTURE2D = 294,
-     RW_TEXTURE3D = 295,
+     RW_TEXTURE2D = 293,
+     RW_TEXTURE3D = 294,
+     RW_TEXTURE2DARRAY = 295,
      RW_TEXTURE3D_FLOAT4 = 296,
      TEXTURE2DMS = 297,
      IMAGE3D = 298,
@@ -118,7 +118,10 @@ extern int glfxdebug;
      PLUS_PLUS = 327,
      MINUS_MINUS = 328,
      EQ_EQ = 329,
-     NOT_EQ = 330
+     NOT_EQ = 330,
+     SA_MAXVERTEXCOUNT = 331,
+     SA_NUMTHREADS = 332,
+     CS_LAYOUT = 333
    };
 #endif
 

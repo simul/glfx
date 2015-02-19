@@ -103,7 +103,7 @@ the last is C code to be copied verbatim to the output.
 #define stdReturn return stdReturn_
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL
+%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -122,9 +122,19 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_DEFINE);
 													stdReturn(DEFINE);
 												}
-<INITIAL>"[numthreads("{NUM_BLCK}","{NUM_BLCK}","{NUM_BLCK}")]" {
-													glfxlval.strs[0]=yytext;
-													stdReturn(CS_LAYOUT);
+<INITIAL>^[ \t]*"[" {
+													glfxPushState(IN_SHADER_ATTRIBUTE);
+													stdReturn('[');
+												}
+<IN_SHADER_ATTRIBUTE>"maxvertexcount"			{
+													stdReturn(SA_MAXVERTEXCOUNT);
+												}
+<IN_SHADER_ATTRIBUTE>"numthreads"			{
+													stdReturn(SA_NUMTHREADS);
+												}
+<IN_SHADER_ATTRIBUTE>"]"						{
+													glfxPopState();
+													stdReturn(']');
 												}
 <IN_DEFINE>[^\n]+								{
 													if(gLexPassthrough)
@@ -152,6 +162,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <IN_UNIFORM_DECL>"RWTexture2D"					{
 													stdReturn(RW_TEXTURE2D);
+												}  
+<IN_UNIFORM_DECL>"Texture2DArray"					{
+													stdReturn(RW_TEXTURE2DARRAY);
 												}  
 <IN_UNIFORM_DECL>"image3D"						{
 													stdReturn(IMAGE3D);
@@ -399,22 +412,22 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.fnum=(float)atof(yytext);
 													stdReturn(FLOAT);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{NUM_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													stdReturn(NUM);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL,IN_SHADER_ATTRIBUTE>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(IDENTIFIER);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"("[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*"("[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('(');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*")"[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*")"[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(')');
 												}
@@ -426,7 +439,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													stdReturn(']');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*","[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*","[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(',');
 												}
@@ -528,7 +541,26 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 												}
 <INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
-<INITIAL>"in"|"out"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; stdReturn(STORAGEQ);}
+<INITIAL>"inout"	{
+													if(gLexPassthrough)
+														glfxWrite(yytext);
+													else
+													{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														stdReturn(STORAGEQ);
+													}
+												}
+<INITIAL>"in"|"out"|"line"|"lineadj"|"point"	{
+													if(gLexPassthrough)
+														glfxWrite(yytext);
+													else
+													{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														stdReturn(STORAGEQ);
+													}
+												}
 <INITIAL>"gl_FragDepth"							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
 <INITIAL>"true"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=1; stdReturn(NUM);}
 <INITIAL>"false"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=0; stdReturn(NUM);}
@@ -554,6 +586,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"("									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('(');}
 <INITIAL>")"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(')');}
+<INITIAL>"<"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('<');}
+<INITIAL>">"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('>');}
 <INITIAL>[ \t\n]*"{"[ \t\n]*					{
 													if(gLexPassthrough)
 														glfxWrite(yytext);

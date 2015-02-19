@@ -45,6 +45,7 @@
 	static int current_filenumber=0;
 	static int global_linenumber=0;
 	std::string currentCsLayout;
+	int maxVertexCount			=0;
 	int last_recorded_linenum	=0;
 	int global_linenum			=0;
 	int filenum					=0;
@@ -81,6 +82,17 @@
 	{
 		write_line_number_next=true;
 	}
+	void stringReplaceAll(std::string& str, const std::string& from, const std::string& to)
+	{
+		if(from.empty())
+			return;
+		size_t start_pos = 0;
+		while((start_pos = str.find(from, start_pos)) != std::string::npos)
+		{
+			str.replace(start_pos, from.length(), to);
+			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+		}
+	}
 	static string GetLayoutForTemplateType(string s)
 	{
 		if(s==string("vec4"))
@@ -95,18 +107,29 @@
 		{
 			return "layout(r32f)";
 		}
+		if(s==string("uint"))
+		{
+			return "layout(r32ui)";
+		}
+		if(s==string("int"))
+		{
+			return "layout(r32i)";
+		}
 		return "";
 	}
-	void stringReplaceAll(std::string& str, const std::string& from, const std::string& to)
+	static string GetEquivalentGLTextureType(string texture_type,string template_type)
 	{
-		if(from.empty())
-			return;
-		size_t start_pos = 0;
-		while((start_pos = str.find(from, start_pos)) != std::string::npos)
+		stringReplaceAll(texture_type,"RWTexture","image");
+		stringReplaceAll(texture_type,"Texture","sampler");
+		if(template_type.find("uint")<template_type.length())
 		{
-			str.replace(start_pos, from.length(), to);
-			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+			texture_type=string("u")+texture_type;
 		}
+		else if(template_type.find("int")<template_type.length())
+		{
+			texture_type=string("i")+texture_type;
+		}
+		return texture_type;
 	}
 	string getGLInputSemantic(int s);
 %}
@@ -114,12 +137,12 @@
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER STRUCT
-%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE CS_LAYOUT 
-%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
+%token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE  
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
-
+%token SA_MAXVERTEXCOUNT SA_NUMTHREADS CS_LAYOUT
 
 %%
 
@@ -149,7 +172,7 @@ prog : prog tok
 			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
 		string template_type=$3.strs[0];
 		string texture_name=$4.strs[0];
-		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<texture_type<<" "<<texture_name<<";\n";
+		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<GetEquivalentGLTextureType(texture_type,template_type)<<" "<<texture_name<<";\n";
 		gEffect->m_sharedCode<<decl.str();
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -189,6 +212,18 @@ prog : prog tok
 	| CS_LAYOUT
 	{
 		currentCsLayout=$1.strs[0];
+	}
+	| '[' SA_MAXVERTEXCOUNT '(' NUM ')' ']'
+	{
+		maxVertexCount=$4.num;
+	}
+	| '[' SA_NUMTHREADS '(' NUM ',' NUM ',' NUM ')' ']'
+	{
+		currentCsLayout="layout(local_size_x=%1,local_size_y=%2,local_size_z=%3) in;";
+		stringReplaceAll(currentCsLayout,"%1",$4.strs[0]);
+		stringReplaceAll(currentCsLayout,"%2",$6.strs[0]);
+		stringReplaceAll(currentCsLayout,"%3",$8.strs[0]);
+		
 	}
 	| LAYOUT cs_layout_spec IDENTIFIER ';'
 	{
@@ -463,7 +498,7 @@ prog : prog tok
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
 	};
-	texture_type: TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D
+	texture_type: TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
@@ -623,7 +658,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		$$.vars = new vector<YYSTYPE::variable>;
 	};
 
-param_declaration : param opt_sq location
+param_declaration: param opt_sq location
 {
     ostringstream prepend;
 	string semantic;
@@ -636,7 +671,7 @@ param_declaration : param opt_sq location
         prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     case SEMANTIC:
-		semantic=getGLInputSemantic($3.num);//strs[0];
+		semantic=getGLInputSemantic($3.num);
         break;
     }
     prepend<<$1.strs[0];
@@ -654,20 +689,34 @@ param_declaration : param opt_sq location
     $$.strs[4]=semantic;
 };
 
-opt_sq: '[' ']'
+opt_sq: '[' opt_num ']'
 				{
-					$$.strs[0]="[]";
+					$$.strs[0]=(string("[")+$2.strs[0])+"]";
+					$$.num=$2.num;
 				}
 				|
 				{
 					$$.strs[0]="";
+					$$.num=0;
 				};
-
-param : opt_storage IDENTIFIER IDENTIFIER
+opt_num: NUM
+			{
+					$$.strs[0]=$1.strs[0];
+					$$.num=$1.num;
+			}
+			|
+			{
+					$$.strs[0]="";
+					$$.num=0;
+			}
+param : opt_storage IDENTIFIER optional_templateval IDENTIFIER
 	{
 		string storage	=$1.strs[0];
 		string type		=$2.strs[0];
-		string id		=$3.strs[0];
+		string template_=$3.strs[0];
+		if(template_.length())
+			type+=string("<")+template_+string(">");
+		string id		=$4.strs[0];
 		$$.strs[0]		= storage	;
 		$$.strs[1]		= type		;
 		$$.strs[2]		= id		;
