@@ -135,7 +135,7 @@
 %}
 
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID NUM INCLUDE SAMPLER FLOAT
+%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE  
 %token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
@@ -164,6 +164,7 @@ prog : prog tok
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
 		string texture_type=$2.strs[0];
+		int typed_id=$2.token;
 		bool compute_only=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
 		
 		stringReplaceAll(texture_type,"RWTexture","image");
@@ -172,7 +173,10 @@ prog : prog tok
 			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
 		string template_type=$3.strs[0];
 		string texture_name=$4.strs[0];
-		decl<<GetLayoutForTemplateType(template_type)<<" uniform "<<GetEquivalentGLTextureType(texture_type,template_type)<<" "<<texture_name<<";\n";
+		string layout;
+		if(compute_only)
+			layout=GetLayoutForTemplateType(template_type)+" ";
+		decl<<layout<<"uniform "<<GetEquivalentGLTextureType(texture_type,template_type)<<" "<<texture_name<<";\n";
 		gEffect->m_sharedCode<<decl.str();
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -360,26 +364,127 @@ prog : prog tok
 		// Add shader parameters
 		for(vector<YYSTYPE::variable>::const_iterator it=$5.vars->begin();it!=$5.vars->end();++it)
 		{
+			bool as_interface=false;
 			string structInstanceName=it->identifier;
 			string type(it->type);
+			string storage(it->storage);
+			if(storage.length()==0)
+				storage="in";
+			if(storage==string("inout"))
+			{
+				size_t brack_pos=type.find("<");
+				if(brack_pos<type.length())
+				{
+					string output_type=type.substr(0,brack_pos);
+					type=type.substr(brack_pos+1,type.length()-brack_pos-2);
+					stringReplaceAll(output_type,"PointStream","points");
+					stringReplaceAll(output_type,"LineStream","line_strip");
+					stringReplaceAll(output_type,"TriangleStream","triangle_strip");
+					shaderCode<<"layout("<<output_type<<") out;\n";
+				}
+			}
 			map<string,Struct*>::const_iterator u=gEffect->m_structs.find(type);
 			map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
 			int lineno;
 			if(u!=gEffect->m_structs.end())
 			{
-				extraDeclarations<<type<<" "<<structInstanceName<<";\n";
 				const Struct *s=u->second;
-				for(int i=0;i<(int)s->m_structMembers.size();i++)
+			// Geometry shader outputs have the "inout" storage specifier, and a template-looking type.
+			// We must convert them to something like:
+			// layout(output_primitive,maxverts=vert_count) out;
+			// and an untemplated output type.
+			//	points
+			//	line_strip
+			//	triangle_strip
+				if(storage==string("inout"))
 				{
-					const StructMember &m=s->m_structMembers[i];
-					string sem=(type+"_")+m.name;
-					if(m.semantic.length())
-						sem=(sem+"_")+m.semantic;
-					if(m.semantic==string("gl_VertexID"))
-						sem=m.semantic;
-					//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
-					shaderCode<<"in "<<it->storage<<' '<<m.type<<' '<<sem<<";"<<endl;
-					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<";\n";
+					size_t brack_pos=type.find("<");
+					if(brack_pos<type.length())
+					{
+						string output_type=type.substr(0,brack_pos);
+						type=type.substr(brack_pos+1,type.length()-brack_pos-2);
+						stringReplaceAll(output_type,"PointStream","points");
+						stringReplaceAll(output_type,"LineStream","line_strip");
+						stringReplaceAll(output_type,"TriangleStream","triangle_strip");
+						shaderCode<<"layout("<<output_type<<") out;\n";
+					}
+					// In the actual shader code, convert HLSL-style member function calls to GLSL type
+					// stream commands:
+					string appendcall=structInstanceName+".Append";
+					size_t pos=shaderContent.find(appendcall);
+					while(pos<shaderContent.size())
+					{
+						// We must replace something of the form vSream.Append(OUT)
+						// with something like:
+						// vStream.pos	=OUT.pos;
+						// vStream.txc	=OUT.txc;
+						// EmitVertex();
+
+						// First extract the name of the appended struct:
+						size_t startpos=shaderContent.find("(",pos);
+						size_t endpos=shaderContent.find(")",startpos);
+						if(startpos>=shaderContent.length()||endpos>=shaderContent.length())
+							break;
+				
+						string localStructName=shaderContent.substr(startpos+1,endpos-startpos-1);
+						ostringstream vertexEmitCode;
+						for(int i=0;i<(int)s->m_structMembers.size();i++)
+						{
+							const StructMember &m=s->m_structMembers[i];
+							vertexEmitCode<<structInstanceName<<"."<<m.name<<"="<<localStructName<<"."<<m.name<<"; ";
+						}
+						vertexEmitCode<<"EmitVertex()";
+						shaderContent.replace(shaderContent.begin()+pos,shaderContent.begin()+endpos+1,vertexEmitCode.str());
+						pos=shaderContent.find(appendcall,endpos);
+				
+					}
+					stringReplaceAll(shaderContent,structInstanceName+".RestartStrip()","EndPrimitive();");
+					as_interface=true;
+					storage="out";
+				}
+				// Geometry shader storage (line,lineadj,point) needs special consideration.
+				// it gets moved to this kind of declaration:
+				// layout(triangles) in;
+				// layout (triangle_strip, max_vertices=6) out;
+				if(storage==string("line")||storage==string("point")||storage==string("triangle")||storage==string("lineadj")||storage==string("triangleadj"))
+				{
+					storage+="s";
+					stringReplaceAll(storage,"adjs","s_adjacency");
+					shaderCode<<"layout("<<storage<<") in;\n";
+					storage="in";
+					as_interface=true;
+				}
+				if(as_interface)
+				{
+					// If we're taking interface-style input we want it to look like this:
+					//in VertexData {
+					//vec2 texCoord;
+					//vec3 normal;
+					//} VertexIn[];
+					shaderCode<<storage<<" VertexData\n";
+					shaderCode<<"{\n";
+					for(int i=0;i<(int)s->m_structMembers.size();i++)
+					{
+						const StructMember &m=s->m_structMembers[i];
+						shaderCode<<'\t'<<m.type<<' '<<m.name<<";"<<endl;
+					}
+					shaderCode<<"} "<<structInstanceName<<";\n";
+				}
+				else
+				{
+					extraDeclarations<<type<<" "<<structInstanceName<<";\n";
+					for(int i=0;i<(int)s->m_structMembers.size();i++)
+					{
+						const StructMember &m=s->m_structMembers[i];
+						string sem=(type+"_")+m.name;
+						if(m.semantic.length())
+							sem=(sem+"_")+m.semantic;
+						if(m.semantic==string("gl_VertexID"))
+							sem=m.semantic;
+						//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
+						shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
+						extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<";\n";
+					}
 				}
 				continue;
 			}
@@ -662,6 +767,7 @@ param_declaration: param opt_sq location
 {
     ostringstream prepend;
 	string semantic;
+	string location		=$3.strs[1];
     switch($3.rType)
 	{
     case REGISTER_INT:
@@ -743,6 +849,11 @@ input_semantic:	SV_DISPATCHTHREADID
 	{
 		$$.strs[0]=$1.strs[0];
 		$$.num=SV_GROUPTHREADID;
+	}
+	| SV_VERTEXID
+	{
+		$$.strs[0]=$1.strs[0];
+		$$.num=SV_VERTEXID;
 	}
 location : ':' NUM
 	{
@@ -1792,6 +1903,9 @@ type_spec: IDENTIFIER
 			return "gl_LocalInvocationID";
 		case SV_GROUPID:
 			return "gl_WorkGroupID";
+		case SV_VERTEXID:
+			return "gl_VertexID";
+		default:
 		break;
 		};
 		return "";

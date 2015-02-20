@@ -8,6 +8,8 @@
 #ifndef _MSC_VER
 typedef int errno_t;
 #include <errno.h>
+#else
+#include <Windows.h>
 #endif
 
 #include "GL/glew.h"
@@ -111,6 +113,8 @@ unsigned Program::CompileAndLink(string& log) const
 			char infoLog[1024];
 			glGetProgramInfoLog(programId,1024,&len,infoLog);
 			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+			if(!res&&IsDebuggerPresent())
+				DebugBreak();
 		}
 	}
 	
@@ -148,6 +152,8 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
 		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
 		if (strlen(infoLog)>0)
 			sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
+		if(!res&&IsDebuggerPresent())
+			DebugBreak();
 		delete[] infoLog;
 	}
     return res;
