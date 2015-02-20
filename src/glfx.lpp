@@ -377,12 +377,37 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 												}
 
-<INITIAL>"VertexShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=VERTEX_SHADER;	glfxPushState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"PixelShader"							{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
-<INITIAL>"FragmentShader"						{glfxlval.lineno=yylineno;	glfxlval.sType=FRAGMENT_SHADER;	glfxPushState(IN_SHADER_COMPILE); stdReturn(DECL_SHADER);}
+<INITIAL>"VertexShader"							{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=VERTEX_SHADER;
+													glfxPushState(IN_SHADER_COMPILE);
+													stdReturn(DECL_SHADER);
+												}
+<INITIAL>"GeometryShader"							{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=GEOMETRY_SHADER;
+													glfxPushState(IN_SHADER_COMPILE);
+													stdReturn(DECL_SHADER);
+												}
+<INITIAL>"PixelShader"							{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=FRAGMENT_SHADER;
+													glfxPushState(IN_SHADER_COMPILE);
+													stdReturn(DECL_SHADER);
+												}
+<INITIAL>"FragmentShader"						{
+													glfxlval.lineno=yylineno;
+													glfxlval.sType=FRAGMENT_SHADER;
+													glfxPushState(IN_SHADER_COMPILE);
+													stdReturn(DECL_SHADER);
+												}
 <IN_SHADER_COMPILE>"CompileShader"				{
 													glfxlval.lineno=yylineno;
 													stdReturn(COMPILE_SHADER);
+												}
+<IN_SHADER_COMPILE>"ConstructGSWithSO"			{
+													glfxlval.lineno=yylineno;
+													stdReturn(CONSTRUCT_GS_WITH_SO);
 												}
 <IN_SHADER>"vec2"	{
 													glfxlval.lineno=yylineno;
@@ -517,6 +542,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxlval.strs[0]=yytext;
 														stdReturn(QUOTED_STRING);
 													}
+												}
+<IN_SHADER_COMPILE>{STR_BLCK}					{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(QUOTED_STRING);
 												}
 <INITIAL>{HEX_BLCK}								{
 													if(gLexPassthrough)

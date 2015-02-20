@@ -192,6 +192,8 @@ GLenum toBlendOpGLEnum(const std::string &str)
 		return GL_FUNC_ADD;
 	else if(is_equal(str,"SUBTRACT"))
 		return GL_FUNC_SUBTRACT;
+	else if(is_equal(str,"MAX"))
+		return GL_FUNC_ADD;
 	else
 	{
 		ostringstream str;
