@@ -461,7 +461,7 @@ prog : prog tok
 					//vec2 texCoord;
 					//vec3 normal;
 					//} VertexIn[];
-					shaderCode<<storage<<" VertexData\n";
+					shaderCode<<storage<<" "<<type<<"\n";
 					shaderCode<<"{\n";
 					for(int i=0;i<(int)s->m_structMembers.size();i++)
 					{
@@ -523,7 +523,22 @@ prog : prog tok
 			{
 				// if we're returning a struct, we declare outputs for each of its members,
 				// then fill in them all.
+				/*
+out VertexData {
+    vec2 texCoord;
+    vec3 normal;
+} VertexOut;
+					finalCode<<sem<<"="<<returnable<<"."<<m.name<<";"<<endl;
+				*/
 				const Struct *s=u->second;
+				string structInstanceName="structInstanceName";
+				shaderCode<<"out "<<returnType<<"IO\n{\n";
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					shaderCode<<"\t"<<m.type<<" "<<m.name<<";\n";
+				}
+				shaderCode<<"} "<<structInstanceName<<";"<<endl;
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
@@ -537,7 +552,7 @@ prog : prog tok
 						shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
 						finalCode<<builtin_name<<"="<<returnable<<"."<<m.name<<";"<<endl;
 					}
-					if(m.semantic.substr(0,9)==string("SV_TARGET"))
+					else if(m.semantic.substr(0,9)==string("SV_TARGET"))
 					{
 						string numstr=m.semantic.substr(9,m.semantic.length()-9);
 						int num=0;
@@ -546,14 +561,16 @@ prog : prog tok
 						if(num>=0)
 							shaderCode<<"layout(location = "<<num<<") ";
 					}
-					if(m.semantic.substr(0,9)==string("SV_DEPTH"))
+					else if(m.semantic.substr(0,9)==string("SV_DEPTH"))
 					{
 						sem="gl_FragDepth";
 					}
+					else continue;
 					//out float gl_FragDepth;
 					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
 					finalCode<<sem<<"="<<returnable<<"."<<m.name<<";"<<endl;
 				}
+				
 			}
 		}
 		// Add definition and code
