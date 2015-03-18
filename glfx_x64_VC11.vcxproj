@@ -30,6 +30,7 @@
     </ClCompile>
     <ClCompile Include="src\PreprocessLexer.cpp" />
     <ClCompile Include="src\PreprocessParser.cpp" />
+    <ClCompile Include="src\ShaderCompiler.cpp" />
     <ClCompile Include="src\StringFunctions.cpp" />
     <ClCompile Include="src\StringToWString.cpp" />
   </ItemGroup>

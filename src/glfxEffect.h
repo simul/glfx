@@ -28,7 +28,6 @@ namespace glfxParser
 		map<std::string,DepthStencilState*>	m_depthStencilStates;
 		map<std::string,SamplerState*>		m_samplerStates;
 		map<std::string,RasterizerState*>	m_rasterizerStates;
-		map<std::string,Struct*>			m_structs;
 		map<std::string,std::string>		m_shaders;
 		map<std::string,std::string>		m_shaderLayouts;
 		std::map<unsigned,PassState> passStates;
@@ -38,15 +37,6 @@ namespace glfxParser
 		//!		Profile vs_4_0(410);
 		ProfileMap					m_profileToVersion;	
 		CompiledShaderMap			m_compiledShaders;
-		struct InterfaceDcl
-		{
-			string id;
-			int atLine;
-
-			InterfaceDcl(string s, int l) : id(s), atLine(l) {}
-			InterfaceDcl() {}
-		};
-		map<string, InterfaceDcl>   m_interfaces;
 		vector<string>				m_filenames;
 		ostringstream               m_sharedCode;
 		ostringstream               m_log;
@@ -56,6 +46,16 @@ namespace glfxParser
 		string						m_filename;
     
 	public:
+		struct InterfaceDcl
+		{
+			string id;
+			int atLine;
+
+			InterfaceDcl(string s, int l) : id(s), atLine(l) {}
+			InterfaceDcl() {}
+		};
+		map<string, InterfaceDcl>   m_interfaces;
+		map<std::string,Struct*>			m_structs;
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
 		//unsigned BuildProgram(const string& prog) const;

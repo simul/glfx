@@ -158,6 +158,20 @@ namespace glfxParser
 extern int glfxdebug;
 #endif
 
+struct CompilableShader
+{
+	std::string shaderName;
+	std::string returnType;
+	std::string shaderContent;
+	std::string csLayout;
+	std::string returnable;
+	int main_linenumber;
+	int content_linenumber;
+	int current_filenumber;
+	vector<glfxstype::variable> vars;
+};
+extern string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh);
+extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
 extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
 extern void glfxerror(const char*);
