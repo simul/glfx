@@ -177,9 +177,10 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 		}
 		else
 		{
+			bool as_interface=(shaderType!=FRAGMENT_SHADER);
 			const Struct *s=u->second;
 			string structInstanceName="structInstanceName";
-			if(shaderType!=FRAGMENT_SHADER)
+			if(as_interface)
 			{
 				shaderCode<<"out "<<sh.returnType<<"IO\n{\n";
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
@@ -188,6 +189,12 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 					shaderCode<<"\t"<<m.type<<" "<<m.name<<";\n";
 				}
 				shaderCode<<"} "<<structInstanceName<<";"<<endl;
+			}
+			string returnVariable=sh.returnable;
+			if(returnVariable.find("(")<returnVariable.length())
+			{
+				returnVariable="returnVariable";
+				finalCode<<sh.returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 			}
 			for(int i=0;i<(int)s->m_structMembers.size();i++)
 			{
@@ -200,7 +207,7 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 				{
 					string builtin_name="gl_Position";
 					shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
-					finalCode<<builtin_name<<"="<<sh.returnable<<"."<<m.name<<";"<<endl;
+					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
 				}
 				else if(m.semantic.substr(0,9)==string("SV_TARGET"))
 				{
@@ -220,9 +227,15 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 					if(shaderType==FRAGMENT_SHADER)
 						continue;
 				}
-				//out float gl_FragDepth;
-				shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
-				finalCode<<sem<<"="<<sh.returnable<<"."<<m.name<<";"<<endl;
+				if(as_interface)
+				{
+					finalCode<<structInstanceName<<"."<<m.name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+				else
+				{
+					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
+					finalCode<<sem<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
 			}
 		}
 	}

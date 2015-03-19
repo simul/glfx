@@ -228,7 +228,6 @@ prog : prog tok
 		stringReplaceAll(currentCsLayout,"%1",$4.strs[0]);
 		stringReplaceAll(currentCsLayout,"%2",$6.strs[0]);
 		stringReplaceAll(currentCsLayout,"%3",$8.strs[0]);
-		
 	}
 	| LAYOUT cs_layout_spec IDENTIFIER ';'
 	{
