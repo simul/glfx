@@ -9,6 +9,7 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
+	string shaderContent=sh.shaderContent;
 	// Add shader parameters
 	for(vector<glfxstype::variable>::const_iterator it=sh.vars.begin();it!=sh.vars.end();++it)
 	{
@@ -18,7 +19,6 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 		string storage(it->storage);
 		if(storage.length()==0)
 			storage="in";
-		string shaderContent=sh.shaderContent;
 		if(storage==string("inout"))
 		{
 			size_t brack_pos=type.find("<");
@@ -232,7 +232,7 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 	if(extraDeclarations.str().length())
 		shaderCode<<extraDeclarations.str()<<"\n";
 	shaderCode<<"#line "<<sh.content_linenumber<<" "<<sh.current_filenumber<<endl;
-	shaderCode<<sh.shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
+	shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
 
 	return shaderCode.str();
 	// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:

@@ -1416,7 +1416,9 @@ postfix_exp		: primary_exp
 					}
 					| postfix_exp '.' IDENTIFIER
 					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+						string expr1=$1.strs[0];
+						string expr3=$3.strs[0];
+						$$.strs[0]=expr1+$2.strs[0]+expr3;
 					}
 					| postfix_exp PLUS_PLUS
 					{
