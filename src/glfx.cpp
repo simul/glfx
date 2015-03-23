@@ -866,7 +866,8 @@ GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const ch
 }
 GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass)
 {
-	gEffects[effect]->ApplyPassState(pass);
+	if(effect>=0&&effect<gEffects.size())
+		gEffects[effect]->ApplyPassState(pass);
 }
 
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
