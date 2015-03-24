@@ -4632,8 +4632,8 @@ void glfxWarning(const char* e)
     ostringstream errMsg;
 	int lex_linenumber=glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx warning: \""<<glfxget_text()<<"\" "<<e;
-	gEffect->Log()<<errMsg;
+    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx warning: \""<<glfxget_text()<<"\" "<<e<<std::endl;
+	gEffect->Log()<<errMsg.str();
 }
 
 void glfxerror(const char* e)
