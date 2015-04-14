@@ -136,7 +136,9 @@ TechniqueGroup *Effect::GetTechniqueGroupByIndex(int idx)
 	{
 		i++;
 	}
-	TechniqueGroup *group=it->second;
+	TechniqueGroup *group=NULL;
+	if(it!=m_techniqueGroups.end())
+		group=it->second;
 	return group;
 }
 
