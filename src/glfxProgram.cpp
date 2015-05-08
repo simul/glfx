@@ -152,8 +152,8 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
 		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
 		if (strlen(infoLog)>0)
 			sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
-		if(!res&&IsDebuggerPresent())
-			DebugBreak();
+		//if(!res&&IsDebuggerPresent())
+		//	DebugBreak();
 		delete[] infoLog;
 	}
     return res;
