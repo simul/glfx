@@ -2,6 +2,7 @@
 #define STRINGFUNCTIONS_H
 
 #include <string>
+#include <vector>
 #include <stdarg.h>
 
 extern void StripDirectoryFromFilename(std::string &str);
@@ -17,7 +18,9 @@ extern std::string stringFormat(std::string fmt, ...);
 /// A quick-and-dirty, non-re-entrant formatting function. Use this only for debugging.
 extern const char *QuickFormat(const char *format_str,...);
 //! Proper find-and-replace function for strings:
-extern void find_and_replace(std::string& source, std::string const& find, std::string const& replace);
+extern void find_and_replace(std::string& source, std::string const& find, std::string const& replace);	
+//! Divide a string into a vector of smaller strings, based on the given separator
+extern std::vector<std::string> split(const std::string& source, char separator);
 
 #endif
 

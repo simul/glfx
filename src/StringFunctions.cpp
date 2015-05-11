@@ -8,6 +8,7 @@
 #endif
 
 using std::string;
+using std::vector;
 size_t ttab;
 bool IsWhitespace(char c)
 {
@@ -151,4 +152,20 @@ void find_and_replace(std::string& source, std::string const& find, std::string 
 		source.replace(i, find.length(), replace);
 		i += replace.length() - find.length() + 1;
 	}
+}
+
+vector<string> split(const string& source, char separator)
+{
+	vector<string> vec;
+	int pos=0;
+	while(pos>=0&&pos<source.length())
+	{
+		int nextpos=(int)source.find(separator,pos);
+		if(nextpos<0)
+			nextpos=source.length();
+		if(nextpos>=0)
+			vec.push_back(source.substr(pos,nextpos-pos));
+		pos=nextpos+1;
+	}
+	return vec;
 }

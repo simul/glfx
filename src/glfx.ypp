@@ -13,6 +13,7 @@
     
     #include "glfxParser.h"
     #include "glfxClasses.h"
+    #include "StringFunctions.h"
 
     using namespace std;
     using namespace glfxParser;
@@ -135,7 +136,7 @@
 		std::map<std::string,CompilableShader*> compilableShaders;
 %}
 
-%token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token DEFINE MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -506,7 +507,7 @@ lex_fx :
     gLexPassthrough=false;
 };
 
-shader_fx :
+shader_fx:
 {
 	read_shader=true;
     gLexPassthrough=false;
@@ -1397,6 +1398,15 @@ unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
 {
 	$$.strs[0]=$1.strs[0];
 }
+sampling_exp:	postfix_exp '.' SAMPLING_COMMAND
+					{
+						string expr1=$1.strs[0];
+						string expr3=$3.strs[0];
+						$$.strs[0]=expr1+$2.strs[0]+expr3;
+						// We put the postfix expression into strs[1]
+						$$.strs[1]=expr3;
+					}
+
 postfix_exp		: primary_exp
 					{
 						$$.strs[0]=$1.strs[0];
@@ -1405,9 +1415,23 @@ postfix_exp		: primary_exp
 					{
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
 					}
+					| sampling_exp '(' argument_exp_list ')'
+					{
+						string expr1=$1.strs[0];
+						string command=$1.strs[1];
+						string expr2=$2.strs[0];
+						string expr3=$3.strs[0];
+						string expr4=$4.strs[0];
+						vector<string> args=split(expr3,',');
+						$$.strs[0]=expr1+expr2+expr3+expr4;
+					}
 					| postfix_exp '(' argument_exp_list ')'
 					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+						string expr1=$1.strs[0];
+						string expr2=$2.strs[0];
+						string expr3=$3.strs[0];
+						string expr4=$4.strs[0];
+						$$.strs[0]=expr1+expr2+expr3+expr4;
 					}
 					| postfix_exp '('			')'
 					{

@@ -103,7 +103,7 @@ the last is C code to be copied verbatim to the output.
 #define stdReturn return stdReturn_
 %}
 
-%x IN_SHADER IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE
+%x IN_SHADER IN_FUNCTION IN_DEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -116,38 +116,38 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 /*
 */
 %%
-<INITIAL>"#"define								{
-													if(gLexPassthrough)
-														glfxWrite(yytext); 
-													glfxPushState(IN_DEFINE);
-													stdReturn(DEFINE);
-												}
+<INITIAL>"#"define							{
+												if(gLexPassthrough)
+													glfxWrite(yytext); 
+												glfxPushState(IN_DEFINE);
+												stdReturn(DEFINE);
+											}
 <INITIAL>^[ \t]*"[" {
-													glfxPushState(IN_SHADER_ATTRIBUTE);
-													stdReturn('[');
-												}
-<IN_SHADER_ATTRIBUTE>"maxvertexcount"			{
-													stdReturn(SA_MAXVERTEXCOUNT);
-												}
+												glfxPushState(IN_SHADER_ATTRIBUTE);
+												stdReturn('[');
+											}
+<IN_SHADER_ATTRIBUTE>"maxvertexcount"		{
+												stdReturn(SA_MAXVERTEXCOUNT);
+											}
 <IN_SHADER_ATTRIBUTE>"numthreads"			{
 													stdReturn(SA_NUMTHREADS);
-												}
-<IN_SHADER_ATTRIBUTE>"]"						{
-													glfxPopState();
-													stdReturn(']');
-												}
-<IN_DEFINE>[^\n]+								{
+											}
+<IN_SHADER_ATTRIBUTE>"]"					{
+												glfxPopState();
+												stdReturn(']');
+											}
+<IN_DEFINE>[^\n]+							{
 													if(gLexPassthrough)
 														glfxWrite(yytext); 
 													stdReturn(MACRO_DEFINITION);
-												}
-<IN_DEFINE>\n									{
-													if(gLexPassthrough)
-														glfxWrite(yytext); 
-													glfxPopState();
-													stdReturn(EOL);
-												}
-<INITIAL>"uniform"								{
+											}
+<IN_DEFINE>\n								{
+												if(gLexPassthrough)
+													glfxWrite(yytext); 
+												glfxPopState();
+												stdReturn(EOL);
+											}
+<INITIAL>"uniform"							{
 													glfxPushState(IN_UNIFORM_DECL);
 													stdReturn(UNIFORM);
 												}
@@ -415,6 +415,11 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(IDENTIFIER);
+												}
+<IN_SHADER>"Sample"	{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(SAMPLING_COMMAND);
 												}
 <IN_SHADER>"return"	{
 													glfxlval.lineno=yylineno;
