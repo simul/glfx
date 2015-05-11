@@ -212,13 +212,14 @@ extern char *glfxtext;
 #ifdef YY_HEADER_EXPORT_START_CONDITIONS
 #define INITIAL 0
 #define IN_SHADER 1
-#define IN_DEFINE 2
-#define IN_SHADER_COMPILE 3
-#define IN_RENDER_STATE 4
-#define IN_STRUCT 5
-#define IN_TEXTURE_DECL 6
-#define IN_UNIFORM_DECL 7
-#define IN_SHADER_ATTRIBUTE 8
+#define IN_FUNCTION 2
+#define IN_DEFINE 3
+#define IN_SHADER_COMPILE 4
+#define IN_RENDER_STATE 5
+#define IN_STRUCT 6
+#define IN_TEXTURE_DECL 7
+#define IN_UNIFORM_DECL 8
+#define IN_SHADER_ATTRIBUTE 9
 
 #endif
 
@@ -322,9 +323,9 @@ extern int glfxlex (void);
 #undef YY_DECL
 #endif
 
-#line 691 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 696 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
-#line 329 "src/glfxScanner.h"
+#line 330 "src/glfxScanner.h"
 #undef glfxIN_HEADER
 #endif /* glfxHEADER_H */
