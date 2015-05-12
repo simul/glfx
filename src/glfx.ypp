@@ -137,7 +137,7 @@
 	std::map<std::string,Function*> functions;
 %}
 
-%token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -356,6 +356,11 @@ prog : prog tok
 		currentCsLayout+=$1.strs[0];
 		currentCsLayout+=$3.strs[0];
 	}
+	| CONSTANT_BUFFER IDENTIFIER shader_fx struct_definition ';' lex_passthrough
+	{
+		string bufferName	=$2.strs[0];
+		string def			=$4.strs[0];
+	}
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' shader_fx function_content lex_passthrough
 	{
@@ -364,6 +369,10 @@ prog : prog tok
 		functions[functionName]	=f;
 		f->returnType			=$1.strs[0];
 		f->content				=$7.strs[0];
+		string returnable			=$8.strs[1];
+		f->content+="\nreturn ";
+		f->content+=returnable+";";
+		f->content+="\n";
 		f->parameters			=*$4.vars;
 		delete $4.vars;
 	}
@@ -420,7 +429,7 @@ prog : prog tok
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
-	};
+	}
 	texture_type: TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY
 	{
 		$$.strs[0]	=$1.strs[0];
@@ -549,10 +558,36 @@ read_block : { /* Read next block */
 
 optional_return_semantic: ':' IDENTIFIER
  {
+    $$.strs[0]=$1.strs[0]+$2.strs[0];
  }
  |
  {
+    $$.strs[0]="";
  }
+struct_definition: '{' struct_member_list '}'
+{
+    $$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+}
+struct_member_list: struct_member_list struct_member
+{
+    $$.strs[0]=($1.strs[0]+"\n")+$2.strs[0];
+}
+|struct_member
+{
+    $$.strs[0]=$1.strs[0];
+}
+struct_member: optional_uniform IDENTIFIER IDENTIFIER ';'
+{
+    $$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+";";
+}
+optional_uniform: UNIFORM
+{
+    $$.strs[0]="uniform";
+}
+|
+{
+    $$.strs[0]="";
+}
 param_declaration_list : param_declaration_list ',' param_declaration
 	{
 		$$.vars=$1.vars;

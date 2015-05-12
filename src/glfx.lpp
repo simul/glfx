@@ -217,7 +217,14 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"group"								glfxlval.boolean=false;		stdReturn(GROUP);
 <INITIAL>"fxgroup"								glfxlval.boolean=false;		stdReturn(GROUP);
 <INITIAL>"shader"								{
-													glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	stdReturn(SHADER);
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(SHADER);
+												}
+<INITIAL>"constant_buffer"						{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(CONSTANT_BUFFER);
 												}
 <INITIAL>"interface"							glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	stdReturn(INTERFACE);
 <INITIAL>"sampler"								glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	stdReturn(SAMPLER);
@@ -439,7 +446,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER>"if"									stdReturn(IF);
 <IN_SHADER>"else"								stdReturn(ELSE);
 <IN_SHADER>"while"								stdReturn(WHILE);
-											
+<IN_SHADER>"uniform"							{
+													stdReturn(UNIFORM);
+												}
 
 <IN_SHADER>";"[ \t\n]*							{
 													stdReturn(';');
@@ -673,7 +682,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('[');}
 <INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(']');}
-<INITIAL>","									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(',');}
+<INITIAL>","									{
+													//if(gLexPassthrough)
+													//	glfxWrite(yytext);
+													//else
+														stdReturn(',');
+												}
 <INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
