@@ -133,7 +133,7 @@
 		return texture_type;
 	}
 	string getGLInputSemantic(int s);
-		std::map<std::string,CompilableShader*> compilableShaders;
+	std::map<std::string,CompilableShader*> compilableShaders;
 %}
 
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND

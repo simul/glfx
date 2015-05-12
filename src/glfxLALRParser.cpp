@@ -203,7 +203,7 @@
 		return texture_type;
 	}
 	string getGLInputSemantic(int s);
-		std::map<std::string,CompilableShader*> compilableShaders;
+	std::map<std::string,CompilableShader*> compilableShaders;
 
 /* Line 371 of yacc.c  */
 #line 210 "src/glfxLALRParser.cpp"
