@@ -158,6 +158,16 @@ namespace glfxParser
 extern int glfxdebug;
 #endif
 
+/// A struct representing a function that has been parsed from source.
+struct Function
+{
+	std::string returnType;
+	std::string content;
+	int main_linenumber;
+	int content_linenumber;
+	int current_filenumber;
+	vector<glfxstype::variable> parameters;
+};
 struct CompilableShader
 {
 	std::string shaderName;

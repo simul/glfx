@@ -134,6 +134,7 @@
 	}
 	string getGLInputSemantic(int s);
 	std::map<std::string,CompilableShader*> compilableShaders;
+	std::map<std::string,Function*> functions;
 %}
 
 %token WHITESPACE UNIFORM SHADER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -258,9 +259,11 @@ prog : prog tok
 	}
 	| DEFINE MACRO_DEFINITION EOL
 	{
+		string name					=$2.strs[0];
 	}
 	| UNDEF IDENTIFIER EOL
 	{
+		string name					=$2.strs[0];
 	}
 	| STRUCT IDENTIFIER '{' struct_members '}' ';'
 	{
@@ -356,8 +359,13 @@ prog : prog tok
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' shader_fx function_content lex_passthrough
 	{
-		string returnType		=$1.strs[0];
 		string functionName		=$2.strs[0];
+		Function *f				=new Function;
+		functions[functionName]	=f;
+		f->returnType			=$1.strs[0];
+		f->content				=$7.strs[0];
+		f->parameters			=*$4.vars;
+		delete $4.vars;
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
