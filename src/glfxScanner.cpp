@@ -14423,12 +14423,13 @@ YY_RULE_SETUP
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); // Single line comment (with possible continuation)
+
 												}
 	YY_BREAK
 case 152:
 /* rule 152 can match eol */
 YY_RULE_SETUP
-#line 707 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 708 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); // Multiline comment
@@ -14437,7 +14438,7 @@ YY_RULE_SETUP
 case 153:
 /* rule 153 can match eol */
 YY_RULE_SETUP
-#line 711 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 712 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough) glfxWrite(glfxtext);
 												}
@@ -14445,18 +14446,18 @@ YY_RULE_SETUP
 case 154:
 /* rule 154 can match eol */
 YY_RULE_SETUP
-#line 714 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 715 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {}// Without this line, the glfxlineno would get out of whack.
 	YY_BREAK
 case 155:
 YY_RULE_SETUP
-#line 715 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 716 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {errLex(glfxtext);}
 	YY_BREAK
 case 156:
 /* rule 156 can match eol */
 YY_RULE_SETUP
-#line 716 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 717 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace++;
@@ -14466,7 +14467,7 @@ YY_RULE_SETUP
 case 157:
 /* rule 157 can match eol */
 YY_RULE_SETUP
-#line 721 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 722 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace--;
@@ -14481,7 +14482,7 @@ YY_RULE_SETUP
 case 158:
 /* rule 158 can match eol */
 YY_RULE_SETUP
-#line 731 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 732 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace--;
@@ -14490,10 +14491,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 159:
 YY_RULE_SETUP
-#line 736 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 737 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 ECHO;
 	YY_BREAK
-#line 14497 "src/glfxScanner.cpp"
+#line 14498 "src/glfxScanner.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(IN_SHADER):
 case YY_STATE_EOF(IN_FUNCTION):
@@ -15549,7 +15550,7 @@ void glfxfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 736 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 737 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
 void glfxPushState(int s)

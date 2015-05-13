@@ -362,24 +362,34 @@ prog : prog tok
 	{
 		string bufferName	=$2.strs[0];
 		string def			=$4.strs[0];
+
+		ostringstream str;
+		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
+		str<< "constant_buffer"<<" "<<$2.strs[0]<<$4.strs[0]<<";\n";
+		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
+
+		glfxWrite(str.str().c_str());
 	}
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' shader_fx function_content lex_passthrough
 	{
+		string params			=$4.strs[0];
 		string functionName		=$2.strs[0];
 		Function *f				=new Function;
 		functions[functionName]	=f;
 		f->returnType			=$1.strs[0];
 		f->content				=$7.strs[0];
-		string returnable			=$8.strs[1];
+		string returnable		=$8.strs[1];
 		f->content+="\nreturn ";
 		f->content+=returnable+";";
-		f->content+="\n";
 		f->parameters			=*$4.vars;
 		delete $4.vars;
 
 		ostringstream str;
-		str<< f->returnType<<" "<<functionName<<$4.strs[0]<<"\n"<<f->content<<"\n}\n";
+		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
+		str<< f->returnType<<" "<<functionName<<"("<<params<<")"<<"\n{"<<f->content<<"\n}\n";
+		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
+
 		glfxWrite(str.str().c_str());
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
@@ -572,7 +582,8 @@ optional_return_semantic: ':' IDENTIFIER
  }
 struct_definition: '{' struct_member_list '}'
 {
-    $$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+    $$.strs[0]="{\n";
+	$$.strs[0]+=($2.strs[0]+"\n}\n");
 }
 struct_member_list: struct_member_list struct_member
 {
@@ -584,7 +595,7 @@ struct_member_list: struct_member_list struct_member
 }
 struct_member: optional_uniform IDENTIFIER IDENTIFIER ';'
 {
-    $$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+";";
+    $$.strs[0]=(($1.strs[0]+" ")+$2.strs[0]+" ")+$3.strs[0]+";";
 }
 optional_uniform: UNIFORM
 {
@@ -596,22 +607,25 @@ optional_uniform: UNIFORM
 }
 param_declaration_list : param_declaration_list ',' param_declaration
 	{
-		$$.vars=$1.vars;
+		$$.vars		=$1.vars;
+		$$.strs[0]	=($1.strs[0]+",")+$3.strs[0];
 
 		YYSTYPE::variable var;
-		var.storage=$3.strs[0];
-		var.type=$3.strs[1];
-		var.identifier=$3.strs[2];
-		var.semantic=$3.strs[4];
+		var.storage		=$3.strs[1];
+		var.type		=$3.strs[2];
+		var.identifier	=$3.strs[3];
+		var.semantic	=$3.strs[4];
     
 		$$.vars->push_back(var);
 	}
     | param_declaration
 	{
 		YYSTYPE::variable var;
-		var.storage=$1.strs[0];
-		var.type=$1.strs[1];
-		var.identifier=$1.strs[2];
+		string s1	=$1.strs[0];
+		$$.strs[0]	=s1;
+		var.storage=$1.strs[1];
+		var.type=$1.strs[2];
+		var.identifier=$1.strs[3];
 		var.semantic=$1.strs[4];
     
 		$$.vars = new vector<YYSTYPE::variable>;
@@ -619,6 +633,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 	}
     |
 	{
+		$$.strs[0]	="";
 		$$.vars = new vector<YYSTYPE::variable>;
 	};
 
@@ -639,18 +654,19 @@ param_declaration: param opt_sq location
 		semantic=getGLInputSemantic($3.num);
         break;
     }
-    prepend<<$1.strs[0];
+    prepend<<$1.strs[1];
 
 	string storage	=prepend.str();
-	string type		=$1.strs[1];
-	string id		=$1.strs[2]+$2.strs[0];
+	string type		=$1.strs[2];
+	string id		=$1.strs[3]+$2.strs[0];
+	string all		=$1.strs[0]+$2.strs[0]+$3.strs[0];
+    $$.strs[0]=all;
+    $$.strs[1]=storage;
+    $$.strs[2]=type;
+    $$.strs[3]=id;
 
-    $$.strs[0]=storage;
-    $$.strs[1]=type;
-    $$.strs[2]=id;
-
-    $$.strs[3]=$2.strs[0];
-    $$.strs[3]+=$3.strs[0];
+   // $$.strs[3]=$2.strs[0];
+    //$$.strs[3]+=$3.strs[0];
     $$.strs[4]=semantic;
 };
 
@@ -682,9 +698,11 @@ param : opt_storage IDENTIFIER optional_templateval IDENTIFIER
 		if(template_.length())
 			type+=string("<")+template_+string(">");
 		string id		=$4.strs[0];
-		$$.strs[0]		= storage	;
-		$$.strs[1]		= type		;
-		$$.strs[2]		= id		;
+		string all		=(($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+" ")+$4.strs[0];
+		$$.strs[0]		= all	;
+		$$.strs[1]		= storage	;
+		$$.strs[2]		= type		;
+		$$.strs[3]		= id		;
 	};
 opt_storage : STORAGEQ
 	{
@@ -1204,7 +1222,14 @@ statement:  expression ';'
 				}
 			| IF '(' expression ')' statement ELSE statement
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
+					string s1=$1.strs[0];
+					string s2=$2.strs[0];
+					string s3=$3.strs[0];
+					string s4=$4.strs[0];
+					string s5=$5.strs[0];
+					string s6=$6.strs[0];
+					string s7=$7.strs[0];
+					$$.strs[0]=(s1+s2+s3+s4+s5+s6+"\n")+s7;
 				}
 			| WHILE '(' expression ')' statement
 				{

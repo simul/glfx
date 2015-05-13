@@ -703,6 +703,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
+
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
 													if(gLexPassthrough)
