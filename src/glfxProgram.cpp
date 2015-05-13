@@ -145,7 +145,7 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
     //if(!tmp)
 	{
 		if(!tmp)
-			sLog<<"Status: "<<shaderSrc.name<<" shader compiled with"<<(tmp ? "out" : "")<<" errors"<<endl;
+			sLog<<"Status: "<<shaderSrc.name<<" shader compiled with errors"<<endl;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
 
 		char* infoLog=new char[tmp];

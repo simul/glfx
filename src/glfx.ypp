@@ -263,7 +263,9 @@ prog : prog tok
 	}
 	| UNDEF IDENTIFIER EOL
 	{
-		string name					=$2.strs[0];
+		string name		=$2.strs[0];
+		string str		=string("#undef ")+name+"\n";
+		glfxWrite(str.c_str()); 
 	}
 	| STRUCT IDENTIFIER '{' struct_members '}' ';'
 	{
@@ -375,6 +377,10 @@ prog : prog tok
 		f->content+="\n";
 		f->parameters			=*$4.vars;
 		delete $4.vars;
+
+		ostringstream str;
+		str<< f->returnType<<" "<<functionName<<$4.strs[0]<<"\n"<<f->content<<"\n}\n";
+		glfxWrite(str.str().c_str());
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough

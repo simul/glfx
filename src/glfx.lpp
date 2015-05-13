@@ -122,8 +122,8 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												stdReturn(DEFINE);
 											}
 <INITIAL>"#"undef							{
-												if(gLexPassthrough)
-													glfxWrite(yytext); 
+												glfxlval.lineno=yylineno;
+												glfxlval.strs[0]=yytext;
 												glfxPushState(IN_UNDEFINE);
 												stdReturn(UNDEF);
 											}
@@ -535,6 +535,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_SHADER>"/"			{
 							stdReturn('/');
 						}
+<IN_SHADER>"&"			{
+							stdReturn('&');
+						}    
+<IN_SHADER>"|"			{
+							stdReturn('|');
+						}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*	{
 													accumulateWhitespace(yytext);
 												}
@@ -569,13 +575,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.strs[0]=yytext;
 													stdReturn(QUOTED_STRING);
 												}
-<INITIAL>{HEX_BLCK}								{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
+<INITIAL,IN_SHADER>{HEX_BLCK}								{
+													//if(gLexPassthrough)
+													//	glfxWrite(yytext);
+													//else
 													{
-														glfxlval.lineno=yylineno;
-														glfxlval.unum=strtoul(yytext, NULL, 16);
+														glfxlval.lineno	=yylineno;
+														glfxlval.unum	=strtoul(yytext, NULL, 16);
 														glfxlval.strs[0]=yytext;
 														stdReturn(NUM);
 													}
@@ -593,9 +599,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
 <INITIAL>"inout"	{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
+												//	if(gLexPassthrough)
+												//		glfxWrite(yytext);
+												//	else
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
