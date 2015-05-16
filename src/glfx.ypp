@@ -135,6 +135,7 @@
 	string getGLInputSemantic(int s);
 	std::map<std::string,CompilableShader*> compilableShaders;
 	std::map<std::string,Function*> functions;
+	Function buildFunction;
 %}
 
 %token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -1486,8 +1487,10 @@ sampling_exp:	postfix_exp '.' SAMPLING_COMMAND
 						string expr1=$1.strs[0];
 						string expr3=$3.strs[0];
 						$$.strs[0]=expr1+$2.strs[0]+expr3;
-						// We put the postfix expression into strs[1]
-						$$.strs[1]=expr3;
+						// Put the thing we're sampling into strs[1]
+						$$.strs[1]=expr1;
+						// We put the command into strs[2]
+						$$.strs[2]=expr3;
 					}
 
 postfix_exp		: primary_exp
@@ -1501,12 +1504,30 @@ postfix_exp		: primary_exp
 					| sampling_exp '(' argument_exp_list ')'
 					{
 						string expr1=$1.strs[0];
-						string command=$1.strs[1];
+						string texture=$1.strs[1];
+						string command=$1.strs[2];
 						string expr2=$2.strs[0];
 						string expr3=$3.strs[0];
 						string expr4=$4.strs[0];
 						vector<string> args=split(expr3,',');
-						$$.strs[0]=expr1+expr2+expr3+expr4;
+						// The first argument is the sampler state, the second is the texcoords, the third if present is the lod.
+						// So: to translate this to GLSL, an expression like
+						//			mainTexture.Sample(samplerState1,texcoords)
+						// becomes:
+						//			texture(mainTexture&samplerState1,texcoords)
+						// and we will map the string "mainTexture&samplerState1" to mainTexture and samplerState1.
+
+						// Later, if we call the function, we will insert it into the shader code.
+						// each Texture parameter must be replaced by a list of all the texture-sampler combinations that use it.
+						// each SamplerState parameter must be replaced by a list of the texture-sampler combinations that use it.
+						// This might lead to some doubling-up.
+						TextureSampler *ts=new TextureSampler;
+						ts->texture=texture;
+						ts->samplerState=args[0];
+						string textureSamplerName=(ts->texture+"&")+ts->samplerState;
+						buildFunction.textureSamplers[textureSamplerName]=(ts);
+						string full_expr=string("texture(")+(textureSamplerName+",")+args[1];
+						$$.strs[0]=full_expr;
 					}
 					| postfix_exp '(' argument_exp_list ')'
 					{

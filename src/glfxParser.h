@@ -157,7 +157,11 @@ namespace glfxParser
 #define YYDEBUG 1
 extern int glfxdebug;
 #endif
-
+struct TextureSampler
+{
+	std::string texture;
+	std::string samplerState;
+};
 /// A struct representing a function that has been parsed from source.
 struct Function
 {
@@ -167,6 +171,7 @@ struct Function
 	int content_linenumber;
 	int current_filenumber;
 	vector<glfxstype::variable> parameters;
+	map<string,TextureSampler*> textureSamplers;
 };
 struct CompilableShader
 {
