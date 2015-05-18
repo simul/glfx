@@ -156,6 +156,18 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxPushState(IN_UNIFORM_DECL);
 													stdReturn(UNIFORM);
 												}
+<IN_UNIFORM_DECL>"sampler3D"					{
+													stdReturn(TEXTURE3D);
+												}
+<IN_UNIFORM_DECL>"Texture3D"					{
+													stdReturn(TEXTURE3D);
+												}
+<IN_UNIFORM_DECL>"sampler2D"					{
+													stdReturn(TEXTURE2D);
+												}
+<IN_UNIFORM_DECL>"Texture2D"					{
+													stdReturn(TEXTURE2D);
+												}
 <IN_UNIFORM_DECL>"Texture2DMS"					{
 													stdReturn(TEXTURE2DMS);
 												}
@@ -770,7 +782,7 @@ const char *glfxGetStateText()
 	};
 	return "";
 }
-void resetGlfxParse()
+void resetGlfxLex()
 {
 	glfxdebug=0;
 	brace=0;

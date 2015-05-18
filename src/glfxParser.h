@@ -159,19 +159,32 @@ extern int glfxdebug;
 #endif
 struct TextureSampler
 {
-	std::string texture;
+	std::string textureName;
 	std::string samplerState;
+};
+struct DeclaredTexture
+{
+	std::string type;
 };
 /// A struct representing a function that has been parsed from source.
 struct Function
 {
+	void clear()
+	{
+		for(auto i=textureSamplers.begin();i!=textureSamplers.end();i++)
+		{
+			delete i->second;
+		}
+		(*this)=Function();
+	}
 	std::string returnType;
 	std::string content;
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
-	vector<glfxstype::variable> parameters;
-	map<string,TextureSampler*> textureSamplers;
+	std::vector<glfxstype::variable> parameters;
+	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
+	std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
 };
 struct CompilableShader
 {
@@ -191,6 +204,7 @@ extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
 extern void glfxerror(const char*);
 extern int glfxparse();
+extern void resetGlfxLex();
 extern void resetGlfxParse();
 extern void glfxWarning(const char* e);
 extern bool is_equal(const string& a, const char * b);

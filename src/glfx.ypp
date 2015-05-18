@@ -133,8 +133,9 @@
 		return texture_type;
 	}
 	string getGLInputSemantic(int s);
-	std::map<std::string,CompilableShader*> compilableShaders;
-	std::map<std::string,Function*> functions;
+	map<std::string,CompilableShader*> compilableShaders;
+	map<std::string,Function*> functions;
+	map<string,DeclaredTexture> declaredTextures;
 	Function buildFunction;
 %}
 
@@ -142,7 +143,7 @@
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
-%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE3D IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -180,7 +181,9 @@ prog : prog tok
 		string layout;
 		if(compute_only)
 			layout=GetLayoutForTemplateType(template_type)+" ";
-		decl<<layout<<"uniform "<<GetEquivalentGLTextureType(texture_type,template_type)<<" "<<texture_name<<";\n";
+		string type=GetEquivalentGLTextureType(texture_type,template_type);
+		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
+		declaredTextures[texture_name].type=type;
 		gEffect->m_sharedCode<<decl.str();
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -374,7 +377,6 @@ prog : prog tok
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' shader_fx function_content lex_passthrough
 	{
-		string params			=$4.strs[0];
 		string functionName		=$2.strs[0];
 		Function *f				=new Function;
 		functions[functionName]	=f;
@@ -386,12 +388,58 @@ prog : prog tok
 		f->parameters			=*$4.vars;
 		delete $4.vars;
 
+		// Now we must reorganize any texture parameters. Look at buildFunction:
+		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		{
+			string tsname=i->first;
+			string texture_name=i->second->textureName;
+			string sampler_state_name=i->second->samplerState;
+		}
+		
 		ostringstream str;
+		ostringstream params;
+		bool start=true;
+		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
+		{
+			string type=j->type;
+			// We SHOULD check the type but don't yet.
+			string name=j->identifier;
+			// Is this one of the textures in the textureSampler list?
+			auto u=buildFunction.textureSamplersByTexture.find(name);
+			if(u!=buildFunction.textureSamplersByTexture.end())
+			{
+				// the type remains the same.
+				for(auto v=u->second.begin();v!=u->second.end();v++)
+				{
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					TextureSampler *ts=*v;
+					params<<j->storage<<" "<<j->type<<" "<<ts->textureName<<"_"<<ts->samplerState;
+					if(j->semantic.size())
+						params<<": "<<j->semantic;
+				}
+			}
+			else
+			{
+				if(start)
+					start=false;
+				else
+					params<<", ";
+				params<<j->storage<<" "<<j->type<<" "<<j->identifier;
+				if(j->semantic.size())
+					params<<": "<<j->semantic;
+			}
+		}
+
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
-		str<< f->returnType<<" "<<functionName<<"("<<params<<")"<<"\n{"<<f->content<<"\n}\n";
+		str<< f->returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{"<<f->content<<"\n}\n";
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 
 		glfxWrite(str.str().c_str());
+
+		buildFunction.clear();
 	}
 	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
@@ -409,6 +457,23 @@ prog : prog tok
 		ostringstream extraDeclarations;
 		ostringstream finalCode;
 		sh.vars=*$5.vars;
+
+		ostringstream str;
+		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		{
+			string tsname=i->first;
+			string texture_name=i->second->textureName;
+			if(declaredTextures.find(texture_name)!=declaredTextures.end())
+			{
+				string sampler_type=declaredTextures[texture_name].type;
+				str<<sampler_type<<" "<<tsname;
+			}
+			else
+				errSem(string("Can't find texture declaration for ")+texture_name);
+		}
+		gEffect->m_sharedCode<<str.str();
+
+		buildFunction.clear();
 		delete $5.vars;
 		
 		gEffect->m_sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
@@ -447,7 +512,7 @@ prog : prog tok
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
 	}
-	texture_type: TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY
+	texture_type: TEXTURE2D|TEXTURE3D|TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
@@ -1504,7 +1569,7 @@ postfix_exp		: primary_exp
 					| sampling_exp '(' argument_exp_list ')'
 					{
 						string expr1=$1.strs[0];
-						string texture=$1.strs[1];
+						string textureName=$1.strs[1];
 						string command=$1.strs[2];
 						string expr2=$2.strs[0];
 						string expr3=$3.strs[0];
@@ -1522,12 +1587,29 @@ postfix_exp		: primary_exp
 						// each SamplerState parameter must be replaced by a list of the texture-sampler combinations that use it.
 						// This might lead to some doubling-up.
 						TextureSampler *ts=new TextureSampler;
-						ts->texture=texture;
+						ts->textureName=textureName;
 						ts->samplerState=args[0];
-						string textureSamplerName=(ts->texture+"&")+ts->samplerState;
+						string textureSamplerName=(ts->textureName+"_")+ts->samplerState;
 						buildFunction.textureSamplers[textureSamplerName]=(ts);
-						string full_expr=string("texture(")+(textureSamplerName+",")+args[1];
+						buildFunction.textureSamplersByTexture[textureName].push_back(ts);
+						string full_expr=string("texture(")+(textureSamplerName+",")+args[1]+")";
 						$$.strs[0]=full_expr;
+
+						// There are four possibilities for each sampling command:
+						// 1. both the texture and the sampler are declared globally.
+						// 2. The texture is a function parameter and the sampler is declared globally.
+						// 3. The texture is declared globally and the sampler is a function parameter.
+						// 4. The texture and the sampler are function parameters.
+
+						// In case 1., we insert the textureSampler declaration at the top, and in C++ apply that sampler to the texture.
+
+						// In case 2., we replace the texture parameter with as many textureSampler parameters as needed.
+						//				In the calls to this function we replace the texture parameter with the textureSamplers.
+						// In case 3., we replace the sampler parameter with as many textureSampler parameters as needed.
+						//				In the calls to this function we replace the sampler parameter with the textureSamplers.
+						// In case 4., we replace the texture with as many textureSampler parameters as needed, and remove the sampler parameters.
+
+						// Initially we will only implement cases 1 and 2.
 					}
 					| postfix_exp '(' argument_exp_list ')'
 					{
@@ -1880,4 +1962,11 @@ void errSem(const string& str, int lex_linenumber)
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
     errMsg<<current_filenumber<<"("<<true_linenumber<<") : glfx error: "<<str<<" in "<<glfxGetStateText();
     throw errMsg.str();
+}
+
+void resetGlfxParse()
+{
+	buildFunction.clear();
+	functions.clear();
+	declaredTextures.clear();
 }

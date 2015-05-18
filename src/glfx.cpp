@@ -702,6 +702,7 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
 		gEffect->Log().clear();
         glfx_scan_string(src);
         glfxset_lineno(1);
+		resetGlfxLex();
 		resetGlfxParse();
         glfxparse();
     }
