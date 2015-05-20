@@ -132,17 +132,38 @@
 		}
 		return texture_type;
 	}
+	string GetTypeOfParameter(const vector<glfxstype::variable> &parameters,const string &name)
+	{
+		for(vector<glfxstype::variable>::const_iterator j=parameters.begin();j!=parameters.end();j++)
+		{
+			if(name==j->identifier)
+				return j->type;
+		}
+		return "";
+	}
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
 	map<std::string,Function*> functions;
 	map<string,DeclaredTexture> declaredTextures;
 	Function buildFunction;
+	TextureSampler *AddTextureSampler(string textureName,string samplerStateName)
+	{
+		TextureSampler *ts=new TextureSampler;
+		ts->textureName=textureName;
+		ts->samplerStateName=samplerStateName;
+		ts->textureSamplerName=(ts->textureName+"_")+ts->samplerStateName;
+		buildFunction.textureSamplers[ts->textureSamplerName]=(ts);
+		buildFunction.textureSamplersByTexture[textureName].push_back(ts);
+		buildFunction.textureSamplersBySampler[ts->samplerStateName].push_back(ts);
+		return ts;
+	}
 %}
 
 %token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
-%token DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
+%token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
+%token WARNING DEF MESSAGE PACK_MATRIX
 %token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE3D IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
@@ -164,6 +185,9 @@ prog : prog tok
 	{
 	}
 	| line_statement
+	{
+	}
+	| PRAGMA WARNING '(' warning-specifier ':' NUM ')'
 	{
 	}
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
@@ -375,16 +399,15 @@ prog : prog tok
 		glfxWrite(str.str().c_str());
 	}
 	// function definition
-    | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' shader_fx function_content lex_passthrough
+    | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' function_fx function_content lex_passthrough
 	{
 		string functionName		=$2.strs[0];
 		Function *f				=new Function;
+		*f						=buildFunction;
 		functions[functionName]	=f;
 		f->returnType			=$1.strs[0];
 		f->content				=$7.strs[0];
-		string returnable		=$8.strs[1];
-		f->content+="\nreturn ";
-		f->content+=returnable+";";
+		
 		f->parameters			=*$4.vars;
 		delete $4.vars;
 
@@ -393,7 +416,7 @@ prog : prog tok
 		{
 			string tsname=i->first;
 			string texture_name=i->second->textureName;
-			string sampler_state_name=i->second->samplerState;
+			string sampler_state_name=i->second->samplerStateName;
 		}
 		
 		ostringstream str;
@@ -416,25 +439,49 @@ prog : prog tok
 					else
 						params<<", ";
 					TextureSampler *ts=*v;
-					params<<j->storage<<" "<<j->type<<" "<<ts->textureName<<"_"<<ts->samplerState;
+					params<<j->storage<<" "<<j->type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 					if(j->semantic.size())
 						params<<": "<<j->semantic;
 				}
 			}
 			else
 			{
-				if(start)
-					start=false;
+				u=buildFunction.textureSamplersBySampler.find(name);
+				if(u!=buildFunction.textureSamplersBySampler.end())
+				{
+					// the type must become sampler2D, sampler3D etc. EITHER
+					// the type is declared for the texture in the vars list, OR it is
+					// in declaredTextures.
+					for(auto v=u->second.begin();v!=u->second.end();v++)
+					{
+						if(start)
+							start=false;
+						else
+							params<<", ";
+						TextureSampler *ts=*v;
+						string type=GetTypeOfParameter(f->parameters,ts->textureName);
+						if(type.length()==0)
+							type=declaredTextures[ts->textureName].type;
+						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
+						if(j->semantic.size())
+							params<<": "<<j->semantic;
+					}
+				}
 				else
-					params<<", ";
-				params<<j->storage<<" "<<j->type<<" "<<j->identifier;
-				if(j->semantic.size())
-					params<<": "<<j->semantic;
+				{
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
+					if(j->semantic.size())
+						params<<": "<<j->semantic;
+				}
 			}
 		}
 
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
-		str<< f->returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{"<<f->content<<"\n}\n";
+		str<< f->returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<f->content<<"\n}\n";
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 
 		glfxWrite(str.str().c_str());
@@ -466,7 +513,7 @@ prog : prog tok
 			if(declaredTextures.find(texture_name)!=declaredTextures.end())
 			{
 				string sampler_type=declaredTextures[texture_name].type;
-				str<<sampler_type<<" "<<tsname;
+				str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
 			}
 			else
 				errSem(string("Can't find texture declaration for ")+texture_name);
@@ -545,6 +592,12 @@ layout_params:'(' NUM ',' NUM ',' NUM ')'
 	ret+=")";
 	$$.strs[0]=ret;
 };
+warning-specifier: IDENTIFIER
+			  {
+			  }
+			  | NUM
+			  {
+			  }
 technique_decls: technique_decls group_technique_decl
 			  {
 			  }
@@ -612,14 +665,23 @@ layout_def: IDENTIFIER
 lex_fx :
 { /* Switch lex to fx scanning */
 	read_shader=false;
+	read_function=false;
     gLexPassthrough=false;
 };
 
 shader_fx:
 {
 	read_shader=true;
+	read_function=false;
     gLexPassthrough=false;
 };
+
+function_fx:
+{
+	read_function=true;
+	read_shader=false;
+    gLexPassthrough=false;
+}
 
 lex_passthrough :
 { /* Switch lex to passthrough mode */
@@ -1325,15 +1387,15 @@ statement:  expression ';'
 			| RETURN optional_expression ';'
 			{
 				string optional_expression=$2.strs[0];
-				if(optional_expression.length()>0)
+				if(read_shader&&optional_expression.length()>0)
 				{
 					$$.strs[0]="";
 					$$.strs[1]=optional_expression;
 				}
 				else
 				{
-					$$.strs[0]=$1.strs[0]+";\n";
-					$$.strs[1]="";
+					$$.strs[0]=($1.strs[0]+" ")+optional_expression+";\n";
+					$$.strs[1]=optional_expression;
 				}
 				$$.lineno=$1.lineno;
 			}
@@ -1561,10 +1623,12 @@ sampling_exp:	postfix_exp '.' SAMPLING_COMMAND
 postfix_exp		: primary_exp
 					{
 						$$.strs[0]=$1.strs[0];
+						$$.strs[2]=$1.strs[0];			//Command
 					}
 					| postfix_exp '[' expression ']'
 					{
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+						$$.strs[2]=$1.strs[2];			//Command
 					}
 					| sampling_exp '(' argument_exp_list ')'
 					{
@@ -1586,13 +1650,8 @@ postfix_exp		: primary_exp
 						// each Texture parameter must be replaced by a list of all the texture-sampler combinations that use it.
 						// each SamplerState parameter must be replaced by a list of the texture-sampler combinations that use it.
 						// This might lead to some doubling-up.
-						TextureSampler *ts=new TextureSampler;
-						ts->textureName=textureName;
-						ts->samplerState=args[0];
-						string textureSamplerName=(ts->textureName+"_")+ts->samplerState;
-						buildFunction.textureSamplers[textureSamplerName]=(ts);
-						buildFunction.textureSamplersByTexture[textureName].push_back(ts);
-						string full_expr=string("texture(")+(textureSamplerName+",")+args[1]+")";
+						TextureSampler *ts=AddTextureSampler(textureName,args[0]);
+						string full_expr=string("texture(")+(ts->textureSamplerName+",")+args[1]+")";
 						$$.strs[0]=full_expr;
 
 						// There are four possibilities for each sampling command:
@@ -1615,18 +1674,46 @@ postfix_exp		: primary_exp
 					{
 						string expr1=$1.strs[0];
 						string expr2=$2.strs[0];
-						string expr3=$3.strs[0];
+						string params=$3.strs[0];
 						string expr4=$4.strs[0];
-						$$.strs[0]=expr1+expr2+expr3+expr4;
+						// ok this could be a function call.
+						string command=$1.strs[2];
+						auto f=functions.find(command);
+						if(f!=functions.end())
+						{
+							// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
+							vector<glfxstype::variable>::const_iterator j=$$.vars.begin();
+							// We figure out this mapping by looking at the vars list of the function we're calling.
+							//	this is the unmodified list, so it corresponds to the call we're making.
+							for(vector<glfxstype::variable>::const_iterator i=f->parameters.begin();i!=f->parameters.end();i++)
+							{
+								string varname=i->identifier;
+								auto u=f->textureSamplersByTexture.find(varname);
+								if(u==f->textureSamplersByTexture.end())
+									u=f->textureSamplersBySampler.find(varname);
+								if(u!=f->textureSamplersByTexture.end())
+								{
+									//
+									const TextureSampler *ts_f=u->second;
+									// Now we add a texturesampler for the current function.
+									AddTextureSampler(
+								}
+								j++;
+							}
+						}
+						$$.strs[0]=expr1+expr2+params+expr4;
 					}
 					| postfix_exp '('			')'
 					{
+						// ok this could be a function call.
+						string command=$1.strs[2];
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 					}
 					| postfix_exp '.' IDENTIFIER
 					{
 						string expr1=$1.strs[0];
 						string expr3=$3.strs[0];
+						$$.strs[2]=expr3;			//Command
 						$$.strs[0]=expr1+$2.strs[0]+expr3;
 					}
 					| postfix_exp PLUS_PLUS
@@ -1969,4 +2056,6 @@ void resetGlfxParse()
 	buildFunction.clear();
 	functions.clear();
 	declaredTextures.clear();
+	read_shader=false;
+	read_function=false;
 }

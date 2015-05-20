@@ -102,7 +102,7 @@ the last is C code to be copied verbatim to the output.
 #define stdReturn return stdReturn_
 %}
 
-%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE
+%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE IN_PRAGMA
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -112,9 +112,38 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
 <INITIAL>"patch"|"centroid"						if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.strs[0]=yytext; stdReturn(STORAGET);}*/
-/*
+/*The HLSL compiler recognizes the following pragmas:
+def
+message
+pack_matrix
+warning
+				once		Display the message of the warnings with the specified numbers only once.
+				default		Reset the behavior of the warnings with the specified numbers to their default value.
+							This also has the effect of turning a warning on that is off by default. The warning will be generated at its default level.
+				1, 2, 3, 4	Apply the specified level to the warnings with the specified numbers.
+							This also has the effect of turning a warning on that is off by default.
+				disable		Do not issue the warnings with the specified numbers.
+				error		Report the warnings with the specified numbers as errors.
 */
 %%
+<INITIAL>"#"pragma							{
+												if(gLexPassthrough)
+													glfxWrite(yytext); 
+												glfxPushState(IN_PRAGMA);
+												stdReturn(PRAGMA);
+											}
+<IN_PRAGMA>"warning"						{
+												stdReturn(WARNING);
+											}
+<IN_PRAGMA>"def"							{
+												stdReturn(DEF);
+											}
+<IN_PRAGMA>"message"						{
+												stdReturn(MESSAGE);
+											}
+<IN_PRAGMA>"pack_matrix"					{
+												stdReturn(PACK_MATRIX);
+											}
 <INITIAL>"#"define							{
 												if(gLexPassthrough)
 													glfxWrite(yytext); 
@@ -146,7 +175,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext); 
 													stdReturn(MACRO_DEFINITION);
 											}
-<IN_DEFINE,IN_UNDEFINE>\n								{
+<IN_DEFINE,IN_UNDEFINE,IN_PRAGMA>\n								{
 												if(gLexPassthrough)
 													glfxWrite(yytext); 
 												glfxPopState();
@@ -198,7 +227,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <IN_UNIFORM_DECL>">"							{
 													stdReturn('>');
 												}
-<IN_UNIFORM_DECL,IN_UNDEFINE>{ID_BLCK}						{
+<IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}						{
 													stdReturn(IDENTIFIER);
 												}
 <IN_UNIFORM_DECL>";"							{
@@ -470,7 +499,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													glfxlval.fnum=(float)atof(yytext);
 													stdReturn(FLOAT);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>{NUM_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE,IN_PRAGMA>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
@@ -621,9 +650,9 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 													}
 												}
 <INITIAL>"in"|"out"|"line"|"lineadj"|"point"	{
-													if(gLexPassthrough)
+												/*	if(gLexPassthrough)
 														glfxWrite(yytext);
-													else
+													else*/
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -653,13 +682,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														stdReturn(IDENTIFIER);
 													}
 												}
-<INITIAL>"("									{
+<INITIAL,IN_PRAGMA>"("									{
 													//if(gLexPassthrough)
 													//	glfxWrite(yytext);
 													//else
 														stdReturn('(');
 												}
-<INITIAL>")"									{
+<INITIAL,IN_PRAGMA>")"									{
 													//if(gLexPassthrough)
 													//	glfxWrite(yytext);
 													//else
@@ -682,7 +711,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 														glfxWrite(yytext);
 													else
 													{
-														if(read_shader)
+														if(read_shader||read_function)
 														{
 															brace++;
 															glfxPushState(IN_SHADER);
@@ -700,7 +729,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 												}
 <INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('[');}
 <INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(']');}
-<INITIAL>","									{
+<INITIAL,IN_PRAGMA>","									{
 													//if(gLexPassthrough)
 													//	glfxWrite(yytext);
 													//else
@@ -709,7 +738,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
 <INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
-<IN_STRUCT>":"									{
+<IN_STRUCT,IN_PRAGMA>":"						{
 													stdReturn(':');
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{

@@ -136,6 +136,7 @@ namespace glfxParser
 	extern RenderState			renderState;
 	extern bool gLexPassthrough;
 	extern bool read_shader;
+	extern bool read_function;
 	
 	#ifdef LINUX
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
@@ -157,10 +158,12 @@ namespace glfxParser
 #define YYDEBUG 1
 extern int glfxdebug;
 #endif
+
 struct TextureSampler
 {
 	std::string textureName;
-	std::string samplerState;
+	std::string samplerStateName;
+	std::string textureSamplerName;
 };
 struct DeclaredTexture
 {
@@ -185,6 +188,7 @@ struct Function
 	std::vector<glfxstype::variable> parameters;
 	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
 	std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
+	std::map<std::string,std::vector<TextureSampler*> > textureSamplersBySampler;
 };
 struct CompilableShader
 {

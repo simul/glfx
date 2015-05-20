@@ -381,7 +381,7 @@ bool gLexPassthrough=true;
 
 RenderState	 renderState;
 bool read_shader=false;
-
+bool read_function=false;
 #pragma optimize("",off)
 static std::string RewriteErrorLine(std::string line,const vector<string> &sourceFilesUtf8)
 {
