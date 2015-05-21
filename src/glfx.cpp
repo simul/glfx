@@ -779,6 +779,10 @@ int GLFX_APIENTRY glfxGetEffectTextureNumber(int e,const char *name)
     return gEffects[e]->GetTextureNumber(name);
 }
 
+void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,GLenum format,bool write)
+{
+	gEffects[effect]->SetTexture( texture_number, tex, dims, format, write);
+}
 void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize)
 {
     const vector<string>& tmpList = gEffects[effect]->GetProgramList();

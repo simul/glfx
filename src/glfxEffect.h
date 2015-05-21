@@ -85,6 +85,7 @@ namespace glfxParser
 		friend int ::glfxlex();
 		TechniqueGroup *current_group;
 		int GetTextureNumber(const char *name);
+		void SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write);
 	};
 	extern Effect *gEffect;
 }

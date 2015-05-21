@@ -97,6 +97,7 @@ GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* techniqu
 GLFXAPI int GLFX_APIENTRY glfxGetProgramCount(int effect);
 
 GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
+GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,GLenum format,bool write);
 /**************************************************
 * glfxGetProgramName
 * Input:
