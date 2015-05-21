@@ -29,11 +29,22 @@ typedef int errno_t;
 #include "glfxProgram.h"
 #include <set>
 
+void CheckGLError()
+{
+	int err=glGetError();
+	if(err)
+	{
+		printf("gl error");
+	}
+}
+#define GL_ERROR_CHECK CheckGLError();
+
 Effect::Effect()
     : m_includes(0)
     , m_active(true)
 	,current_group(NULL)
 	,current_texture_number(0)
+	,current_pass(0)
 {
 }
 
@@ -63,6 +74,7 @@ int Effect::GetTextureNumber(const char *name)
 	else
 	{
 		textureNumberMap[n]=current_texture_number;
+		textureNameMap[current_texture_number]=n;
 		current_texture_number++;
 	}
 	return texture_number;
@@ -127,35 +139,12 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 		throw std::runtime_error("Unknown texture dimension!");
 	}
     glActiveTexture(GL_TEXTURE0+texture_number);
-	if(currentTechnique)
+	if(current_pass)
 	{
-		GLuint program	=currentTechnique->passAsGLuint(currentPass);
-		// If we didn't find this pass already, we've already reported the error. Fail silently this time, therefore.
-		if(program==0)
-			return;
-		GLint loc		=glGetUniformLocation(program,name);
-		if(loc<0)
-			CHECK_PARAM_EXISTS
-		glUniform1i(loc,texture_number);
+		GLint loc		=glGetUniformLocation(current_pass,textureNameMap[texture_number].c_str());
+		if(loc>=0)
+			glUniform1i(loc,texture_number);
 	}
-	else
-	{
-		for(crossplatform::TechniqueMap::iterator i=techniques.begin();i!=techniques.end();i++)
-		{
-			for(int j=0;j<i->second->NumPasses();j++)
-			{
-				GLuint program	=i->second->passAsGLuint(j);
-				GLint loc		=glGetUniformLocation(program,name);
-				if(loc>=0)
-				{
-					glUseProgram(program);
-					glUniform1i(loc,texture_number);
-					glUseProgram(0);
-				}
-			}
-		}
-	}
-GL_ERROR_CHECK
 }
 bool& Effect::Active()
 {
@@ -312,15 +301,34 @@ void Effect::PopulateProgramList()
 		m_techniqueGroupNames.push_back(it->first);
 }
 
-void CheckGLError()
+void Effect::Apply(unsigned pass)
 {
-	int err=glGetError();
-	if(err)
+	GL_ERROR_CHECK
+	glUseProgram(pass);
+	GL_ERROR_CHECK
+	current_pass=pass;
+	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
-		printf("gl error");
+	GL_ERROR_CHECK
+		GLint loc		=glGetUniformLocation(current_pass,i->first.c_str());
+	GL_ERROR_CHECK
+		if(loc>=0)
+			glUniform1i(loc,i->second);
+	GL_ERROR_CHECK
 	}
 }
-#define GL_ERROR_CHECK CheckGLError();
+
+void Effect::Reapply(unsigned pass)
+{
+	Apply(pass);
+}
+
+void Effect::Unapply()
+{
+	glUseProgram(0);
+	current_pass=0;
+}
+
 
 void Effect::ApplyPassState(unsigned pass)
 {

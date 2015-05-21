@@ -48,6 +48,8 @@ namespace glfxParser
 		std::map<std::string,TextureSampler*> textureSamplersByShader;
 		int current_texture_number;
 		std::map<std::string,int> textureNumberMap;
+		std::map<int,std::string> textureNameMap;
+		unsigned current_pass;
 	public:
 		struct InterfaceDcl
 		{
@@ -74,6 +76,9 @@ namespace glfxParser
 		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
 		void SetFilenameList(const vector<string> &filenamesUtf8);
 		void PopulateProgramList();
+		void Apply(unsigned pass);
+		void Reapply(unsigned pass);
+		void Unapply();
 		void ApplyPassState(unsigned pass);
 		bool& Active();
 		string& Dir();
@@ -85,7 +90,7 @@ namespace glfxParser
 		friend int ::glfxlex();
 		TechniqueGroup *current_group;
 		int GetTextureNumber(const char *name);
-		void SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write);
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write);
 	};
 	extern Effect *gEffect;
 }

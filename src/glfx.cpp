@@ -779,10 +779,11 @@ int GLFX_APIENTRY glfxGetEffectTextureNumber(int e,const char *name)
     return gEffects[e]->GetTextureNumber(name);
 }
 
-void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,GLenum format,bool write)
+void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
 {
-	gEffects[effect]->SetTexture( texture_number, tex, dims, format, write);
+	gEffects[effect]->SetTexture( texture_number, tex, dims, depth,format, write);
 }
+
 void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize)
 {
     const vector<string>& tmpList = gEffects[effect]->GetProgramList();
@@ -822,10 +823,26 @@ size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect)
 	return (int)gEffects[effect]->GetTechniqueGroupList().size();
 }
 
+GLFXAPI void GLFX_APIENTRY glfxApply(int effect,GLuint pass)
+{
+	gEffects[effect]->Apply(pass);
+}
+
+GLFXAPI void GLFX_APIENTRY glfxReapply(int effect,GLuint pass)
+{
+	gEffects[effect]->Reapply(pass);
+}
+
+GLFXAPI void GLFX_APIENTRY glfxUnapply(int effect)
+{
+	gEffects[effect]->Unapply();
+}
+
 GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int effect,int g)
 {
 	gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByIndex(g);
 }
+
 const char* GLFX_APIENTRY glfxGetTechniqueGroupName(int effect, int g)
 {
 	const vector<string>& tmpList = gEffects[effect]->GetTechniqueGroupList();
