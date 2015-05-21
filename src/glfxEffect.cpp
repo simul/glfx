@@ -316,6 +316,7 @@ void Effect::Apply(unsigned pass)
 			glUniform1i(loc,i->second);
 	GL_ERROR_CHECK
 	}
+
 }
 
 void Effect::Reapply(unsigned pass)
