@@ -185,7 +185,8 @@ struct Function
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
-	std::vector<glfxstype::variable> parameters;
+	std::vector<glfxstype::variable> parameters;					// the original parameters as defined in the source code.
+	std::vector<glfxstype::variable> expanded_parameters;			// the expanded parameter list including textureSamplers.
 	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
 	std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
 	std::map<std::string,std::vector<TextureSampler*> > textureSamplersBySampler;
@@ -193,14 +194,12 @@ struct Function
 struct CompilableShader
 {
 	std::string shaderName;
-	std::string returnType;
-	std::string shaderContent;
+	Function function;
 	std::string csLayout;
 	std::string returnable;
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
-	vector<glfxstype::variable> vars;
 };
 extern string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh);
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);

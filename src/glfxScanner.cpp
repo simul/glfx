@@ -14065,12 +14065,14 @@ case 29:
 YY_RULE_SETUP
 #line 230 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
-													stdReturn(IDENTIFIER);
-												}
+														glfxlval.lineno=glfxlineno;
+														glfxlval.strs[0]=glfxtext;
+														stdReturn(IDENTIFIER);
+													}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 233 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 235 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxPopState();
 													stdReturn(';');
@@ -14078,7 +14080,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 237 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 239 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
 													glfxlval.lineno=glfxlineno;
@@ -14089,7 +14091,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 244 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 246 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxPushState(IN_STRUCT);
 													stdReturn(STRUCT);
@@ -14097,67 +14099,67 @@ YY_RULE_SETUP
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 248 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 250 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_DISPATCHTHREADID);
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 249 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 251 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_DISPATCHTHREADID);
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 250 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 252 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_GROUPID);
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 251 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 253 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_GROUPTHREADID);
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 252 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 254 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_VERTEXID);
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 253 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 255 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.strs[0]=glfxtext;	stdReturn(SV_VERTEXID);
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 254 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 256 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false;		stdReturn(PROGRAM);
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 255 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 257 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=true;		stdReturn(PROGRAM);
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 256 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 258 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false;		stdReturn(TECHNIQUE);
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 257 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 259 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false;		stdReturn(PASS);
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 258 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 260 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false;		stdReturn(GROUP);
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 259 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 261 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.boolean=false;		stdReturn(GROUP);
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 260 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 262 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14166,7 +14168,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 265 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 267 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14175,17 +14177,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 270 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 272 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext;	stdReturn(INTERFACE);
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 271 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 273 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 glfxlval.lineno=glfxlineno;	glfxlval.strs[0]=glfxtext;	stdReturn(SAMPLER);
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 272 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 274 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxPushState(IN_SHADER_COMPILE);
 													stdReturn(PROFILE);
@@ -14193,7 +14195,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 277 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 279 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxPushState(IN_TEXTURE_DECL);
 													stdReturn(RW_TEXTURE3D_FLOAT4);
@@ -14201,7 +14203,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 281 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 283 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													glfxPopState();
@@ -14210,7 +14212,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 286 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 288 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 														glfxlval.lineno=glfxlineno;
 														glfxlval.strs[0]=glfxtext;
@@ -14220,7 +14222,7 @@ YY_RULE_SETUP
 case 53:
 /* rule 53 can match eol */
 YY_RULE_SETUP
-#line 291 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 293 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													string tmp(glfxtext);
 													size_t firstLoc=tmp.find('"')+1;
@@ -14232,37 +14234,37 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 299 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 301 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=VERTEX_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 300 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 302 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=TESSELATION_CONTROL_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 301 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=TESSELATION_EVALUATION_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 302 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 304 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=GEOMETRY_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 305 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=FRAGMENT_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 304 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 306 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.sType=COMPUTE_SHADER; stdReturn(SHADER_TYPE);}
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 306 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 308 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=RASTERIZER_STATE;
@@ -14272,7 +14274,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 312 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 314 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=DEPTHSTENCIL_STATE;
@@ -14282,7 +14284,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 318 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 320 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=BLEND_STATE;
@@ -14292,7 +14294,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 324 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 326 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													renderState=SAMPLER_STATE;
@@ -14302,7 +14304,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 330 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 332 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14317,7 +14319,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 341 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 343 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14332,7 +14334,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 352 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 354 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14347,7 +14349,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 363 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 365 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14362,7 +14364,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 374 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 376 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14377,7 +14379,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 385 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 387 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14392,7 +14394,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 396 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 398 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14407,7 +14409,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 407 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 409 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14420,7 +14422,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 416 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 418 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14433,7 +14435,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 425 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 427 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14446,7 +14448,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 435 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 437 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.sType=VERTEX_SHADER;
@@ -14456,7 +14458,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 441 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 443 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.sType=GEOMETRY_SHADER;
@@ -14466,7 +14468,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 447 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 449 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.sType=FRAGMENT_SHADER;
@@ -14476,7 +14478,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 453 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 455 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.sType=FRAGMENT_SHADER;
@@ -14486,7 +14488,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 459 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 461 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													stdReturn(COMPILE_SHADER);
@@ -14494,7 +14496,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 463 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 465 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													stdReturn(CONSTRUCT_GS_WITH_SO);
@@ -14502,7 +14504,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 467 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 469 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14511,7 +14513,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 472 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 474 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14520,7 +14522,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 477 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 479 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14529,47 +14531,47 @@ YY_RULE_SETUP
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 482 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 484 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(BREAK);
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 483 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 485 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(CONTINUE);
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 484 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 486 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(DO);
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 485 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 487 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(FOR);
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 486 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 488 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(GOTO);
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 487 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 489 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(IF);
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 488 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 490 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(ELSE);
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 489 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 491 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(WHILE);
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 490 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 492 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													stdReturn(UNIFORM);
 												}
@@ -14577,14 +14579,14 @@ YY_RULE_SETUP
 case 92:
 /* rule 92 can match eol */
 YY_RULE_SETUP
-#line 494 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 496 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													stdReturn(';');
 												}
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 497 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 499 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.fnum=(float)atof(glfxtext);
@@ -14593,7 +14595,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 502 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 504 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.num=atoi(glfxtext);
@@ -14603,7 +14605,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 508 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 510 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14613,7 +14615,7 @@ YY_RULE_SETUP
 case 96:
 /* rule 96 can match eol */
 YY_RULE_SETUP
-#line 513 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 515 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn('(');
@@ -14622,7 +14624,7 @@ YY_RULE_SETUP
 case 97:
 /* rule 97 can match eol */
 YY_RULE_SETUP
-#line 517 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 519 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn(')');
@@ -14631,7 +14633,7 @@ YY_RULE_SETUP
 case 98:
 /* rule 98 can match eol */
 YY_RULE_SETUP
-#line 521 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 523 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn('[');
@@ -14640,7 +14642,7 @@ YY_RULE_SETUP
 case 99:
 /* rule 99 can match eol */
 YY_RULE_SETUP
-#line 525 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 527 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn(']');
@@ -14649,7 +14651,7 @@ YY_RULE_SETUP
 case 100:
 /* rule 100 can match eol */
 YY_RULE_SETUP
-#line 529 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 531 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn(',');
@@ -14657,17 +14659,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 533 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 535 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn('<');
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 534 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 536 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn('>');
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 535 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 537 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn('.');
@@ -14675,149 +14677,149 @@ YY_RULE_SETUP
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 540 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 542 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(TIMES_EQUALS);
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 541 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 543 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(OVER_EQUALS);
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 542 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 544 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(PERCENT_EQUALS);
 	YY_BREAK
 case 107:
 YY_RULE_SETUP
-#line 543 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 545 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(PLUS_EQUALS);
 	YY_BREAK
 case 108:
 YY_RULE_SETUP
-#line 544 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 546 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(MINUS_EQUALS);
 	YY_BREAK
 case 109:
 YY_RULE_SETUP
-#line 545 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 547 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(LEFT_SHIFT_EQUALS);
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 546 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 548 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(RIGHT_SHIFT_EQUALS);
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 547 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 549 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(AND_EQUALS);
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 548 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 550 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(XOR_EQUALS);
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
-#line 549 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 551 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(OR_EQUALS);
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 550 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 552 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(OR);
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 551 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 553 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(AND);
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 553 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 555 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(LESS_EQ);
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 554 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 556 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(GRTR_EQ);
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 556 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 558 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(LEFT_SHIFT);
 	YY_BREAK
 case 119:
 YY_RULE_SETUP
-#line 557 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 559 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(RIGHT_SHIFT);
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 559 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 561 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(PLUS_PLUS);
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 560 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 562 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(MINUS_MINUS);
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 561 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 563 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(EQ_EQ);
 	YY_BREAK
 case 123:
 YY_RULE_SETUP
-#line 562 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 564 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 stdReturn(NOT_EQ);
 	YY_BREAK
 case 124:
 YY_RULE_SETUP
-#line 564 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 566 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('+');
 						}  
 	YY_BREAK
 case 125:
 YY_RULE_SETUP
-#line 567 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 569 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('-');
 						}   
 	YY_BREAK
 case 126:
 YY_RULE_SETUP
-#line 570 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 572 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('*');
 						}    
 	YY_BREAK
 case 127:
 YY_RULE_SETUP
-#line 573 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 575 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('%');
 						}    
 	YY_BREAK
 case 128:
 YY_RULE_SETUP
-#line 576 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 578 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('/');
 						}
 	YY_BREAK
 case 129:
 YY_RULE_SETUP
-#line 579 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 581 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('&');
 						}    
 	YY_BREAK
 case 130:
 YY_RULE_SETUP
-#line 582 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 584 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 							stdReturn('|');
 						}
@@ -14825,14 +14827,14 @@ YY_RULE_SETUP
 case 131:
 /* rule 131 can match eol */
 YY_RULE_SETUP
-#line 585 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 587 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													accumulateWhitespace(glfxtext);
 												}
 	YY_BREAK
 case 132:
 YY_RULE_SETUP
-#line 588 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 590 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													stdReturn('=');
@@ -14840,7 +14842,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 133:
 YY_RULE_SETUP
-#line 593 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 595 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													glfxPopState();
@@ -14849,7 +14851,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 134:
 YY_RULE_SETUP
-#line 598 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 600 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													if(!brace)
@@ -14859,7 +14861,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 135:
 YY_RULE_SETUP
-#line 604 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 606 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14873,7 +14875,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 136:
 YY_RULE_SETUP
-#line 614 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 616 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.lineno=glfxlineno;
 													glfxlval.strs[0]=glfxtext;
@@ -14882,7 +14884,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 137:
 YY_RULE_SETUP
-#line 619 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 621 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													//if(gLexPassthrough)
 													//	glfxWrite(glfxtext);
@@ -14897,11 +14899,11 @@ YY_RULE_SETUP
 	YY_BREAK
 case 138:
 YY_RULE_SETUP
-#line 630 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 632 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
-													if(gLexPassthrough)
-														glfxWrite(glfxtext);
-													else
+													//if(gLexPassthrough)
+													//	glfxWrite(glfxtext);
+													//else
 													{
 														glfxlval.lineno=glfxlineno;
 														glfxlval.num=atoi(glfxtext);
@@ -14912,12 +14914,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 139:
 YY_RULE_SETUP
-#line 641 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 643 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.fnum=(float)atof(glfxtext); stdReturn(FLOAT);}
 	YY_BREAK
 case 140:
 YY_RULE_SETUP
-#line 642 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 644 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 												//	if(gLexPassthrough)
 												//		glfxWrite(glfxtext);
@@ -14931,7 +14933,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 141:
 YY_RULE_SETUP
-#line 652 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 654 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 												/*	if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14945,22 +14947,22 @@ YY_RULE_SETUP
 	YY_BREAK
 case 142:
 YY_RULE_SETUP
-#line 662 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 664 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.lineno=glfxlineno; glfxlval.strs[0]=glfxtext; stdReturn(GL_FRAGDEPTH);}
 	YY_BREAK
 case 143:
 YY_RULE_SETUP
-#line 663 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 665 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.num=1; stdReturn(NUM);}
 	YY_BREAK
 case 144:
 YY_RULE_SETUP
-#line 664 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 666 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {glfxlval.num=0; stdReturn(NUM);}
 	YY_BREAK
 case 145:
 YY_RULE_SETUP
-#line 665 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 667 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													//if(gLexPassthrough)
 													//	glfxWrite(glfxtext);
@@ -14974,7 +14976,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 146:
 YY_RULE_SETUP
-#line 675 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 677 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -14988,7 +14990,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 147:
 YY_RULE_SETUP
-#line 685 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 687 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													//if(gLexPassthrough)
 													//	glfxWrite(glfxtext);
@@ -14998,7 +15000,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 148:
 YY_RULE_SETUP
-#line 691 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 693 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													//if(gLexPassthrough)
 													//	glfxWrite(glfxtext);
@@ -15008,7 +15010,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 149:
 YY_RULE_SETUP
-#line 697 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 699 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -15018,7 +15020,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 150:
 YY_RULE_SETUP
-#line 703 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 705 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -15029,7 +15031,7 @@ YY_RULE_SETUP
 case 151:
 /* rule 151 can match eol */
 YY_RULE_SETUP
-#line 709 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 711 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -15047,7 +15049,7 @@ YY_RULE_SETUP
 case 152:
 /* rule 152 can match eol */
 YY_RULE_SETUP
-#line 722 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 724 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext);
@@ -15059,17 +15061,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 153:
 YY_RULE_SETUP
-#line 730 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-if(gLexPassthrough) glfxWrite(glfxtext); else {stdReturn('[');}
+#line 732 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+{stdReturn('[');}
 	YY_BREAK
 case 154:
 YY_RULE_SETUP
-#line 731 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
-if(gLexPassthrough) glfxWrite(glfxtext); else {stdReturn(']');}
+#line 733 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+{stdReturn(']');}
 	YY_BREAK
 case 155:
 YY_RULE_SETUP
-#line 732 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 734 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													//if(gLexPassthrough)
 													//	glfxWrite(glfxtext);
@@ -15079,22 +15081,22 @@ YY_RULE_SETUP
 	YY_BREAK
 case 156:
 YY_RULE_SETUP
-#line 738 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 740 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {stdReturn('=');}
 	YY_BREAK
 case 157:
 YY_RULE_SETUP
-#line 739 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 741 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {stdReturn(';');}
 	YY_BREAK
 case 158:
 YY_RULE_SETUP
-#line 740 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 742 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {stdReturn(':');}
 	YY_BREAK
 case 159:
 YY_RULE_SETUP
-#line 741 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 743 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													stdReturn(':');
 												}
@@ -15102,7 +15104,7 @@ YY_RULE_SETUP
 case 160:
 /* rule 160 can match eol */
 YY_RULE_SETUP
-#line 744 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 746 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); // Single line comment (with possible continuation)
@@ -15112,7 +15114,7 @@ YY_RULE_SETUP
 case 161:
 /* rule 161 can match eol */
 YY_RULE_SETUP
-#line 749 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 751 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough)
 														glfxWrite(glfxtext); // Multiline comment
@@ -15121,7 +15123,7 @@ YY_RULE_SETUP
 case 162:
 /* rule 162 can match eol */
 YY_RULE_SETUP
-#line 753 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 755 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													if(gLexPassthrough) glfxWrite(glfxtext);
 												}
@@ -15129,18 +15131,18 @@ YY_RULE_SETUP
 case 163:
 /* rule 163 can match eol */
 YY_RULE_SETUP
-#line 756 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 758 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {}// Without this line, the glfxlineno would get out of whack.
 	YY_BREAK
 case 164:
 YY_RULE_SETUP
-#line 757 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 759 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 if(gLexPassthrough) glfxWrite(glfxtext); else {errLex(glfxtext);}
 	YY_BREAK
 case 165:
 /* rule 165 can match eol */
 YY_RULE_SETUP
-#line 758 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 760 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace++;
@@ -15150,7 +15152,7 @@ YY_RULE_SETUP
 case 166:
 /* rule 166 can match eol */
 YY_RULE_SETUP
-#line 763 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 765 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace--;
@@ -15165,7 +15167,7 @@ YY_RULE_SETUP
 case 167:
 /* rule 167 can match eol */
 YY_RULE_SETUP
-#line 773 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 775 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 {
 													glfxlval.strs[0]=glfxtext;
 													brace--;
@@ -15174,10 +15176,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 168:
 YY_RULE_SETUP
-#line 778 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 780 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 ECHO;
 	YY_BREAK
-#line 15181 "src/glfxScanner.cpp"
+#line 15183 "src/glfxScanner.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(IN_SHADER):
 case YY_STATE_EOF(IN_FUNCTION):
@@ -16234,7 +16236,7 @@ void glfxfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 778 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 780 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
 void glfxPushState(int s)

@@ -141,6 +141,15 @@
 		}
 		return "";
 	}
+	int GetIndexOfParameter(const vector<glfxstype::variable> &parameters,const string &name)
+	{
+		for(int i=0;i<parameters.size();i++)
+		{
+			if(name==parameters[i].identifier)
+				return i;
+		}
+		return -1;
+	}
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
 	map<std::string,Function*> functions;
@@ -149,8 +158,8 @@
 	TextureSampler *AddTextureSampler(string textureName,string samplerStateName)
 	{
 		TextureSampler *ts=new TextureSampler;
-		ts->textureName=textureName;
-		ts->samplerStateName=samplerStateName;
+		ts->textureName			=textureName;
+		ts->samplerStateName	=samplerStateName;
 		ts->textureSamplerName=(ts->textureName+"_")+ts->samplerStateName;
 		buildFunction.textureSamplers[ts->textureSamplerName]=(ts);
 		buildFunction.textureSamplersByTexture[textureName].push_back(ts);
@@ -295,23 +304,22 @@ prog : prog tok
 		string str		=string("#undef ")+name+"\n";
 		glfxWrite(str.c_str()); 
 	}
-	| STRUCT IDENTIFIER '{' struct_members '}' ';'
+	| STRUCT IDENTIFIER struct_definition ';'
 	{
 		Struct *rs					=new Struct;
 		*rs							=buildStruct;
 		string name					=$2.strs[0];
 		gEffect->m_structs[name]	=rs;
-		// Set to default:
-		buildStruct					=Struct();
 		gEffect->m_sharedCode<<"struct "<<$2.strs[0]<<"\n{\n";
 		for(int i=0;i<(int)rs->m_structMembers.size();i++)
 		{
 			const StructMember &m=rs->m_structMembers[i];
 			gEffect->m_sharedCode<<m.type<<" "<<m.name<<";\n";
-		
 		}
-		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,$6.lineno+last_linenumber-global_linenumber);
+		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,$4.lineno+last_linenumber-global_linenumber);
 		gEffect->m_sharedCode<<"};";
+		// Set to default:
+		buildStruct					=Struct();
 	}
 	| RENDER_STATE_DECL IDENTIFIER optional_render_state_list ';'
 	{
@@ -397,6 +405,8 @@ prog : prog tok
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 
 		glfxWrite(str.str().c_str());
+		// Set to default:
+		buildStruct					=Struct();
 	}
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' function_fx function_content lex_passthrough
@@ -410,14 +420,6 @@ prog : prog tok
 		
 		f->parameters			=*$4.vars;
 		delete $4.vars;
-
-		// Now we must reorganize any texture parameters. Look at buildFunction:
-		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
-		{
-			string tsname=i->first;
-			string texture_name=i->second->textureName;
-			string sampler_state_name=i->second->samplerStateName;
-		}
 		
 		ostringstream str;
 		ostringstream params;
@@ -442,6 +444,12 @@ prog : prog tok
 					params<<j->storage<<" "<<j->type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 					if(j->semantic.size())
 						params<<": "<<j->semantic;
+					glfxstype::variable p;
+					p.storage		=j->storage;
+					p.type			=j->type;
+					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
+					p.semantic		=j->semantic;
+					f->expanded_parameters.push_back(p);
 				}
 			}
 			else
@@ -465,10 +473,17 @@ prog : prog tok
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						if(j->semantic.size())
 							params<<": "<<j->semantic;
+						glfxstype::variable p;
+						p.storage=j->storage;
+						p.type=type;
+						p.identifier=(ts->textureName+"_")+ts->samplerStateName;
+						p.semantic=j->semantic;
+						f->expanded_parameters.push_back(p);
 					}
 				}
 				else
 				{
+					f->expanded_parameters.push_back(*j);
 					if(start)
 						start=false;
 					else
@@ -493,8 +508,8 @@ prog : prog tok
 	{
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
 		sh.shaderName			=$3.strs[0];
-		sh.returnType			=$2.strs[0];
-		sh.shaderContent		=$8.strs[0];
+		sh.function.returnType	=$2.strs[0];
+		sh.function.content		=$8.strs[0];
 		sh.returnable			=$8.strs[1];
 		sh.main_linenumber		=$1.lineno+(last_linenumber-global_linenumber);
 		sh.content_linenumber	=$8.lineno+(last_linenumber-global_linenumber);
@@ -503,10 +518,16 @@ prog : prog tok
 		ostringstream shaderCode;
 		ostringstream extraDeclarations;
 		ostringstream finalCode;
-		sh.vars=*$5.vars;
+		sh.function.parameters	=*$5.vars;
 
 		ostringstream str;
-		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		sh.function.textureSamplers					=buildFunction.textureSamplers;
+		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
+		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
+		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
+
+
+		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
 			string tsname=i->first;
 			string texture_name=i->second->textureName;
@@ -514,6 +535,8 @@ prog : prog tok
 			{
 				string sampler_type=declaredTextures[texture_name].type;
 				str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
+
+				// We know that this texture-sampler combo will be used in this shader.
 			}
 			else
 				errSem(string("Can't find texture declaration for ")+texture_name);
@@ -713,17 +736,35 @@ struct_definition: '{' struct_member_list '}'
     $$.strs[0]="{\n";
 	$$.strs[0]+=($2.strs[0]+"\n}\n");
 }
-struct_member_list: struct_member_list struct_member
+struct_member_list: struct_member_list struct_memb
 {
-    $$.strs[0]=($1.strs[0]+"\n")+$2.strs[0];
+	string list			=$1.strs[0];
+	string new_member	=$2.strs[0];
+    $$.strs[0]=(list+"\n")+new_member;
 }
-|struct_member
+| struct_memb
 {
-    $$.strs[0]=$1.strs[0];
+	string member	=$1.strs[0];
+    $$.strs[0]=member;
 }
-struct_member: optional_uniform IDENTIFIER IDENTIFIER ';'
+struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
 {
-    $$.strs[0]=(($1.strs[0]+" ")+$2.strs[0]+" ")+$3.strs[0]+";";
+	$$.lineno		=$4.lineno;
+	string unif		=$1.strs[0];
+	string type		=$2.strs[0];
+	string name		=$3.strs[0];
+	string sq		=$4.strs[0];
+	string sem		=$5.strs[0];
+	StructMember s;
+	s.type		=type;
+	s.semantic	=sem;
+	s.name		=name;
+	buildStruct.m_structMembers.push_back(s);
+	$$.strs[0]=(unif.length()?(unif+" "):"");
+    $$.strs[0]+=(type+" ")+name;
+	$$.strs[0]+=sq;
+	$$.strs[0]+=sem.length()?(string(": ")+sem):"";
+	$$.strs[0]+=";";
 }
 optional_uniform: UNIFORM
 {
@@ -1159,8 +1200,10 @@ shader_compile: IDENTIFIER
 			string shaderName=$5.strs[0];
 			CompilableShader &sh=*(compilableShaders[shaderName]);
 			gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
+			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
 			gEffect->m_shaders[shaderName]			=Compile($1.sType,sh);
 
+			gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
 			stringstream ss;
 			ss << $5.strs[0]<<"Compiled"<<version_num;
@@ -1674,31 +1717,55 @@ postfix_exp		: primary_exp
 					{
 						string expr1=$1.strs[0];
 						string expr2=$2.strs[0];
-						string params=$3.strs[0];
+						string params;
+						auto vars=*($3.vars);
+						delete $3.vars;
 						string expr4=$4.strs[0];
 						// ok this could be a function call.
 						string command=$1.strs[2];
-						auto f=functions.find(command);
-						if(f!=functions.end())
+						auto j=functions.find(command);
+						if(j==functions.end())
 						{
+							params=$3.strs[0];
+						}
+						else
+						{
+							const Function &f=*(j->second);
 							// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
-							vector<glfxstype::variable>::const_iterator j=$$.vars.begin();
 							// We figure out this mapping by looking at the vars list of the function we're calling.
 							//	this is the unmodified list, so it corresponds to the call we're making.
-							for(vector<glfxstype::variable>::const_iterator i=f->parameters.begin();i!=f->parameters.end();i++)
+							for(vector<glfxstype::variable>::const_iterator i=f.expanded_parameters.begin();i!=f.expanded_parameters.end();i++)
 							{
-								string varname=i->identifier;
-								auto u=f->textureSamplersByTexture.find(varname);
-								if(u==f->textureSamplersByTexture.end())
-									u=f->textureSamplersBySampler.find(varname);
-								if(u!=f->textureSamplersByTexture.end())
+								string declared_name=i->identifier;
+								// That's how the parameter was declared. Is it in the original list?
+								int index=GetIndexOfParameter(f.parameters,declared_name);
+								// If so we pass the corresponding parameter from the call.
+								if(index>=0)
 								{
-									//
-									const TextureSampler *ts_f=u->second;
-									// Now we add a texturesampler for the current function.
-									AddTextureSampler(
+									const glfxstype::variable &p=vars[index];
+									if(params.size())
+										params+=",";
+									params+=p.identifier;
 								}
-								j++;
+								else // could be a textureSampler...
+								{
+									auto u=f.textureSamplers.find(declared_name);
+									if(u!=f.textureSamplers.end())
+									{
+										string textureName		=u->second->textureName;
+										string samplerStateName	=u->second->samplerStateName;
+										int t					=GetIndexOfParameter(f.parameters,textureName);
+										int s					=GetIndexOfParameter(f.parameters,samplerStateName);
+										if(t>=0)
+											textureName			=(vars[t]).identifier;
+										if(s>=0)
+											samplerStateName	=(vars[s]).identifier;
+										AddTextureSampler(textureName,samplerStateName);
+										if(params.size())
+											params+=",";
+										params+=(textureName+"_")+samplerStateName;
+									}
+								}
 							}
 						}
 						$$.strs[0]=expr1+expr2+params+expr4;
@@ -1727,10 +1794,18 @@ postfix_exp		: primary_exp
 argument_exp_list	: argument_exp_list ',' assignment_exp
 					{
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+						$$.vars=$1.vars;
+						YYSTYPE::variable var;
+						var.identifier	=$3.strs[0];
+						$$.vars->push_back(var);
 					}
 					| assignment_exp
 					{
 						$$.strs[0]=$1.strs[0];
+						$$.vars = new vector<YYSTYPE::variable>;
+						YYSTYPE::variable var;
+						var.identifier	=$1.strs[0];
+						$$.vars->push_back(var);
 					}
 initializer		: assignment_exp
 				{
@@ -1805,18 +1880,6 @@ read_parenthesis :
 	{ /* read parenthesis */
 		$$.strs[0]=glfxreadblock('(', ')');
 	};
-struct_member : IDENTIFIER IDENTIFIER optional_semantic ';'
-					   {
-							$$.lineno		=$3.lineno;
-							string name		=$2.strs[0];
-							string type		=$1.strs[0];
-							string sem		=$3.strs[0];
-							StructMember s;
-							s.type		=type;
-							s.semantic	=sem;
-							s.name		=name;
-							buildStruct.m_structMembers.push_back(s);
-					}
 optional_semantic: ':' IDENTIFIER
 					{
 						$$.strs[0]		=$2.strs[0];
@@ -1825,15 +1888,6 @@ optional_semantic: ':' IDENTIFIER
 					{
 						$$.strs[0]="";
 					}
-struct_members: struct_members struct_member
-					{
-						$$.lineno		=$2.lineno;
-					}
-					|
-					struct_member
-					{
-						$$.lineno		=$1.lineno;
-					};
 optional_render_state_list:	'{' render_state_list '}'
 					{
 						$$.lineno		=$2.lineno;
@@ -2055,6 +2109,7 @@ void resetGlfxParse()
 {
 	buildFunction.clear();
 	functions.clear();
+	buildStruct					=Struct();
 	declaredTextures.clear();
 	read_shader=false;
 	read_function=false;

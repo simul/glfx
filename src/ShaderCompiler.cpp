@@ -9,9 +9,9 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
-	string shaderContent=sh.shaderContent;
+	string shaderContent=sh.function.content;
 	// Add shader parameters
-	for(vector<glfxstype::variable>::const_iterator it=sh.vars.begin();it!=sh.vars.end();++it)
+	for(vector<glfxstype::variable>::const_iterator it=sh.function.parameters.begin();it!=sh.function.parameters.end();++it)
 	{
 		bool as_interface=(shaderType!=VERTEX_SHADER);
 		string structInstanceName=it->identifier;
@@ -148,14 +148,10 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 		else if(varType!=gEffect->m_interfaces.end())
 		{
 			type+=varType->second.id;
-		//	lineno=varType->second.atLine;
 		}
-		////else
-		//	lineno=$1.lineno;
 		if(it->semantic.length()>0)
 		{
 			extraDeclarations<<it->type<<" "<<structInstanceName<<"="<<it->semantic<<";\n"<<endl;
-//			shaderCode<<"#define "<<it->identifier<<" "<<it->semantic<<endl;
 		}
 		else
 		{
@@ -165,14 +161,14 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 		}
 	}
 	// Add the return variable.
-	if(sh.returnType!=string("void"))
+	if(sh.function.returnType!=string("void"))
 	{
-		map<string,Struct*>::const_iterator u=gEffect->m_structs.find(sh.returnType);
+		map<string,Struct*>::const_iterator u=gEffect->m_structs.find(sh.function.returnType);
 		if(u==gEffect->m_structs.end())
 		{
 			string returnVariable="returnVariable";
 			// if we're returning a simple type, we declare it as an output.
-			shaderCode<<"out "<<sh.returnType<<" "<<returnVariable<<";\n";
+			shaderCode<<"out "<<sh.function.returnType<<" "<<returnVariable<<";\n";
 			finalCode<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 		}
 		else
@@ -182,7 +178,7 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 			string structInstanceName="structInstanceName";
 			if(as_interface)
 			{
-				shaderCode<<"out "<<sh.returnType<<"IO\n{\n";
+				shaderCode<<"out "<<sh.function.returnType<<"IO\n{\n";
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
@@ -194,12 +190,12 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 			if(returnVariable.find("(")<returnVariable.length())
 			{
 				returnVariable="returnVariable";
-				finalCode<<sh.returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+				finalCode<<sh.function.returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 			}
 			for(int i=0;i<(int)s->m_structMembers.size();i++)
 			{
 				const StructMember &m=s->m_structMembers[i];
-				string sem=(sh.returnType+"_")+m.name;
+				string sem=(sh.function.returnType+"_")+m.name;
 				if(m.semantic.length())
 					sem=(sem+"_")+m.semantic;
 				// Special outputs:

@@ -227,9 +227,11 @@ warning
 <IN_UNIFORM_DECL>">"							{
 													stdReturn('>');
 												}
-<IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}						{
-													stdReturn(IDENTIFIER);
-												}
+<IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}	{
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														stdReturn(IDENTIFIER);
+													}
 <IN_UNIFORM_DECL>";"							{
 													glfxPopState();
 													stdReturn(';');
@@ -278,7 +280,7 @@ warning
 													glfxPushState(IN_TEXTURE_DECL);
 													stdReturn(RW_TEXTURE3D_FLOAT4);
 												}
-<IN_TEXTURE_DECL>","			{
+<IN_TEXTURE_DECL>","							{
 													glfxlval.strs[0]=yytext;
 													glfxPopState();
 													stdReturn(',');
@@ -628,9 +630,9 @@ warning
 													}
 												}
 <INITIAL>{NUM_BLCK}								{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
+													//if(gLexPassthrough)
+													//	glfxWrite(yytext);
+													//else
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.num=atoi(yytext);
@@ -727,8 +729,8 @@ warning
 														stdReturn('}');
 													}//"["[\t ]*"]"						if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(EMPTY_ARRAY_BRACKETS);}
 												}
-<INITIAL>"["									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('[');}
-<INITIAL>"]"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(']');}
+<INITIAL>"["									{stdReturn('[');}
+<INITIAL>"]"									{stdReturn(']');}
 <INITIAL,IN_PRAGMA>","									{
 													//if(gLexPassthrough)
 													//	glfxWrite(yytext);

@@ -33,6 +33,7 @@ Effect::Effect()
     : m_includes(0)
     , m_active(true)
 	,current_group(NULL)
+	,current_texture_number(0)
 {
 }
 
@@ -47,6 +48,24 @@ Effect::~Effect()
         comp.insert(it->second);
     for(std::set<CompiledShader*>::iterator it=comp.begin(); it!=comp.end(); ++it)
         delete (*it);
+	for(auto i=textureSamplers.begin();i!=textureSamplers.end();i++)
+		delete i->second;
+}
+
+int Effect::GetTextureNumber(const char *name)
+{
+	int texture_number=current_texture_number;
+	std::string n(name);
+	if(textureNumberMap.find(n)!=textureNumberMap.end())
+	{
+		texture_number=textureNumberMap[n];
+	}
+	else
+	{
+		textureNumberMap[n]=current_texture_number;
+		current_texture_number++;
+	}
+	return texture_number;
 }
 
 bool& Effect::Active()
@@ -107,6 +126,23 @@ unsigned Effect::CreateSampler(const string& sampler) const
         throw "Sampler not found";
 
     return it->second->CreateSamplerObject();
+}
+
+void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName)
+{
+	for(auto i=ts.begin();i!=ts.end();i++)
+	{
+		const TextureSampler *t=i->second;
+		auto j=textureSamplers.find(i->first);
+		if(j!=textureSamplers.end())
+		{
+			textureSamplersByShader[shaderName]=j->second;
+			continue;
+		}
+		TextureSampler *t2=new TextureSampler();
+		*t2=*t;
+		textureSamplersByShader[shaderName]=t2;
+	}
 }
 
 const vector<string>& Effect::GetProgramList() const
@@ -200,77 +236,79 @@ void CheckGLError()
 void Effect::ApplyPassState(unsigned pass)
 {
 	std::map<unsigned,PassState>::iterator i=passStates.find(pass);
-	if(i==passStates.end())
-		return;
-	PassState &passState=i->second;
-	if(passState.depthStencilState.length()>0)
+	if(i!=passStates.end())
 	{
-		DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
-		if(depthStencilState.DepthEnable)
+		PassState &passState=i->second;
+		if(passState.depthStencilState.length()>0)
 		{
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(depthStencilState.DepthWriteMask);
-			glDepthFunc(depthStencilState.DepthFunc);
-		}
-		else
-			glDisable(GL_DEPTH_TEST);
-	}
-	if(passState.blendState.length()>0)
-	{
-		BlendState &blendState=*m_blendStates[passState.blendState];
-		int num=0;
-			GL_ERROR_CHECK
-		for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
-		{
-			if(i->second)
-				num++;
-			if(blendState.RenderTargetWriteMask.find(i->first)!=blendState.RenderTargetWriteMask.end())
+			DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
+			if(depthStencilState.DepthEnable)
 			{
-				unsigned m=blendState.RenderTargetWriteMask[i->first];
-				glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
-				GL_ERROR_CHECK
+				glEnable(GL_DEPTH_TEST);
+				glDepthMask(depthStencilState.DepthWriteMask);
+				glDepthFunc(depthStencilState.DepthFunc);
 			}
-			else glColorMaski(i->first,true,true,true,true);
+			else
+				glDisable(GL_DEPTH_TEST);
 		}
-		if(!num)
+		if(passState.blendState.length()>0)
 		{
-			glDisable(GL_BLEND);
-			GL_ERROR_CHECK
-		}
-		else
-		{
-			glEnable(GL_BLEND);
-			GL_ERROR_CHECK
+			BlendState &blendState=*m_blendStates[passState.blendState];
+			int num=0;
+				GL_ERROR_CHECK
 			for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
 			{
 				if(i->second)
+					num++;
+				if(blendState.RenderTargetWriteMask.find(i->first)!=blendState.RenderTargetWriteMask.end())
 				{
+					unsigned m=blendState.RenderTargetWriteMask[i->first];
+					glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
+					GL_ERROR_CHECK
+				}
+				else glColorMaski(i->first,true,true,true,true);
+			}
+			if(!num)
+			{
+				glDisable(GL_BLEND);
+				GL_ERROR_CHECK
+			}
+			else
+			{
+				glEnable(GL_BLEND);
+				GL_ERROR_CHECK
+				for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
+				{
+					if(i->second)
+					{
 
-					glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
-			GL_ERROR_CHECK
+						glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
+				GL_ERROR_CHECK
 
 				
 
 
-					glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
-										   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
-			GL_ERROR_CHECK
+						glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
+											   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
+				GL_ERROR_CHECK
+					}
+					else
+					{
+						glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
+				GL_ERROR_CHECK
+
+
+
+						glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
+											   GL_ONE, GL_ZERO);
+				GL_ERROR_CHECK
+					}
 				}
-				else
-				{
-					glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
-			GL_ERROR_CHECK
-
-
-
-					glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
-										   GL_ONE, GL_ZERO);
-			GL_ERROR_CHECK
-				}
+				if(blendState.AlphaToCoverageEnable)
+					glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+				GL_ERROR_CHECK
 			}
-			if(blendState.AlphaToCoverageEnable)
-				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-			GL_ERROR_CHECK
 		}
 	}
+	// Now we will set the appropriate sampler states.
 }
