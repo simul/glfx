@@ -45,7 +45,12 @@ namespace glfxParser
 		string                      m_dir;
 		string						m_filename;
 		std::map<std::string,TextureSampler*> textureSamplers;
-		std::map<std::string,TextureSampler*> textureSamplersByShader;
+		std::map<std::string,vector<TextureSampler*> > textureSamplersByTexture;
+		std::map<std::string,std::set<TextureSampler*> > textureSamplersByShader;
+
+		// sampler state objects by name
+		static std::map<std::string,unsigned> glSamplerStates;
+
 		int current_texture_number;
 		std::map<std::string,int> textureNumberMap;
 		std::map<int,std::string> textureNameMap;

@@ -76,6 +76,18 @@ int Effect::GetTextureNumber(const char *name)
 		textureNumberMap[n]=current_texture_number;
 		textureNameMap[current_texture_number]=n;
 		current_texture_number++;
+		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
+		auto i=textureSamplersByTexture.find(n);
+		if(i!=textureSamplersByTexture.end())
+		{
+			const vector<TextureSampler*> &ts=i->second;
+			for(int j=0;j<ts.size();j++)
+			{
+				textureNumberMap[ts[j]->textureSamplerName]=current_texture_number;
+				textureNameMap[current_texture_number]=ts[j]->textureSamplerName;
+				current_texture_number++;
+			}
+		}
 	}
 	return texture_number;
 }
@@ -214,12 +226,14 @@ void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &t
 		auto j=textureSamplers.find(i->first);
 		if(j!=textureSamplers.end())
 		{
-			textureSamplersByShader[shaderName]=j->second;
+			textureSamplersByShader[shaderName].insert(j->second);
 			continue;
 		}
 		TextureSampler *t2=new TextureSampler();
+		textureSamplers[i->first]=t2;
+		textureSamplersByTexture[i->second->textureName]=t2;
 		*t2=*t;
-		textureSamplersByShader[shaderName]=t2;
+		textureSamplersByShader[shaderName].insert(t2);
 	}
 }
 
