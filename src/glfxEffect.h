@@ -59,6 +59,8 @@ namespace glfxParser
 		std::map<std::string,int> textureNumberMap;
 		std::map<int,std::string> textureNameMap;
 		unsigned current_pass;
+		// Create the gl objects for samplers defined in the fx file.
+		void CreateDefinedSamplers();
 	public:
 		struct InterfaceDcl
 		{

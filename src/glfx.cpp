@@ -910,7 +910,7 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
 	{
 		if (technique)
 			technique_str = technique;
-		progid = gEffects[effect]->BuildProgram(technique_str, pass, slog);
+		progid = gEffects[effect]->BuildProgram(technique_str, pass?pass:"", slog);
 	}
 	catch(const char* err)
 	{

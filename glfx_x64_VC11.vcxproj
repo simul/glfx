@@ -109,11 +109,6 @@
     </CustomBuild>
     <None Include="src\c_syntax.bnf" />
     <None Include="test\shaders\geometry_pass.glsl" />
-    <None Include="test\shaders\lighting.glsl" />
-    <None Include="test\shaders\light_pass.glsl" />
-    <None Include="test\shaders\missing_prefix.glsl" />
-    <None Include="test\shaders\missing_shader.glsl" />
-    <None Include="test\shaders\null_technique.glsl" />
     <None Include="test\shaders\simple_technique.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

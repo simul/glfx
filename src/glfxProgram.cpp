@@ -35,10 +35,10 @@ Technique::Technique(const map<std::string, Program>& passes)
 {
 }
 
-Program::Program(const map<ShaderType,Shader>& shaders,const map<string,set<TextureSampler*> > &textureSamplersByShader)
+Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p,const map<string,set<TextureSampler*> > &textureSamplersByShader)
 {
+	passState=p;
     map<ShaderType,Shader>::const_iterator it;
-    
     ShaderType types[NUM_OF_SHADER_TYPES]={VERTEX_SHADER,TESSELATION_CONTROL_SHADER,TESSELATION_EVALUATION_SHADER,GEOMETRY_SHADER,FRAGMENT_SHADER,COMPUTE_SHADER};
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{

@@ -958,17 +958,16 @@ pass_list: pass_list pass_def
 
 pass_def: PASS IDENTIFIER '{' prog_def '}'
 {
-	$4.prog->m_separable = $1.boolean;
-	$$.prog = $4.prog;
-	$$.strs[0] = $2.strs[0];
-	$$.prog->passState=buildPassState;
-	buildPassState=PassState();
+	$4.prog->m_separable	= $1.boolean;
+	$$.prog					= $4.prog;
+	$$.strs[0]				= $2.strs[0];
 }
 
 prog_def : shaders_list
 {
-    $$.prog = new Program(*($1.shaders),gEffect->textureSamplersByShader);
+    $$.prog = new Program(*($1.shaders),buildPassState,gEffect->textureSamplersByShader);
     delete $1.shaders;
+	buildPassState			=PassState();
 };
 
 shaders_list : shaders_list shader_def

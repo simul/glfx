@@ -18,7 +18,7 @@ namespace glfxParser
 			string  layout;
 		};
 
-		Program(const map<ShaderType, Shader>& shaders,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader);
+		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader);
 		Program();
 		Program(const Program& prog);
 		const Program &operator=(const Program &);

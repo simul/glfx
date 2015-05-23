@@ -40,6 +40,7 @@ void CheckGLError()
 }
 #define GL_ERROR_CHECK CheckGLError();
 
+map<string,unsigned> Effect::glSamplerStates;
 Effect::Effect()
     : m_includes(0)
     , m_active(true)
@@ -193,10 +194,14 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		map<string, Technique*>::const_iterator it = group->m_techniques.find(tech);
 		if (it == group->m_techniques.end())
 			return 0;
-		Technique *tech = it->second;
-		map<string, Program>::const_iterator jt=tech->GetPasses().find(pass);
-		unsigned ret = jt->second.CompileAndLink(log);
-		passStates[ret]=jt->second.passState;
+		Technique *tech	=it->second;
+		map<string, Program>::const_iterator jt=tech->GetPasses().begin();
+		if(pass.length())
+			jt=tech->GetPasses().find(pass);
+		if(jt==tech->GetPasses().end())
+			return 0;
+		unsigned ret	=jt->second.CompileAndLink(log);
+		passStates[ret]	=jt->second.passState;
 		return ret;
 	}
 }
@@ -309,6 +314,31 @@ void Effect::PopulateProgramList()
 	m_techniqueGroupNames.clear();
 	for (map<string, TechniqueGroup*>::const_iterator it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		m_techniqueGroupNames.push_back(it->first);
+	CreateDefinedSamplers();
+}
+
+void Effect::CreateDefinedSamplers()
+{
+	for(auto i=textureSamplers.begin();i!=textureSamplers.end();i++)
+	{
+		string samplerName=i->second->samplerStateName;
+		const SamplerState *S=m_samplerStates[samplerName];
+		GLuint samplerObj;
+		glGenSamplers(1, &samplerObj);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_MIN_FILTER, S->MinFilter);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_MAG_FILTER, S->MagFilter);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_WRAP_S, S->AddressU);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_WRAP_T, S->AddressV);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_WRAP_R, S->AddressW);
+	/*		NOT yet implemented:
+		glSamplerParameterf(samplerObj, GL_TEXTURE_MIN_LOD, S->MinLod);
+		glSamplerParameterf(samplerObj, GL_TEXTURE_MAX_LOD, S->MaxLod);
+		glSamplerParameterf(samplerObj, GL_TEXTURE_LOD_BIAS, S->LodBias);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_COMPARE_MODE, S->CompareMode);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_COMPARE_FUNC, S->CompareFunc);
+		glSamplerParameteri(samplerObj, GL_TEXTURE_MAX_ANISOTROPY_EXT, S->MaxAnisotropy);*/
+		glSamplerStates[samplerName]=samplerObj;
+	}
 }
 
 void Effect::Apply(unsigned pass)
@@ -342,7 +372,8 @@ void Effect::ApplyPassTextures(unsigned pass)
 		GLint loc		=glGetUniformLocation(current_pass,i->first.c_str());
 	GL_ERROR_CHECK
 		if(loc>=0)
-			glUniform1i(loc,texture_number++);
+			glUniform1i(loc,texture_number);
+		texture_number++;
 	GL_ERROR_CHECK
 		//0x8B4D
 		// The texture numbers after this are for sampler states for this texture.
@@ -351,15 +382,19 @@ void Effect::ApplyPassTextures(unsigned pass)
 		{
 			PassState &passState=j->second;
 			auto k=passState.textureSamplersByTexture.find(i->first);
-			const vector<TextureSampler*> &ts=k->second;
-			for(auto l=ts.begin();l!=ts.end();l++)
+			if(k!=passState.textureSamplersByTexture.end())
 			{
-				GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName.c_str()	);
-				if(loc>=0)
+				const vector<TextureSampler*> &ts=k->second;
+				for(auto l=ts.begin();l!=ts.end();l++)
 				{
-					GLuint sampler_state=m_sam
-				glBindSampler(texture_number, sampler_state);
-					glUniform1i(loc,texture_number++);
+					GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName.c_str()	);
+					if(loc>=0)
+					{
+						GLuint sampler_state=glSamplerStates[(*l)->samplerStateName];
+						glBindSampler(texture_number, sampler_state);
+						glUniform1i(loc,texture_number);
+					}
+					texture_number++;
 				}
 			}
 		}
