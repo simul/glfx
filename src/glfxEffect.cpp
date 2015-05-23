@@ -211,7 +211,6 @@ unsigned Effect::CreateSampler(const string& sampler) const
     map<string,Sampler*>::const_iterator it=m_samplers.find(sampler);
     if(it==m_samplers.end())
         throw "Sampler not found";
-
     return it->second->CreateSamplerObject();
 }
 
@@ -318,18 +317,7 @@ void Effect::Apply(unsigned pass)
 	glUseProgram(pass);
 	GL_ERROR_CHECK
 	current_pass=pass;
-	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
-	{
-	GL_ERROR_CHECK
-		GLint loc		=glGetUniformLocation(current_pass,i->first.c_str());
-	GL_ERROR_CHECK
-		if(loc>=0)
-			glUniform1i(loc,i->second);
-	GL_ERROR_CHECK
-		//0x8B4D
-		// The texture numbers after this are for sampler states for this texture.
-//		std::map<unsigned,PassState>::iterator i=passStates.find(pass);
-	}
+	ApplyPassTextures(pass);
 
 }
 
@@ -344,82 +332,111 @@ void Effect::Unapply()
 	current_pass=0;
 }
 
+void Effect::ApplyPassTextures(unsigned pass)
+{
+	std::map<unsigned,PassState>::iterator j=passStates.find(pass);
+	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
+	{
+	GL_ERROR_CHECK
+		int texture_number=i->second;
+		GLint loc		=glGetUniformLocation(current_pass,i->first.c_str());
+	GL_ERROR_CHECK
+		if(loc>=0)
+			glUniform1i(loc,texture_number++);
+	GL_ERROR_CHECK
+		//0x8B4D
+		// The texture numbers after this are for sampler states for this texture.
+//		std::map<unsigned,PassState>::iterator i=passStates.find(pass);
+		if(j!=passStates.end())
+		{
+			PassState &passState=j->second;
+			auto k=passState.textureSamplersByTexture.find(i->first);
+			const vector<TextureSampler*> &ts=k->second;
+			for(auto l=ts.begin();l!=ts.end();l++)
+			{
+				GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName.c_str()	);
+				if(loc>=0)
+				{
+					GLuint sampler_state=m_sam
+				glBindSampler(texture_number, sampler_state);
+					glUniform1i(loc,texture_number++);
+				}
+			}
+		}
+	}
+}
 
 void Effect::ApplyPassState(unsigned pass)
 {
 	std::map<unsigned,PassState>::iterator i=passStates.find(pass);
-	if(i!=passStates.end())
+	if(i==passStates.end())
+		return;
+	PassState &passState=i->second;
+	if(passState.depthStencilState.length()>0)
 	{
-		PassState &passState=i->second;
-		if(passState.depthStencilState.length()>0)
+		DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
+		if(depthStencilState.DepthEnable)
 		{
-			DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
-			if(depthStencilState.DepthEnable)
-			{
-				glEnable(GL_DEPTH_TEST);
-				glDepthMask(depthStencilState.DepthWriteMask);
-				glDepthFunc(depthStencilState.DepthFunc);
-			}
-			else
-				glDisable(GL_DEPTH_TEST);
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(depthStencilState.DepthWriteMask);
+			glDepthFunc(depthStencilState.DepthFunc);
 		}
-		if(passState.blendState.length()>0)
+		else
+			glDisable(GL_DEPTH_TEST);
+	}
+	if(passState.blendState.length()>0)
+	{
+		BlendState &blendState=*m_blendStates[passState.blendState];
+		int num=0;
+			GL_ERROR_CHECK
+		for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
 		{
-			BlendState &blendState=*m_blendStates[passState.blendState];
-			int num=0;
+			if(i->second)
+				num++;
+			if(blendState.RenderTargetWriteMask.find(i->first)!=blendState.RenderTargetWriteMask.end())
+			{
+				unsigned m=blendState.RenderTargetWriteMask[i->first];
+				glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
 				GL_ERROR_CHECK
+			}
+			else glColorMaski(i->first,true,true,true,true);
+		}
+		if(!num)
+		{
+			glDisable(GL_BLEND);
+			GL_ERROR_CHECK
+		}
+		else
+		{
+			glEnable(GL_BLEND);
+			GL_ERROR_CHECK
 			for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
 			{
 				if(i->second)
-					num++;
-				if(blendState.RenderTargetWriteMask.find(i->first)!=blendState.RenderTargetWriteMask.end())
 				{
-					unsigned m=blendState.RenderTargetWriteMask[i->first];
-					glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
-					GL_ERROR_CHECK
+
+					glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
+			GL_ERROR_CHECK
+
+					glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
+										   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
+			GL_ERROR_CHECK
 				}
-				else glColorMaski(i->first,true,true,true,true);
-			}
-			if(!num)
-			{
-				glDisable(GL_BLEND);
-				GL_ERROR_CHECK
-			}
-			else
-			{
-				glEnable(GL_BLEND);
-				GL_ERROR_CHECK
-				for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
+				else
 				{
-					if(i->second)
-					{
-
-						glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
-				GL_ERROR_CHECK
-
-				
-
-
-						glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
-											   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
-				GL_ERROR_CHECK
-					}
-					else
-					{
-						glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
-				GL_ERROR_CHECK
+					glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
+			GL_ERROR_CHECK
 
 
 
-						glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
-											   GL_ONE, GL_ZERO);
-				GL_ERROR_CHECK
-					}
+					glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
+										   GL_ONE, GL_ZERO);
+			GL_ERROR_CHECK
 				}
-				if(blendState.AlphaToCoverageEnable)
-					glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-				GL_ERROR_CHECK
 			}
+			if(blendState.AlphaToCoverageEnable)
+				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			GL_ERROR_CHECK
 		}
 	}
 	// Now we will set the appropriate sampler states.
