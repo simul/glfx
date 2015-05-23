@@ -35,7 +35,7 @@ Technique::Technique(const map<std::string, Program>& passes)
 {
 }
 
-Program::Program(const map<ShaderType,Shader>& shaders)
+Program::Program(const map<ShaderType,Shader>& shaders,const map<string,set<TextureSampler*> > &textureSamplersByShader)
 {
     map<ShaderType,Shader>::const_iterator it;
     
@@ -44,7 +44,19 @@ Program::Program(const map<ShaderType,Shader>& shaders)
 	{
         it=shaders.find(types[i]);
         if(it!=shaders.end())
+		{
             m_shaders[i]=it->second;
+			string shaderName=it->second.name;
+			auto j=textureSamplersByShader.find(shaderName);
+			if(j!=textureSamplersByShader.end())
+			{
+				const set<TextureSampler*> &ts=j->second;
+				for(auto k=ts.begin();k!=ts.end();k++)
+				{
+					textureSamplersByTexture[(*k)->textureName]=*k;
+				}
+			}
+		}
     }
 
     m_separable=false;

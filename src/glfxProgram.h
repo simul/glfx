@@ -1,6 +1,9 @@
 #ifndef GLFXPROGRAM_H
 #define GLFXPROGRAM_H
+#include <map>
+#include <set>
 #include "glfxClasses.h"
+	struct TextureSampler;
 namespace glfxParser
 {
 	//! A Program in glsl is equivalent to a Pass in hlsl.
@@ -8,6 +11,7 @@ namespace glfxParser
 	{
 	public:
 		PassState passState;
+		std::map<std::string,TextureSampler*> textureSamplersByTexture;
 		struct Shader
 		{
 			string  name;
@@ -15,7 +19,7 @@ namespace glfxParser
 			string  layout;
 		};
 
-		Program(const map<ShaderType, Shader>& shaders);
+		Program(const map<ShaderType, Shader>& shaders,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader);
 		Program();
 		Program(const Program& prog);
 		const Program &operator=(const Program &);

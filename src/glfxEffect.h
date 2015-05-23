@@ -3,6 +3,7 @@
 #include "glfxClasses.h"
 #include <map>
 #include <string>
+#include <set>
 
 namespace glfxParser
 {
@@ -47,6 +48,8 @@ namespace glfxParser
 		std::map<std::string,TextureSampler*> textureSamplers;
 		std::map<std::string,vector<TextureSampler*> > textureSamplersByTexture;
 		std::map<std::string,std::set<TextureSampler*> > textureSamplersByShader;
+		// But to apply the ts, we must map them by pass.
+		std::map<unsigned,std::set<TextureSampler*> > textureSamplersByPass;
 
 		// sampler state objects by name
 		static std::map<std::string,unsigned> glSamplerStates;

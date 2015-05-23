@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 
 #ifndef _MSC_VER
 typedef int errno_t;
@@ -177,12 +178,14 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 {
 	if (tech.length() == 0)
 	{
-		map<string, Program*>::const_iterator it = m_programs.find(pass);
+		std::cerr<<"Must have a technique"<<std::endl;
+		assert(tech.length());
+	/*	map<string, Program*>::const_iterator it = m_programs.find(pass);
 		if (it == m_programs.end())
 			return 0;
 
-		unsigned ret = it->second->CompileAndLink(log);
-		return ret;
+		unsigned ret = it->second->CompileAndLink(log);*/
+		return 0;
 	}
 	else
 	{
@@ -197,13 +200,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		return ret;
 	}
 }
-/*
-unsigned Effect::BuildProgram(const string& prog) const
-{
-    string trash;
-    return BuildProgram(prog, trash);
-}
-*/
+
 ostringstream& Effect::Log()
 {
     return m_log;
@@ -231,7 +228,7 @@ void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &t
 		}
 		TextureSampler *t2=new TextureSampler();
 		textureSamplers[i->first]=t2;
-		textureSamplersByTexture[i->second->textureName]=t2;
+		textureSamplersByTexture[i->second->textureName].push_back(t2);
 		*t2=*t;
 		textureSamplersByShader[shaderName].insert(t2);
 	}

@@ -967,7 +967,7 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-    $$.prog = new Program(*($1.shaders));
+    $$.prog = new Program(*($1.shaders),gEffect->textureSamplersByShader);
     delete $1.shaders;
 };
 
@@ -1037,55 +1037,9 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 				 unsigned mask=$7.unum;
 			 };
 
-shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = VS_Main();
+shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_main;
 			{
-				$$.strs[1]="";
-				$$.strs[0]="";
-				$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
-				glfxParser::ShaderType shaderType=$1.sType;
-				glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-				if(shaderType<NUM_OF_SHADER_TYPES&&$3.num>0)
-				{
-					// Assemble the shader
-					ostringstream theShader;
-					theShader<<"#version "<<$1.num<<endl;
-					theShader<<$3.strs[1];
-					// Because there's no such thing in GLSL:
-					theShader<<"#define SamplerState int\n";
-					// RVK: Must do this because layout(u,v,w) causes problems for non-compute shaders in some compilers:
-					if(shaderType==COMPUTE_SHADER)
-						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
-					string shaderName=($3.strs[0]);
-					if(_stricmp(shaderName.c_str(),"NULL")!=0)
-					{
-						theShader<<gEffect->m_sharedCode.str();
-						map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
-						if(it==gEffect->m_shaders.end())
-						{
-							int ylineno=$3.lineno;
-							int true_linenumber=ylineno+(last_linenumber-global_linenumber);
-							ostringstream errMsg;
-							errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-							errSem(errMsg.str(), true_linenumber);
-						}
-						else
-						{
-							if(shaderType==COMPUTE_SHADER)
-								theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
-						// Currently in case of error it never returns (throw)
-						// TODO: Handle continuation in case of error
-							theShader<<it->second;
-						}
-					}
-					$$.strs[1]=shaderName;
-					$$.strs[0]=theShader.str();
-				}
-				else if(shaderCommand<NumShaderCommands)
-				{
-					$$.strs[0]=$1.strs[1];
-					$$.strs[1]=$1.strs[0];
-				}
-				$$.sType=$1.sType;
+				errSem("Pass definitions like vs(430)=vs_main are no longer supported. Please use SetVertexShader() etc.");
 			}
 			// For example: SetVertexShader(vs_main);
 			| SHADER_COMMAND '(' shader_compile ')' ';'
