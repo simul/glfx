@@ -38,6 +38,12 @@ typedef unsigned GLenum;
 namespace glfxParser
 {
 	using namespace std;
+	struct TextureSampler
+	{
+		std::string textureName;
+		std::string samplerStateName;
+		std::string textureSamplerName;
+	};
 	/// Values that represent ShaderType.
 	enum ShaderType
 	{
@@ -171,6 +177,8 @@ namespace glfxParser
 	{
 		std::string depthStencilState;
 		std::string blendState;
+		// When setting a texture, set the appropriate sampler states as well.
+		std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
 	};
 
 } // glfxParser

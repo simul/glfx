@@ -53,7 +53,7 @@ Program::Program(const map<ShaderType,Shader>& shaders,const map<string,set<Text
 				const set<TextureSampler*> &ts=j->second;
 				for(auto k=ts.begin();k!=ts.end();k++)
 				{
-					textureSamplersByTexture[(*k)->textureName]=*k;
+					passState.textureSamplersByTexture[(*k)->textureName].push_back(*k);
 				}
 			}
 		}

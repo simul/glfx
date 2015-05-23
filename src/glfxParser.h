@@ -159,12 +159,6 @@ namespace glfxParser
 extern int glfxdebug;
 #endif
 
-struct TextureSampler
-{
-	std::string textureName;
-	std::string samplerStateName;
-	std::string textureSamplerName;
-};
 struct DeclaredTexture
 {
 	std::string type;

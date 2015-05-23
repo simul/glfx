@@ -3,15 +3,14 @@
 #include <map>
 #include <set>
 #include "glfxClasses.h"
-	struct TextureSampler;
 namespace glfxParser
 {
+	struct TextureSampler;
 	//! A Program in glsl is equivalent to a Pass in hlsl.
 	class Program
 	{
 	public:
 		PassState passState;
-		std::map<std::string,TextureSampler*> textureSamplersByTexture;
 		struct Shader
 		{
 			string  name;

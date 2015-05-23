@@ -326,6 +326,9 @@ void Effect::Apply(unsigned pass)
 		if(loc>=0)
 			glUniform1i(loc,i->second);
 	GL_ERROR_CHECK
+		//0x8B4D
+		// The texture numbers after this are for sampler states for this texture.
+//		std::map<unsigned,PassState>::iterator i=passStates.find(pass);
 	}
 
 }
