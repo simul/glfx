@@ -96,48 +96,58 @@ int Effect::GetTextureNumber(const char *name)
 
 void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
 {
+	TextureAssignment &t=textureAssignmentMap[texture_number];
+	t.tex	=tex;
+	t.dims	=dims;
+	t.depth	=depth;
+	t.format=format;
+	t.write	=write;
+}
+
+void Effect::SetTex(int texture_number,const TextureAssignment &t)
+{
 	// The effect knows the needed info: the format
 	GL_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
 	GL_ERROR_CHECK
-	if(!tex)
+	if(!t.tex)
 		return;
-	if(dims==2)
+	if(t.dims==2)
 	{
-		if(write)
+		if(t.write)
 		{
 			texture_number=0;
 			glBindImageTexture(texture_number,
- 				tex,
+ 				t.tex,
  				0,
  				GL_FALSE,
  				0,
  				GL_READ_WRITE,
-				format);
+				t.format);
 		}
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
 		{
 			// 2D but depth>1? That's an ARRAY texture.
-			if(depth>1)
-				glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+			if(t.depth>1)
+				glBindTexture(GL_TEXTURE_2D_ARRAY,t.tex);
 			else
-				glBindTexture(GL_TEXTURE_2D,tex);
+				glBindTexture(GL_TEXTURE_2D,t.tex);
 		}
 	}
-	else if(dims==3)
+	else if(t.dims==3)
 	{
-		if(write)
+		if(t.write)
 		{
 			texture_number=0;
 			glBindImageTexture(texture_number,
- 				tex,
+ 				t.tex,
  				0,
  				GL_TRUE,
  				0,
  				GL_READ_WRITE,
-				format);
+				t.format);
 		//GL_RGBA32F);
 /*
 GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
@@ -146,7 +156,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 */
 		}
 		else
-			glBindTexture(GL_TEXTURE_3D,tex);
+			glBindTexture(GL_TEXTURE_3D,t.tex);
 	}
 	else
 	{
@@ -160,6 +170,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 			glUniform1i(loc,texture_number);
 	}
 }
+
 bool& Effect::Active()
 {
     return m_active;
@@ -368,11 +379,16 @@ void Effect::ApplyPassTextures(unsigned pass)
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
 	GL_ERROR_CHECK
-		int texture_number=i->second;
-		GLint loc		=glGetUniformLocation(current_pass,i->first.c_str());
+		int main_texture_number		=i->second;
+		int texture_number			=main_texture_number;
+		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
+		GLint loc					=glGetUniformLocation(current_pass,i->first.c_str());
 	GL_ERROR_CHECK
 		if(loc>=0)
+		{
+			SetTex(texture_number,ta);
 			glUniform1i(loc,texture_number);
+		}
 		texture_number++;
 	GL_ERROR_CHECK
 		//0x8B4D
@@ -390,6 +406,7 @@ void Effect::ApplyPassTextures(unsigned pass)
 					GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName.c_str()	);
 					if(loc>=0)
 					{
+						SetTex(texture_number,ta);
 						GLuint sampler_state=glSamplerStates[(*l)->samplerStateName];
 						glBindSampler(texture_number, sampler_state);
 						glUniform1i(loc,texture_number);
