@@ -38,7 +38,31 @@ void CheckGLError()
 		printf("gl error");
 	}
 }
-#define GL_ERROR_CHECK CheckGLError();
+
+#ifdef _WIN32
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#endif
+
+#ifdef __ORBIS__
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#include <libdbg.h>
+#endif
+
+/// This errno check can be disabled for production. ALWAYS_GLFX_ERRNO_CHECK must always be enabled as it is used for functionality.
+#if 0
+	#define GLFX_ERRNO_CHECK
+#else
+	#define GLFX_ERRNO_CHECK \
+		if(errno!=0)\
+		{\
+			char e[101];\
+			strerror_r(errno,e,100);\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
+			errno=0;\
+		}
+#endif
+
+#define GLFX_ERROR_CHECK CheckGLError();GLFX_ERRNO_CHECK
 
 map<string,unsigned> Effect::glSamplerStates;
 Effect::Effect()
@@ -107,10 +131,10 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 void Effect::SetTex(int texture_number,const TextureAssignment &t)
 {
 	// The effect knows the needed info: the format
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 	if(!t.tex)
 		return;
 	if(t.dims==2)
@@ -162,6 +186,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 	{
 		throw std::runtime_error("Unknown texture dimension!");
 	}
+	GLFX_ERROR_CHECK
     glActiveTexture(GL_TEXTURE0+texture_number);
 	if(current_pass)
 	{
@@ -169,6 +194,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 		if(loc>=0)
 			glUniform1i(loc,texture_number);
 	}
+	GLFX_ERROR_CHECK
 }
 
 bool& Effect::Active()
@@ -354,9 +380,9 @@ void Effect::CreateDefinedSamplers()
 
 void Effect::Apply(unsigned pass)
 {
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 	glUseProgram(pass);
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 	current_pass=pass;
 	ApplyPassTextures(pass);
 
@@ -375,22 +401,23 @@ void Effect::Unapply()
 
 void Effect::ApplyPassTextures(unsigned pass)
 {
+	GLFX_ERROR_CHECK
 	std::map<unsigned,PassState>::iterator j=passStates.find(pass);
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 		int main_texture_number		=i->second;
 		int texture_number			=main_texture_number;
 		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
 		GLint loc					=glGetUniformLocation(current_pass,i->first.c_str());
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 		if(loc>=0)
 		{
 			SetTex(texture_number,ta);
 			glUniform1i(loc,texture_number);
 		}
 		texture_number++;
-	GL_ERROR_CHECK
+	GLFX_ERROR_CHECK
 		//0x8B4D
 		// The texture numbers after this are for sampler states for this texture.
 //		std::map<unsigned,PassState>::iterator i=passStates.find(pass);
@@ -440,7 +467,7 @@ void Effect::ApplyPassState(unsigned pass)
 	{
 		BlendState &blendState=*m_blendStates[passState.blendState];
 		int num=0;
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 		for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
 		{
 			if(i->second)
@@ -449,46 +476,46 @@ void Effect::ApplyPassState(unsigned pass)
 			{
 				unsigned m=blendState.RenderTargetWriteMask[i->first];
 				glColorMaski(i->first,(m&0x8)!=0,(m&0x4)!=0,(m&0x2)!=0,(m&0x1)!=0);
-				GL_ERROR_CHECK
+				GLFX_ERROR_CHECK
 			}
 			else glColorMaski(i->first,true,true,true,true);
 		}
 		if(!num)
 		{
 			glDisable(GL_BLEND);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 		}
 		else
 		{
 			glEnable(GL_BLEND);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 			for(std::map<int,bool>::iterator i=blendState.BlendEnable.begin();i!=blendState.BlendEnable.end();i++)
 			{
 				if(i->second)
 				{
 
 					glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 
 					glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
 										   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 				}
 				else
 				{
 					glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 
 
 
 					glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
 										   GL_ONE, GL_ZERO);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 				}
 			}
 			if(blendState.AlphaToCoverageEnable)
 				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-			GL_ERROR_CHECK
+			GLFX_ERROR_CHECK
 		}
 	}
 	// Now we will set the appropriate sampler states.
