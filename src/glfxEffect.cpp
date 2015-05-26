@@ -137,11 +137,12 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
 	GLFX_ERROR_CHECK
 	if(!t.tex)
 		return;
+	const char *nn=textureNameMap[texture_number].c_str();
 	if(t.dims==2)
 	{
 		if(t.write)
 		{
-			texture_number=0;
+		//	texture_number=0;
 			glBindImageTexture(texture_number,
  				t.tex,
  				0,
@@ -190,7 +191,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
     glActiveTexture(GL_TEXTURE0+texture_number);
 	if(current_pass)
 	{
-		GLint loc		=glGetUniformLocation(current_pass,textureNameMap[texture_number].c_str());
+		GLint loc		=glGetUniformLocation(current_pass,nn);
 		if(loc>=0)
 			glUniform1i(loc,texture_number);
 	}
