@@ -154,21 +154,45 @@
 	map<std::string,CompilableShader*> compilableShaders;
 	map<std::string,Function*> functions;
 	map<string,DeclaredTexture> declaredTextures;
+	map<string,DeclaredTexture> additionalTextureDeclarations;
+	
+	void DeclareTextureSampler(const TextureSampler *ts)
+	{
+		auto i=additionalTextureDeclarations.find(ts->textureSamplerName());
+		if(i!=additionalTextureDeclarations.end())
+			return;
+
+		string tsname		=ts->textureSamplerName();
+		string texture_name=ts->textureName;
+		if(declaredTextures.find(texture_name)!=declaredTextures.end())
+		{
+			string sampler_type=declaredTextures[texture_name].type;
+			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
+			additionalTextureDeclarations[tsname].type=sampler_type;
+			// We know that this texture-sampler combo will be used in this shader.
+		}
+		else
+			errSem(string("Can't find texture declaration for ")+texture_name);
+	}
 	Function buildFunction;
 	TextureSampler *AddTextureSampler(string textureName,string samplerStateName)
 	{
+		auto i=buildFunction.textureSamplers.find((textureName+"_")+samplerStateName);
+		if(i!=buildFunction.textureSamplers.end())
+		{
+			return i->second;
+		}
 		TextureSampler *ts=new TextureSampler;
 		ts->textureName			=textureName;
 		ts->samplerStateName	=samplerStateName;
-		ts->textureSamplerName=(ts->textureName+"_")+ts->samplerStateName;
-		buildFunction.textureSamplers[ts->textureSamplerName]=(ts);
-		buildFunction.textureSamplersByTexture[textureName].push_back(ts);
-		buildFunction.textureSamplersBySampler[ts->samplerStateName].push_back(ts);
+		buildFunction.textureSamplers[ts->textureSamplerName()]=(ts);
+		buildFunction.textureSamplersByTexture[textureName].insert(ts);
+		buildFunction.textureSamplersBySampler[ts->samplerStateName].insert(ts);
 		return ts;
 	}
 %}
 
-%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLING_COMMAND STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -414,6 +438,10 @@ prog : prog tok
 		string functionName		=$2.strs[0];
 		Function *f				=new Function;
 		*f						=buildFunction;
+		if(buildFunction.textureSamplers.size())
+		{
+	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
+		}
 		functions[functionName]	=f;
 		f->returnType			=$1.strs[0];
 		f->content				=$7.strs[0];
@@ -421,9 +449,9 @@ prog : prog tok
 		f->parameters			=*$4.vars;
 		delete $4.vars;
 		
-		ostringstream str;
 		ostringstream params;
 		bool start=true;
+		set<string> usedSamplerStates;
 		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
 		{
 			string type=j->type;
@@ -441,7 +469,8 @@ prog : prog tok
 					else
 						params<<", ";
 					TextureSampler *ts=*v;
-					params<<j->storage<<" "<<j->type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
+					usedSamplerStates.insert(ts->samplerStateName);
+					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
 					if(j->semantic.size())
 						params<<": "<<j->semantic;
 					glfxstype::variable p;
@@ -450,10 +479,14 @@ prog : prog tok
 					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
 					p.semantic		=j->semantic;
 					f->expanded_parameters.push_back(p);
+					buildFunction.removeTextureSampler(ts->textureSamplerName());
 				}
 			}
 			else
 			{
+				auto a=usedSamplerStates.find(name);
+				if(a!=usedSamplerStates.end())
+					continue;
 				u=buildFunction.textureSamplersBySampler.find(name);
 				if(u!=buildFunction.textureSamplersBySampler.end())
 				{
@@ -474,11 +507,12 @@ prog : prog tok
 						if(j->semantic.size())
 							params<<": "<<j->semantic;
 						glfxstype::variable p;
-						p.storage=j->storage;
-						p.type=type;
-						p.identifier=(ts->textureName+"_")+ts->samplerStateName;
-						p.semantic=j->semantic;
+						p.storage			=j->storage;
+						p.type				=type;
+						p.identifier		=ts->textureSamplerName();
+						p.semantic			=j->semantic;
 						f->expanded_parameters.push_back(p);
+						buildFunction.removeTextureSampler(ts->textureSamplerName());
 					}
 				}
 				else
@@ -494,7 +528,14 @@ prog : prog tok
 				}
 			}
 		}
-
+		ostringstream str;
+		// Any textureSamplers not passed up the line are added to the effect's list of global textureSamplers.
+		// Note: This is only temporary until we stop including unused functions in the shared code.
+		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		{
+			DeclareTextureSampler(i->second);
+		}
+		
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
 		str<< f->returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<f->content<<"\n}\n";
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
@@ -529,7 +570,8 @@ prog : prog tok
 
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
-			string tsname=i->first;
+			DeclareTextureSampler(i->second);
+	/*		string tsname=i->first;
 			string texture_name=i->second->textureName;
 			if(declaredTextures.find(texture_name)!=declaredTextures.end())
 			{
@@ -539,7 +581,7 @@ prog : prog tok
 				// We know that this texture-sampler combo will be used in this shader.
 			}
 			else
-				errSem(string("Can't find texture declaration for ")+texture_name);
+				errSem(string("Can't find texture declaration for ")+texture_name);*/
 		}
 		gEffect->m_sharedCode<<str.str();
 
@@ -1079,6 +1121,10 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 					{
 						theShader<<"int "<<i->first<<"=0;\n";
 					}
+					for(auto i=additionalTextureDeclarations.begin();i!=additionalTextureDeclarations.end();i++)
+					{
+						theShader<<"uniform "<<i->second.type<<" "<<i->first<<";\n";
+					}
 					if(shaderCommand==COMPUTE_SHADER)
 						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
 					if(shaderCommand<NumShaderCommands)
@@ -1324,16 +1370,16 @@ declarator: IDENTIFIER
 		}
 statement:  expression ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
+					$$.strs[0]=$1.strs[0]+";\n";
 					$$.lineno=$1.lineno;
 				}
 			   |  ';'
 				{
-					$$.strs[0]=$1.strs[0];
+					$$.strs[0]=";\n";
 				}
 			| declaration ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
+					$$.strs[0]=$1.strs[0]+";\n";
 				}
 			| compound_statement
 				{
@@ -1361,7 +1407,7 @@ statement:  expression ';'
 				}
 			| DO statement WHILE '(' expression ')' ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+";\n";
 				}
 			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
 				{
@@ -1370,15 +1416,15 @@ statement:  expression ';'
 				}
 			| GOTO IDENTIFIER ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+";\n";
 				}
 			| CONTINUE ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
+					$$.strs[0]=$1.strs[0]+";\n";
 				}
 			| BREAK ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0];
+					$$.strs[0]=$1.strs[0]+";\n";
 				}
 			| RETURN optional_expression ';'
 			{
@@ -1605,15 +1651,23 @@ unary_operator		: '&' | '*' | '+' | '-' | '~' | '!'
 {
 	$$.strs[0]=$1.strs[0];
 }
-sampling_exp:	postfix_exp '.' SAMPLING_COMMAND
+sampling_command: SAMPLE
+{
+	$$.strs[0]="texture";
+}
+| SAMPLE_LOD
+{
+	$$.strs[0]="textureLod";
+}
+sampling_exp:	postfix_exp '.' sampling_command
 					{
-						string expr1=$1.strs[0];
-						string expr3=$3.strs[0];
-						$$.strs[0]=expr1+$2.strs[0]+expr3;
+						string texture=$1.strs[0];
+						string command=$3.strs[0];
+						$$.strs[0]=texture+$2.strs[0]+command;
 						// Put the thing we're sampling into strs[1]
-						$$.strs[1]=expr1;
+						$$.strs[1]=texture;
 						// We put the command into strs[2]
-						$$.strs[2]=expr3;
+						$$.strs[2]=command;
 					}
 
 postfix_exp		: primary_exp
@@ -1626,15 +1680,12 @@ postfix_exp		: primary_exp
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
 						$$.strs[2]=$1.strs[2];			//Command
 					}
-					| sampling_exp '(' argument_exp_list ')'
+					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{
-						string expr1=$1.strs[0];
-						string textureName=$1.strs[1];
-						string command=$1.strs[2];
-						string expr2=$2.strs[0];
-						string expr3=$3.strs[0];
-						string expr4=$4.strs[0];
-						vector<string> args=split(expr3,',');
+						string textureName		=$1.strs[1];
+						string command			=$1.strs[2];
+						string samplerStateName	=$3.strs[0];
+						string otherParams		=$5.strs[0];
 						// The first argument is the sampler state, the second is the texcoords, the third if present is the lod.
 						// So: to translate this to GLSL, an expression like
 						//			mainTexture.Sample(samplerState1,texcoords)
@@ -1646,8 +1697,8 @@ postfix_exp		: primary_exp
 						// each Texture parameter must be replaced by a list of all the texture-sampler combinations that use it.
 						// each SamplerState parameter must be replaced by a list of the texture-sampler combinations that use it.
 						// This might lead to some doubling-up.
-						TextureSampler *ts=AddTextureSampler(textureName,args[0]);
-						string full_expr=string("texture(")+(ts->textureSamplerName+",")+args[1]+")";
+						TextureSampler *ts=AddTextureSampler(textureName,samplerStateName);
+						string full_expr=(command+"(")+(ts->textureSamplerName()+",")+otherParams+")";
 						$$.strs[0]=full_expr;
 
 						// There are four possibilities for each sampling command:

@@ -474,7 +474,12 @@ warning
 <IN_SHADER>"Sample"	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
-													stdReturn(SAMPLING_COMMAND);
+													stdReturn(SAMPLE);
+												}
+<IN_SHADER>"SampleLevel"						{
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(SAMPLE_LOD);
 												}
 <IN_SHADER>"return"	{
 													glfxlval.lineno=yylineno;

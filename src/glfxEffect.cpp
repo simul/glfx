@@ -106,11 +106,11 @@ int Effect::GetTextureNumber(const char *name)
 		auto i=textureSamplersByTexture.find(n);
 		if(i!=textureSamplersByTexture.end())
 		{
-			const vector<TextureSampler*> &ts=i->second;
-			for(int j=0;j<ts.size();j++)
+			const set<TextureSampler*> &ts=i->second;
+			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureNumberMap[ts[j]->textureSamplerName]=current_texture_number;
-				textureNameMap[current_texture_number]=ts[j]->textureSamplerName;
+				textureNumberMap[(*j)->textureSamplerName()]=current_texture_number;
+				textureNameMap[current_texture_number]=(*j)->textureSamplerName();
 				current_texture_number++;
 			}
 		}
@@ -138,6 +138,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
 	if(!t.tex)
 		return;
 	const char *nn=textureNameMap[texture_number].c_str();
+	GLFX_ERROR_CHECK
 	if(t.dims==2)
 	{
 		if(t.write)
@@ -150,6 +151,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
  				0,
  				GL_READ_WRITE,
 				t.format);
+	GLFX_ERROR_CHECK
 		}
 		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 		else
@@ -159,6 +161,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
 				glBindTexture(GL_TEXTURE_2D_ARRAY,t.tex);
 			else
 				glBindTexture(GL_TEXTURE_2D,t.tex);
+	GLFX_ERROR_CHECK
 		}
 	}
 	else if(t.dims==3)
@@ -182,6 +185,7 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 		}
 		else
 			glBindTexture(GL_TEXTURE_3D,t.tex);
+	GLFX_ERROR_CHECK
 	}
 	else
 	{
@@ -270,7 +274,7 @@ void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &t
 		}
 		TextureSampler *t2=new TextureSampler();
 		textureSamplers[i->first]=t2;
-		textureSamplersByTexture[i->second->textureName].push_back(t2);
+		textureSamplersByTexture[i->second->textureName].insert(t2);
 		*t2=*t;
 		textureSamplersByShader[shaderName].insert(t2);
 	}
@@ -415,7 +419,9 @@ void Effect::ApplyPassTextures(unsigned pass)
 		if(loc>=0)
 		{
 			SetTex(texture_number,ta);
+	GLFX_ERROR_CHECK
 			glUniform1i(loc,texture_number);
+	GLFX_ERROR_CHECK
 		}
 		texture_number++;
 	GLFX_ERROR_CHECK
@@ -431,7 +437,7 @@ void Effect::ApplyPassTextures(unsigned pass)
 				const vector<TextureSampler*> &ts=k->second;
 				for(auto l=ts.begin();l!=ts.end();l++)
 				{
-					GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName.c_str()	);
+					GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName().c_str()	);
 					if(loc>=0)
 					{
 						SetTex(texture_number,ta);

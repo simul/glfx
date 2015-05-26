@@ -47,7 +47,7 @@ namespace glfxParser
 		string                      m_dir;
 		string						m_filename;
 		std::map<std::string,TextureSampler*> textureSamplers;
-		std::map<std::string,vector<TextureSampler*> > textureSamplersByTexture;
+		std::map<std::string,std::set<TextureSampler*> > textureSamplersByTexture;
 		std::map<std::string,std::set<TextureSampler*> > textureSamplersByShader;
 		// But to apply the ts, we must map them by pass.
 		std::map<unsigned,std::set<TextureSampler*> > textureSamplersByPass;

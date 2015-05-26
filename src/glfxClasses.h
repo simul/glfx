@@ -42,7 +42,10 @@ namespace glfxParser
 	{
 		std::string textureName;
 		std::string samplerStateName;
-		std::string textureSamplerName;
+		std::string textureSamplerName() const
+		{
+			return (textureName+"_")+samplerStateName;
+		}
 	};
 	/// Values that represent ShaderType.
 	enum ShaderType

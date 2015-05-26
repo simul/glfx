@@ -174,6 +174,28 @@ struct Function
 		}
 		(*this)=Function();
 	}
+	void operator=(const Function &f)
+	{
+		returnType			=f.returnType;
+		content				=f.content;
+		main_linenumber		=f.main_linenumber;
+		content_linenumber	=f.content_linenumber;
+		current_filenumber	=f.current_filenumber;
+		parameters			=f.parameters;					// the original parameters as defined in the source code.
+		expanded_parameters	=f.expanded_parameters;
+		textureSamplers.clear();
+		textureSamplersByTexture.clear();
+		textureSamplersBySampler.clear();
+		for(auto i=f.textureSamplers.begin();i!=f.textureSamplers.end();i++)
+		{
+			TextureSampler *ts=new TextureSampler;
+			ts->samplerStateName=i->second->samplerStateName;
+			ts->textureName=i->second->textureName;
+			textureSamplers[i->first]=ts;
+			textureSamplersBySampler[ts->samplerStateName].insert(ts);
+			textureSamplersByTexture[ts->textureName].insert(ts);
+		}
+	}
 	std::string returnType;
 	std::string content;
 	int main_linenumber;
@@ -182,8 +204,26 @@ struct Function
 	std::vector<glfxstype::variable> parameters;					// the original parameters as defined in the source code.
 	std::vector<glfxstype::variable> expanded_parameters;			// the expanded parameter list including textureSamplers.
 	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
-	std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
-	std::map<std::string,std::vector<TextureSampler*> > textureSamplersBySampler;
+	std::map<std::string,std::set<TextureSampler*> > textureSamplersByTexture;
+	std::map<std::string,std::set<TextureSampler*> > textureSamplersBySampler;
+	void removeTextureSampler(std::string tsname)
+	{
+		auto i=textureSamplers.find(tsname);
+		if(i==textureSamplers.end())
+			return;
+		TextureSampler *ts=i->second;
+		std::set<TextureSampler*> byTex=textureSamplersByTexture[ts->textureName];
+		auto j=byTex.find(ts);
+		if(j!=byTex.end())
+			byTex.erase(j);
+		
+		std::set<TextureSampler*> bySam=textureSamplersBySampler[ts->samplerStateName];
+		j=bySam.find(ts);
+		if(j!=bySam.end())
+			bySam.erase(j);
+		delete ts;
+		textureSamplers.erase(i);
+	}
 };
 struct CompilableShader
 {
