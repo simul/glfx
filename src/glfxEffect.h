@@ -30,8 +30,8 @@ namespace glfxParser
 		map<std::string,SamplerState*>		m_samplerStates;
 		map<std::string,RasterizerState*>	m_rasterizerStates;
 		map<std::string,std::string>		m_shaders;
-		map<std::string,std::string>		m_shaderLayouts;
-		std::map<unsigned,PassState> passStates;
+		map<std::string,ComputeLayout>		m_shaderLayouts;
+		std::map<unsigned,PassState>		passStates;
 		map<std::string,unsigned>			samplerObjects;
 		//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 		//! We will use the keyword Profile.

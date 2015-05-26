@@ -225,11 +225,16 @@ struct Function
 		textureSamplers.erase(i);
 	}
 };
+struct ComputeLayout
+{
+	int x,y,z;
+	std::string text();
+};
 struct CompilableShader
 {
 	std::string shaderName;
 	Function function;
-	std::string csLayout;
+	ComputeLayout csLayout;
 	std::string returnable;
 	int main_linenumber;
 	int content_linenumber;

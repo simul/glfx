@@ -109,8 +109,8 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureNumberMap[(*j)->textureSamplerName()]=current_texture_number;
-				textureNameMap[current_texture_number]=(*j)->textureSamplerName();
+			//	textureNumberMap[(*j)->textureSamplerName()]=current_texture_number;
+			//	textureNameMap[current_texture_number]=(*j)->textureSamplerName();
 				current_texture_number++;
 			}
 		}
@@ -132,11 +132,11 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
 {
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
-    glActiveTexture(GL_TEXTURE0+texture_number);
 	// Fall out silently if this texture is not set.
-	GLFX_ERROR_CHECK
 	if(!t.tex)
 		return;
+    glActiveTexture(GL_TEXTURE0+texture_number);
+	GLFX_ERROR_CHECK
 	const char *nn=textureNameMap[texture_number].c_str();
 	GLFX_ERROR_CHECK
 	if(t.dims==2)

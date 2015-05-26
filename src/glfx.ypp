@@ -45,7 +45,7 @@
 	static int last_linenumber=0;
 	static int current_filenumber=0;
 	static int global_linenumber=0;
-	std::string currentCsLayout;
+	ComputeLayout currentCsLayout;
 	int maxVertexCount			=0;
 	int last_recorded_linenum	=0;
 	int global_linenum			=0;
@@ -190,6 +190,11 @@
 		buildFunction.textureSamplersBySampler[ts->samplerStateName].insert(ts);
 		return ts;
 	}
+	string ComputeLayout::text()
+	{
+		string tt=stringFormat("layout(local_size_x=%d,local_size_y=%d,local_size_z=%d) in;",x,y,z);
+		return tt;
+	}
 %}
 
 %token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -201,7 +206,7 @@
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
-%token SA_MAXVERTEXCOUNT SA_NUMTHREADS CS_LAYOUT
+%token SA_MAXVERTEXCOUNT SA_NUMTHREADS
 
 %%
 
@@ -277,28 +282,18 @@ prog : prog tok
 		decl<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<$3.strs[0]<<";";
 		gEffect->m_sharedCode<<decl.str();
 	}
-	| CS_LAYOUT
-	{
-		currentCsLayout=$1.strs[0];
-	}
 	| '[' SA_MAXVERTEXCOUNT '(' NUM ')' ']'
 	{
 		maxVertexCount=$4.num;
 	}
 	| '[' SA_NUMTHREADS '(' NUM ',' NUM ',' NUM ')' ']'
 	{
-		currentCsLayout="layout(local_size_x=%1,local_size_y=%2,local_size_z=%3) in;";
-		stringReplaceAll(currentCsLayout,"%1",$4.strs[0]);
-		stringReplaceAll(currentCsLayout,"%2",$6.strs[0]);
-		stringReplaceAll(currentCsLayout,"%3",$8.strs[0]);
+		currentCsLayout.x=$4.num;
+		currentCsLayout.y=$6.num;
+		currentCsLayout.z=$8.num;
 	}
 	| LAYOUT cs_layout_spec IDENTIFIER ';'
 	{
-		currentCsLayout="";
-		currentCsLayout+=$1.strs[0];
-		currentCsLayout+=$2.strs[0];
-		currentCsLayout+=$3.strs[0];
-		currentCsLayout+=$4.strs[0];
 	}
 	| LAYOUT normal_layout_spec
 	{
@@ -414,9 +409,6 @@ prog : prog tok
 	}
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
-		currentCsLayout="";
-		currentCsLayout+=$1.strs[0];
-		currentCsLayout+=$3.strs[0];
 	}
 	| CONSTANT_BUFFER IDENTIFIER shader_fx struct_definition ';' lex_passthrough
 	{
@@ -656,6 +648,9 @@ layout_params:'(' NUM ',' NUM ',' NUM ')'
 	ret+=$6.strs[0];
 	ret+=")";
 	$$.strs[0]=ret;
+	currentCsLayout.x=$2.num;
+	currentCsLayout.y=$4.num;
+	currentCsLayout.z=$6.num;
 };
 warning-specifier: IDENTIFIER
 			  {
@@ -702,21 +697,25 @@ tx_layout: tx_layout ',' layout_s
 				$$.strs[0]=$1.strs[0];
 				};
 layout_s: layout_el
-	   {
+			{
 				$$.strs[0]=$1.strs[0];
-	   }
-		   | IDENTIFIER
-	   {
+			}
+			| IDENTIFIER
+			{
 				$$.strs[0]=$1.strs[0];
-	   };
+			};
 cs_layout: layout_el ',' layout_el ',' layout_el
 		  {
+				currentCsLayout.x=$1.num;
+				currentCsLayout.y=$3.num;
+				currentCsLayout.z=$5.num;
 				$$.layoutType=CS_LAYOUT_TYPE;
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
 		  };
 layout_el: IDENTIFIER '=' layout_def
 		   {
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+				$$.num=$3.num;
 		   };
 
 layout_def: IDENTIFIER
@@ -1143,7 +1142,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 							else
 							{
 								if(shaderCommand==COMPUTE_SHADER)
-									theShader<<gEffect->m_shaderLayouts[shaderName]<<"\n";
+									theShader<<gEffect->m_shaderLayouts[shaderName].text()<<"\n";
 								// Currently in case of error it never returns (throw)
 								// TODO: Handle continuation in case of error
 									theShader<<it->second;
@@ -1194,8 +1193,6 @@ shader_compile: IDENTIFIER
 			}
 			else
 				version_num=i->second;
-
-
 			string shaderName=$5.strs[0];
 			CompilableShader &sh=*(compilableShaders[shaderName]);
 			gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
