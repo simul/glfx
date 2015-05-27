@@ -137,8 +137,6 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t)
 		return;
     glActiveTexture(GL_TEXTURE0+texture_number);
 	GLFX_ERROR_CHECK
-	const char *nn=textureNameMap[texture_number].c_str();
-	GLFX_ERROR_CHECK
 	if(t.dims==2)
 	{
 		if(t.write)
@@ -191,14 +189,17 @@ GL_INVALID_VALUE is generated if level or layer is less than zero.
 	{
 		throw std::runtime_error("Unknown texture dimension!");
 	}
-	GLFX_ERROR_CHECK
-    glActiveTexture(GL_TEXTURE0+texture_number);
-	if(current_pass)
+//	GLFX_ERROR_CHECK
+ //   glActiveTexture(GL_TEXTURE0+texture_number);
+/*	if(current_pass)
 	{
+		const char *nn=textureNameMap[texture_number].c_str();
+		GLFX_ERROR_CHECK
 		GLint loc		=glGetUniformLocation(current_pass,nn);
+		GLFX_ERROR_CHECK
 		if(loc>=0)
 			glUniform1i(loc,texture_number);
-	}
+	}*/
 	GLFX_ERROR_CHECK
 }
 
@@ -437,13 +438,13 @@ void Effect::ApplyPassTextures(unsigned pass)
 				const vector<TextureSampler*> &ts=k->second;
 				for(auto l=ts.begin();l!=ts.end();l++)
 				{
-					GLint loc		=glGetUniformLocation(current_pass,(*l)->textureSamplerName().c_str()	);
-					if(loc>=0)
+					GLint loc2		=glGetUniformLocation(current_pass,(*l)->textureSamplerName().c_str()	);
+					if(loc2>=0)
 					{
 						SetTex(texture_number,ta);
 						GLuint sampler_state=glSamplerStates[(*l)->samplerStateName];
 						glBindSampler(texture_number, sampler_state);
-						glUniform1i(loc,texture_number);
+						glUniform1i(loc2,texture_number);
 					}
 					texture_number++;
 				}
