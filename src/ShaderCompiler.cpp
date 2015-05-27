@@ -199,10 +199,12 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 				if(m.semantic.length())
 					sem=(sem+"_")+m.semantic;
 				// Special outputs:
-				if(m.semantic==string("gl_VertexID")||m.semantic==string("SV_POSITION"))
+				if(m.semantic==string("gl_Position")||m.semantic==string("SV_POSITION"))
 				{
 					string builtin_name="gl_Position";
 					shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
+					// Flip y of output because we consider GL textures to be "upside-down".
+					finalCode<<returnVariable<<"."<<m.name<<".y*=rescaleVertexShaderY;"<<endl;
 					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
 				}
 				else if(m.semantic.substr(0,9)==string("SV_TARGET"))

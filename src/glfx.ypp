@@ -563,17 +563,6 @@ prog : prog tok
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
 			DeclareTextureSampler(i->second);
-	/*		string tsname=i->first;
-			string texture_name=i->second->textureName;
-			if(declaredTextures.find(texture_name)!=declaredTextures.end())
-			{
-				string sampler_type=declaredTextures[texture_name].type;
-				str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-
-				// We know that this texture-sampler combo will be used in this shader.
-			}
-			else
-				errSem(string("Can't find texture declaration for ")+texture_name);*/
 		}
 		gEffect->m_sharedCode<<str.str();
 
