@@ -511,49 +511,6 @@ optional_params: '(' argument_exp_list ')'
 					$$.str="";
 					$$.strs.clear();
 				 };
-param_list : param_list ',' rvalue
-			 {
-				string &el=$3.str;
-				vector<string> &defs=$$.strs;
-				defs=$1.strs;
-				defs.push_back(el);
-				$$.str=$1.str+$2.str+$3.str;
-			 }
-			 |
-			rvalue
-			 {
-				string &el=$1.str;
-				vector<string> &defs=$$.strs;
-				defs.clear();
-				defs.push_back(el);
-				$$.str=el;
-			 }
-			 |
-			 {
-				$$.str="";
-				 $$.strs.clear();
-			 };
-rvalue: IDENTIFIER optional_params
-			 {
-				 $$.str=$1.str+$2.str;
-			 }
-			 |
-			 rvalue symbol rvalue
-			 {
-				string &r=$1.str;
-				string &s=$2.str;
-				string &v=$3.str;
-				$$.str=r+s+v;
-			 }
-				| '(' rvalue ')'
-			 {
-				 $$.str=$1.str+$2.str+$3.str;
-			 }
-			 |
-			 NUMBER
-			 {
-				 $$.str=$1.str;
-			};
 
 if_conditions: if_conditions OR if_condition
 			{
@@ -647,10 +604,6 @@ definition_element: IDENTIFIER
 						  $$.str=$1.str;
 					  }
 					 | ')'
-					  {
-						  $$.str=$1.str;
-					  }
-					 | ','
 					  {
 						  $$.str=$1.str;
 					  }

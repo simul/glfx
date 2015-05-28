@@ -13,6 +13,7 @@ extern std::string StringOf(int i);
 extern std::string StringOf(float i);
 extern std::string stringof(int i);
 extern std::string stringof(float f);
+extern std::string digits(const char *txt);
 //! Create a std::string using sprintf-style formatting, with variable arguments.
 extern std::string stringFormat(std::string fmt, ...);
 /// A quick-and-dirty, non-re-entrant formatting function. Use this only for debugging.

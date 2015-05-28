@@ -279,13 +279,13 @@ GLenum toMinFilterModeGLEnum(const std::string &str)
 	else if(is_equal(str,"MIN_POINT_MAG_LINEAR_MIP_POINT"))
 		return GL_NEAREST;	
 	else if(is_equal(str,"MIN_LINEAR_MAG_POINT_MIP_LINEAR"))
-		return GL_LINEAR_MIPMAP_LINEAR;
+		return GL_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly
 	else if(is_equal(str,"MIN_MAG_LINEAR_MIP_POINT"))
 		return GL_LINEAR_MIPMAP_NEAREST;	
 	else if(is_equal(str,"MIN_MAG_MIP_LINEAR"))
-		return GL_LINEAR_MIPMAP_LINEAR;	
+		return GL_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly	
 	else if(is_equal(str,"ANISOTROPIC"))
-		return GL_LINEAR_MIPMAP_LINEAR;	
+		return GL_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly	
 	else
 	{
 		ostringstream str;

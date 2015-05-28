@@ -237,11 +237,11 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		map<string, Technique*>::const_iterator it = group->m_techniques.find(tech);
 		if (it == group->m_techniques.end())
 			return 0;
-		Technique *tech	=it->second;
-		map<string, Program>::const_iterator jt=tech->GetPasses().begin();
+		Technique *t	=it->second;
+		map<string, Program>::const_iterator jt=t->GetPasses().begin();
 		if(pass.length())
-			jt=tech->GetPasses().find(pass);
-		if(jt==tech->GetPasses().end())
+			jt=t->GetPasses().find(pass);
+		if(jt==t->GetPasses().end())
 			return 0;
 		unsigned ret	=jt->second.CompileAndLink(log);
 		passStates[ret]	=jt->second.passState;

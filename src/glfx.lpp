@@ -46,6 +46,7 @@ the last is C code to be copied verbatim to the output.
 
     // tokens from parser generator
     #include "glfxLALRParser.hpp"
+    #include "StringFunctions.h"
 
     static void errLex(const char* tok);
 
@@ -457,6 +458,36 @@ warning
 													glfxlval.sType=FRAGMENT_SHADER;
 													glfxPushState(IN_SHADER_COMPILE);
 													stdReturn(DECL_SHADER);
+												}
+<IN_SHADER_COMPILE>"vs_"[0-9]"_"[0-9]			{
+													glfxlval.sType=VERTEX_SHADER;
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
+												}
+<IN_SHADER_COMPILE>"ps_"[0-9]"_"[0-9]			{
+													glfxlval.sType=FRAGMENT_SHADER;
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
+												}
+<IN_SHADER_COMPILE>"cs_"[0-9]"_"[0-9]			{
+													glfxlval.sType=COMPUTE_SHADER;
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
+												}
+<IN_SHADER_COMPILE>"gs_"[0-9]"_"[0-9]			{
+													glfxlval.sType=GEOMETRY_SHADER;
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
+												}
+<IN_SHADER_COMPILE>"ds_"[0-9]"_"[0-9]			{
+													glfxlval.sType=TESSELATION_EVALUATION_SHADER;//= Domain shader
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
+												}
+<IN_SHADER_COMPILE>"hs_"[0-9]"_"[0-9]			{
+													glfxlval.sType=TESSELATION_CONTROL_SHADER;//= Hull shader
+													glfxlval.num=atoi(digits(yytext).c_str());
+													stdReturn(SHADER_PROFILE);
 												}
 <IN_SHADER_COMPILE>"CompileShader"				{
 													glfxlval.lineno=yylineno;

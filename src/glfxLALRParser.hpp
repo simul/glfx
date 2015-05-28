@@ -133,7 +133,8 @@ extern int glfxdebug;
      EQ_EQ = 342,
      NOT_EQ = 343,
      SA_MAXVERTEXCOUNT = 344,
-     SA_NUMTHREADS = 345
+     SA_NUMTHREADS = 345,
+     SHADER_PROFILE = 346
    };
 #endif
 

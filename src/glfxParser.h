@@ -239,6 +239,7 @@ struct CompilableShader
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
+	//glfxParser::ShaderType shaderType;
 };
 extern string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh);
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);

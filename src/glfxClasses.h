@@ -42,6 +42,7 @@ namespace glfxParser
 	{
 		std::string textureName;
 		std::string samplerStateName;
+		bool global;
 		std::string textureSamplerName() const
 		{
 			return (textureName+"_")+samplerStateName;

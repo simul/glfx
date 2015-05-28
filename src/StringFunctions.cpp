@@ -67,6 +67,19 @@ string StringOf(float i)
 	return string(txt);
 }
 
+extern std::string digits(const char *txt)
+{
+	std::string d;
+	const char *t=txt;
+	while(*t)
+	{
+		if(*t>='0'&&*t<='9')
+			d+=*t;
+		t++;
+	}
+	return d;
+}
+
 void StripDirectoryFromFilename(string &str)
 {
 	int pos=(int)str.find("\\");

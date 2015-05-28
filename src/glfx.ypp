@@ -185,6 +185,7 @@
 		TextureSampler *ts=new TextureSampler;
 		ts->textureName			=textureName;
 		ts->samplerStateName	=samplerStateName;
+		ts->global				=false;
 		buildFunction.textureSamplers[ts->textureSamplerName()]=(ts);
 		buildFunction.textureSamplersByTexture[textureName].insert(ts);
 		buildFunction.textureSamplersBySampler[ts->samplerStateName].insert(ts);
@@ -195,6 +196,26 @@
 		string tt=stringFormat("layout(local_size_x=%d,local_size_y=%d,local_size_z=%d) in;",x,y,z);
 		return tt;
 	}
+	string ShaderTypeToString(ShaderType s)
+	{
+		switch(s)
+		{
+		case VERTEX_SHADER:
+		return "Vertex";
+		case TESSELATION_CONTROL_SHADER:		//= Hull shader
+		return "Hull (TC)";
+		case TESSELATION_EVALUATION_SHADER:	//= Domain Shader
+		return "Domain (TE)";
+		case GEOMETRY_SHADER:
+		return "Geometry";
+		case FRAGMENT_SHADER:
+		return "Pixel (Fragment)";
+		case COMPUTE_SHADER:
+		return "Compute";
+		default:
+		return "Unknown";
+		}
+	};
 %}
 
 %token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -207,6 +228,8 @@
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
 %token SA_MAXVERTEXCOUNT SA_NUMTHREADS
+
+%token SHADER_PROFILE  
 
 %%
 
@@ -380,7 +403,7 @@ prog : prog tok
 		int true_linenumber=$4.lineno+(last_linenumber-global_linenumber);
 	//	WriteLineNumber(true_linenumber);
 	}
-	| PROFILE IDENTIFIER '(' NUM ')' ';'
+	| PROFILE SHADER_PROFILE '(' NUM ')' ';'
 	{
 		string profileName		=$2.strs[0];
 		int profileNum			=$4.num;
@@ -405,6 +428,8 @@ prog : prog tok
 			// TODO: Warn here about double-compiling a shader.
 			glfxWarning("double-compiling shader ");
 		}
+		if($1.sType!=$4.sType)
+			errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't assign ")+ShaderTypeToString($4.sType)+" shader to ")+ShaderTypeToString($1.sType)+" shader").c_str());
 		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
 	}
 	| LAYOUT lex_fx layout_params lex_passthrough
@@ -525,6 +550,8 @@ prog : prog tok
 		// Note: This is only temporary until we stop including unused functions in the shared code.
 		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
 		{
+			TextureSampler *ts=i->second;
+			ts->global=true;
 			DeclareTextureSampler(i->second);
 		}
 		
@@ -1075,7 +1102,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 			{
 				$$.strs[1]="";
 				$$.strs[0]="";
-				$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
+				$$.sType	=$1.sType;//(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
 				// i.e. it's a combination of shadertype, profile, and function name.
@@ -1100,6 +1127,9 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 					$$.num							=compiledShader->version;
 					$$.sCommand						=$1.sCommand;
 					$$.sType						=$1.sType;
+					if($$.sType!=$3.sType)
+						errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't call ")+$1.strs[0]+" with ")+ShaderTypeToString($3.sType)+" shader as input.").c_str());
+
 					ostringstream theShader;
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
@@ -1145,6 +1175,11 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 shader_compile: IDENTIFIER
 		{
 			string compiledShaderName	=$1.strs[0];
+			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
+			if(i!=gEffect->m_compiledShaders.end())
+				$$.sType				=i->second->shaderType;
+			else
+				$$.sType				=NUM_OF_SHADER_TYPES;
 			$$.strs[0]					=compiledShaderName;
 			$$.num						=0;
 			$$.lineno					=$1.lineno;
@@ -1152,6 +1187,7 @@ shader_compile: IDENTIFIER
 		| CONSTRUCT_GS_WITH_SO '(' IDENTIFIER ',' QUOTED_STRING ')' 
 		{
 			$$.lineno				=$5.lineno;
+			$$.sType				=GEOMETRY_SHADER;
 			string gsName			=$3.strs[0];
 			string definition		=$5.strs[0];
 			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(gsName);
@@ -1168,10 +1204,12 @@ shader_compile: IDENTIFIER
 			}
 			$$.strs[0]										=gsName;
 		}
-		| COMPILE_SHADER '(' IDENTIFIER ',' IDENTIFIER '(' ')' ')' 
+		| COMPILE_SHADER '(' SHADER_PROFILE ',' IDENTIFIER '(' ')' ')' 
 		{
 			$$.lineno								=$5.lineno;
+			$$.sType								=$3.sType;
 			string profileName						=$3.strs[0];
+			$$.token								=$3.token;
 			ProfileMap::iterator i					=gEffect->m_profileToVersion.find(profileName);
 			int version_num							=0;
 			if(i==gEffect->m_profileToVersion.end())
@@ -1742,20 +1780,28 @@ postfix_exp		: primary_exp
 									auto u=f.textureSamplers.find(declared_name);
 									if(u!=f.textureSamplers.end())
 									{
-										string textureName		=u->second->textureName;
-										string samplerStateName	=u->second->samplerStateName;
-										int t					=GetIndexOfParameter(f.parameters,textureName);
-										int s					=GetIndexOfParameter(f.parameters,samplerStateName);
+										TextureSampler *ts		=u->second;
+										int t					=GetIndexOfParameter(f.parameters,ts->textureName);
+										int s					=GetIndexOfParameter(f.parameters,ts->samplerStateName);
+										string textureName		=ts->textureName;
+										string samplerStateName	=ts->samplerStateName;
 										if(t>=0)
 											textureName			=(vars[t]).identifier;
 										if(s>=0)
 											samplerStateName	=(vars[s]).identifier;
-										AddTextureSampler(textureName,samplerStateName);
+										TextureSampler *ts_new=AddTextureSampler(textureName,samplerStateName);
 										if(params.size())
 											params+=",";
-										params+=(textureName+"_")+samplerStateName;
+										params+=ts_new->textureSamplerName();
+										
 									}
 								}
+							}
+							for(auto j=f.textureSamplers.begin();j!=f.textureSamplers.end();j++)
+							{
+								TextureSampler *ts		=j->second;
+								if(ts->global)
+									AddTextureSampler(ts->textureName,ts->samplerStateName)->global=true;
 							}
 						}
 						$$.strs[0]=expr1+expr2+params+expr4;
