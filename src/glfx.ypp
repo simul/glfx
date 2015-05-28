@@ -218,7 +218,7 @@
 	};
 %}
 
-%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -1693,7 +1693,16 @@ sampling_exp:	postfix_exp '.' sampling_command
 						// We put the command into strs[2]
 						$$.strs[2]=command;
 					}
-
+get_dims_exp:	postfix_exp '.' GET_DIMS
+					{
+						string texture=$1.strs[0];
+						string command=$3.strs[0];
+						$$.strs[0]=texture+$2.strs[0]+command;
+						// Put the thing we're sampling into strs[1]
+						$$.strs[1]=texture;
+						// We put the command into strs[2]
+						$$.strs[2]=command;
+					}
 postfix_exp		: primary_exp
 					{
 						$$.strs[0]=$1.strs[0];
@@ -1703,6 +1712,25 @@ postfix_exp		: primary_exp
 					{
 						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
 						$$.strs[2]=$1.strs[2];			//Command
+					}
+					| get_dims_exp '(' assignment_exp ',' assignment_exp ')'
+					{
+						string textureName	=$1.strs[1];
+						string x			=$3.strs[0];
+						string y			=$5.strs[0];
+						ostringstream full_expr;
+						full_expr<<"{ivec2 iv=textureSize("<<textureName<<",0); "<<x<<"=iv.x;"<<y<<"=iv.y;}\n";
+						$$.strs[0]=full_expr.str();
+					}
+					| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
+					{
+						string textureName	=$1.strs[1];
+						string x			=$3.strs[0];
+						string y			=$5.strs[0];
+						string z			=$7.strs[0];
+						ostringstream full_expr;
+						full_expr<<"{ivec3 iv=textureSize("<<textureName<<",0); "<<x<<"=iv.x;"<<y<<"=iv.y;"<<z<<"=iv.z;}\n";
+						$$.strs[0]=full_expr.str();
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{

@@ -507,6 +507,9 @@ warning
 													glfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE);
 												}
+<IN_SHADER>"GetDimensions"						{
+													stdReturn(GET_DIMS);
+												}
 <IN_SHADER>"SampleLevel"						{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
