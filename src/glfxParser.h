@@ -67,7 +67,7 @@ struct ShaderParameterType
 	};
 	std::string str;
 };
-
+//typedef enum yytokentype;
 //! This is the struct that the parser uses to store data about document elements.
 struct glfxstype
 {
@@ -80,6 +80,7 @@ struct glfxstype
         string	type;
         string	identifier;
         string	semantic;
+		int type_enum;		// corresponds to yytokentype enum
     };
 
 	// Render state commands, like "DepthWriteMask = ZERO" and so on.
@@ -162,6 +163,7 @@ extern int glfxdebug;
 struct DeclaredTexture
 {
 	std::string type;
+	int type_enum;
 };
 /// A struct representing a function that has been parsed from source.
 struct Function

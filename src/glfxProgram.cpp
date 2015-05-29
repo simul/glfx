@@ -148,7 +148,7 @@ int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstr
 {
     const char* strSrc=shaderSrc.src.c_str();
     const char* layout=shaderSrc.layout.c_str();
-    glShaderSource(shader, 1, &strSrc, NULL);
+    glShaderSource(shader,1,&strSrc, NULL);
     glCompileShader(shader);
     
     GLint tmp,res;

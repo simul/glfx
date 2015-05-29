@@ -366,6 +366,8 @@ void Effect::CreateDefinedSamplers()
 	{
 		string samplerName=i->second->samplerStateName;
 		const SamplerState *S=m_samplerStates[samplerName];
+		if(!S)
+			continue;
 		GLuint samplerObj;
 		glGenSamplers(1, &samplerObj);
 		glSamplerParameteri(samplerObj, GL_TEXTURE_MIN_FILTER, S->MinFilter);
@@ -442,9 +444,17 @@ void Effect::ApplyPassTextures(unsigned pass)
 					if(loc2>=0)
 					{
 						SetTex(texture_number,ta);
-						GLuint sampler_state=glSamplerStates[(*l)->samplerStateName];
-						glBindSampler(texture_number, sampler_state);
-						glUniform1i(loc2,texture_number);
+						auto c=glSamplerStates.find((*l)->samplerStateName);
+						if(c!=glSamplerStates.end())
+						{
+							GLuint sampler_state=c->second;
+							glBindSampler(texture_number, sampler_state);
+							glUniform1i(loc2,texture_number);
+						}
+						else
+						{
+							glUniform1i(loc2,main_texture_number);
+						}
 					}
 					texture_number++;
 				}

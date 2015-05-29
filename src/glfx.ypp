@@ -163,12 +163,13 @@
 			return;
 
 		string tsname		=ts->textureSamplerName();
-		string texture_name=ts->textureName;
+		string texture_name	=ts->textureName;
 		if(declaredTextures.find(texture_name)!=declaredTextures.end())
 		{
 			string sampler_type=declaredTextures[texture_name].type;
 			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-			additionalTextureDeclarations[tsname].type=sampler_type;
+			additionalTextureDeclarations[tsname].type		=sampler_type;
+			additionalTextureDeclarations[tsname].type_enum =declaredTextures[texture_name].type_enum;
 			// We know that this texture-sampler combo will be used in this shader.
 		}
 		else
@@ -216,6 +217,110 @@
 		return "Unknown";
 		}
 	};
+	int GetTextureType(const Function &function,const string &textureName)
+	{
+		for(vector<glfxstype::variable>::const_iterator i=function.parameters.begin();i!=function.parameters.end();i++)
+		{
+			if(textureName==i->identifier)
+				return i->type_enum;
+		}
+		auto j=declaredTextures.find(textureName);
+		if(j!=declaredTextures.end())
+			return j->second.type_enum;
+		return 0;
+	}
+	/// The GLSL texture types. "g" stands for the data type - could be "u" for unsigned int, "i" for int, or nothing - for float.
+	enum GLTextureType
+	{
+		unknwownTextureType
+		,gsampler1D					//	GL_TEXTURE_1D						1D texture
+		,gsampler2D					//	GL_TEXTURE_2D						2D texture
+		,gsampler3D					//	GL_TEXTURE_3D						3D texture
+		,gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
+		,gsampler2DRect				//	GL_TEXTURE_RECTANGLE				Rectangle Texture
+		,gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
+		,gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
+		,gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
+		,gsamplerBuffer				//	GL_TEXTURE_BUFFER					Buffer Texture
+		,gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
+		,gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
+		,sampler1DShadow			//	GL_TEXTURE_1D
+		,sampler2DShadow			//	GL_TEXTURE_2D
+		,samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
+		,sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
+		,sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
+		,sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
+		,samplerCubeArrayShadow		//	GL_TEXTURE_CUBE_MAP_ARRAY
+		// Read-write textures - "images" in GLSL parlance:
+		,gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
+		,gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
+		,gimage3D					//	GL_TEXTURE_3D
+		,gimageCube					//	GL_TEXTURE_CUBE_MAP
+		,gimage2DRect				//	GL_TEXTURE_RECTANGLE
+		,gimage1DArray				//	GL_TEXTURE_1D_ARRAY
+		,gimage2DArray				//	GL_TEXTURE_2D_ARRAY
+		,gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
+		,gimageBuffer				//	GL_TEXTURE_BUFFER
+		,gimage2DMS					//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+		,gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	};
+	GLTextureType ToGLTextureType(int t);
+	
+	string GetSizeFunction(string textureName,string x,string y,string z)
+	{
+		int glTextureType	=ToGLTextureType(GetTextureType(buildFunction,textureName));
+		bool lod_param=false;
+		switch(glTextureType)
+		{
+			case gsampler1D:
+			case gsampler2D:
+			case gsampler3D:
+			case gsamplerCube:
+			case sampler1DShadow:
+			case sampler2DShadow:
+			case samplerCubeShadow:
+			case gsamplerCubeArray:
+			case gsampler1DArray:
+			case gsampler2DArray:
+			case sampler1DArrayShadow:
+			case sampler2DArrayShadow:
+				lod_param=true;
+			default:
+				break;
+		}
+		int return_size=2;
+		switch(glTextureType)
+		{
+		case gsampler1D:
+		case sampler1DShadow:
+		case gsamplerBuffer:
+			return_size=1;
+			break;
+		case gsampler3D:
+		case gsamplerCubeArray:
+		case samplerCubeArrayShadow:
+		case gsampler2DArray:
+		case gsampler2DMSArray:
+		case sampler2DArrayShadow:
+			return_size=3;
+			break;
+		default:
+			break;
+		}
+		ostringstream full_expr;
+		// NOTE the spaces around the textureName. We might need to replace it with a sampler name, so we make sure we can find it
+		// as a whole word easily.
+		full_expr<<"{ivec"<<return_size<<" iv=textureSize( "<<textureName<<" ";
+		if(lod_param)
+			full_expr<<",0";
+		full_expr<<"); "<<x<<"=iv.x;";
+		if(return_size>1&&y.size()>0)
+			full_expr<<y<<"=iv.y;";
+		if(return_size>2&&z.size()>0)
+			full_expr<<z<<"=iv.z;";
+		full_expr<<"}\n";
+		return full_expr.str();
+	}
 %}
 
 %token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -254,7 +359,7 @@ prog : prog tok
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
 		string texture_type=$2.strs[0];
-		int typed_id=$2.token;
+		int type_enum=$2.token;
 		bool compute_only=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
 		
 		stringReplaceAll(texture_type,"RWTexture","image");
@@ -269,6 +374,7 @@ prog : prog tok
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
 		declaredTextures[texture_name].type=type;
+		declaredTextures[texture_name].type_enum=type_enum;
 		gEffect->m_sharedCode<<decl.str();
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -468,6 +574,15 @@ prog : prog tok
 		
 		ostringstream params;
 		bool start=true;
+		for(auto p=buildFunction.textureSamplersByTexture.begin();p!=buildFunction.textureSamplersByTexture.end();p++)
+		{
+			auto q=p->second.begin();
+			if(q!=p->second.end())
+			{
+				string t=string(" ")+(*q)->textureName+" ";
+				find_and_replace(f->content,t,(*q)->textureSamplerName());
+			}
+		}
 		set<string> usedSamplerStates;
 		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
 		{
@@ -580,7 +695,7 @@ prog : prog tok
 		ostringstream finalCode;
 		sh.function.parameters	=*$5.vars;
 
-		ostringstream str;
+		//ostringstream str;
 		sh.function.textureSamplers					=buildFunction.textureSamplers;
 		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
 		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
@@ -591,7 +706,7 @@ prog : prog tok
 		{
 			DeclareTextureSampler(i->second);
 		}
-		gEffect->m_sharedCode<<str.str();
+		//gEffect->m_sharedCode<<str.str();
 
 		buildFunction.clear();
 		delete $5.vars;
@@ -841,21 +956,24 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		var.type		=$3.strs[2];
 		var.identifier	=$3.strs[3];
 		var.semantic	=$3.strs[4];
-    
+		var.type_enum	=$3.token;
 		$$.vars->push_back(var);
+		buildFunction.parameters.push_back(var);
 	}
     | param_declaration
 	{
 		YYSTYPE::variable var;
 		string s1	=$1.strs[0];
 		$$.strs[0]	=s1;
-		var.storage=$1.strs[1];
-		var.type=$1.strs[2];
-		var.identifier=$1.strs[3];
-		var.semantic=$1.strs[4];
+		var.storage		=$1.strs[1];
+		var.type		=$1.strs[2];
+		var.identifier	=$1.strs[3];
+		var.semantic	=$1.strs[4];
+		var.type_enum	=$1.token;
     
 		$$.vars = new vector<YYSTYPE::variable>;
 		$$.vars->push_back(var);
+		buildFunction.parameters.push_back(var);
 	}
     |
 	{
@@ -886,14 +1004,12 @@ param_declaration: param opt_sq location
 	string type		=$1.strs[2];
 	string id		=$1.strs[3]+$2.strs[0];
 	string all		=$1.strs[0]+$2.strs[0]+$3.strs[0];
-    $$.strs[0]=all;
-    $$.strs[1]=storage;
-    $$.strs[2]=type;
-    $$.strs[3]=id;
-
-   // $$.strs[3]=$2.strs[0];
-    //$$.strs[3]+=$3.strs[0];
-    $$.strs[4]=semantic;
+    $$.strs[0]	=all;
+    $$.strs[1]	=storage;
+    $$.strs[2]	=type;
+    $$.strs[3]	=id;
+	$$.token	=$1.token;
+    $$.strs[4]	=semantic;
 };
 
 opt_sq: '[' opt_num ']'
@@ -916,7 +1032,7 @@ opt_num: NUM
 					$$.strs[0]="";
 					$$.num=0;
 			}
-param : opt_storage IDENTIFIER optional_templateval IDENTIFIER
+param : opt_storage type_name optional_templateval IDENTIFIER
 	{
 		string storage	=$1.strs[0];
 		string type		=$2.strs[0];
@@ -925,11 +1041,22 @@ param : opt_storage IDENTIFIER optional_templateval IDENTIFIER
 			type+=string("<")+template_+string(">");
 		string id		=$4.strs[0];
 		string all		=(($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+" ")+$4.strs[0];
-		$$.strs[0]		= all	;
-		$$.strs[1]		= storage	;
-		$$.strs[2]		= type		;
-		$$.strs[3]		= id		;
+		$$.strs[0]		=all;
+		$$.strs[1]		=storage;
+		$$.strs[2]		=type;
+		$$.strs[3]		=id;
+		$$.token		=$2.token;
 	};
+type_name: IDENTIFIER
+			{
+				$$.strs[0]		=$1.strs[0];
+				$$.token		=$1.token;
+			}
+			| texture_type
+			{
+				$$.strs[0]		=$1.strs[0];
+				$$.token		=$1.token;
+			}
 opt_storage : STORAGEQ
 	{
 		$$.strs[0]=$1.strs[0];
@@ -1396,23 +1523,28 @@ statement:  expression ';'
 				{
 					$$.strs[0]=$1.strs[0]+";\n";
 					$$.lineno=$1.lineno;
+					$$.strs[1]="";
 				}
 			   |  ';'
 				{
 					$$.strs[0]=";\n";
+					$$.strs[1]="";
 				}
 			| declaration ';'
 				{
 					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[1]="";
 				}
 			| compound_statement
 				{
 					string compound_statement=$1.strs[0];
 					$$.strs[0]=compound_statement;
+					$$.strs[1]="";
 				}
 			| IF '(' expression ')' statement
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+					$$.strs[1]="";
 				}
 			| IF '(' expression ')' statement ELSE statement
 				{
@@ -1424,31 +1556,38 @@ statement:  expression ';'
 					string s6=$6.strs[0];
 					string s7=$7.strs[0];
 					$$.strs[0]=(s1+s2+s3+s4+s5+s6+"\n")+s7;
+					$$.strs[1]="";
 				}
 			| WHILE '(' expression ')' statement
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+					$$.strs[1]="";
 				}
 			| DO statement WHILE '(' expression ')' ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+";\n";
+					$$.strs[1]="";
 				}
 			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
 				{
 					string statement=$9.strs[0];
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0]+$8.strs[0]+statement;
+					$$.strs[1]="";
 				}
 			| GOTO IDENTIFIER ';'
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+";\n";
+					$$.strs[1]="";
 				}
 			| CONTINUE ';'
 				{
 					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[1]="";
 				}
 			| BREAK ';'
 				{
 					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[1]="";
 				}
 			| RETURN optional_expression ';'
 			{
@@ -1468,6 +1607,7 @@ statement:  expression ';'
 			| line_statement_in_shader
 			{
 				$$.strs[0]=$1.strs[0];
+				$$.strs[1]="";
 				$$.lineno=$1.lineno;
 			}
 for_init_statement: expression
@@ -1533,11 +1673,11 @@ assignment_operator: '='
 	{
 		$$.strs[0]=$1.strs[0];
 	}
-| logical_or_exp '?' expression ':' conditional_exp
-	{
-		$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
-	}
-;
+	| logical_or_exp '?' expression ':' conditional_exp
+		{
+			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
+		}
+	;
 logical_or_exp: logical_and_exp
 				{
 					$$.strs[0]=$1.strs[0];
@@ -1718,9 +1858,8 @@ postfix_exp		: primary_exp
 						string textureName	=$1.strs[1];
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
-						ostringstream full_expr;
-						full_expr<<"{ivec2 iv=textureSize("<<textureName<<",0); "<<x<<"=iv.x;"<<y<<"=iv.y;}\n";
-						$$.strs[0]=full_expr.str();
+
+						$$.strs[0]=GetSizeFunction( textureName, x, y,"");
 					}
 					| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
 					{
@@ -1728,9 +1867,7 @@ postfix_exp		: primary_exp
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
-						ostringstream full_expr;
-						full_expr<<"{ivec3 iv=textureSize("<<textureName<<",0); "<<x<<"=iv.x;"<<y<<"=iv.y;"<<z<<"=iv.z;}\n";
-						$$.strs[0]=full_expr.str();
+						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{
@@ -2118,6 +2255,28 @@ type_spec: IDENTIFIER
 		}
 %%
 
+	GLTextureType ToGLTextureType(int t)
+	{
+		switch(t)
+		{
+		case TEXTURE2D:
+			return gsampler2D;
+		case TEXTURE2DMS:
+			return gsampler2DMS;
+		case TEXTURE3D:
+			return gsampler3D;
+		case RW_TEXTURE2D:
+			return gimage2D;
+		case IMAGE3D:
+		case RW_TEXTURE3D:
+		case RW_TEXTURE3D_FLOAT4:
+			return gimage3D;
+		case RW_TEXTURE2DARRAY:
+			return gimage2DArray;
+		default:
+			return unknwownTextureType;
+		};
+	}
 	string getGLInputSemantic(int s)
 	{
 		switch(s)
@@ -2166,7 +2325,7 @@ void errSem(const string& str, int lex_linenumber)
         lex_linenumber= glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
     errMsg<<current_filenumber<<"("<<true_linenumber<<") : glfx error: "<<str<<" in "<<glfxGetStateText();
-    throw errMsg.str();
+    throw std::runtime_error(errMsg.str());
 }
 
 void resetGlfxParse()

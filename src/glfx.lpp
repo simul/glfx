@@ -103,7 +103,7 @@ the last is C code to be copied verbatim to the output.
 #define stdReturn return stdReturn_
 %}
 
-%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE IN_PRAGMA
+%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE IN_PRAGMA IN_MULTILINE_COMMENT
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -186,40 +186,46 @@ warning
 													glfxPushState(IN_UNIFORM_DECL);
 													stdReturn(UNIFORM);
 												}
-<IN_UNIFORM_DECL>"sampler3D"					{
+<INITIAL,IN_UNIFORM_DECL>"sampler3D"			{
 													stdReturn(TEXTURE3D);
 												}
-<IN_UNIFORM_DECL>"Texture3D"					{
+<INITIAL,IN_UNIFORM_DECL>"Texture3D"			{
 													stdReturn(TEXTURE3D);
 												}
-<IN_UNIFORM_DECL>"sampler2D"					{
+<INITIAL,IN_UNIFORM_DECL>"sampler2D"			{
 													stdReturn(TEXTURE2D);
 												}
-<IN_UNIFORM_DECL>"Texture2D"					{
+<INITIAL,IN_UNIFORM_DECL>"usampler2D"			{
 													stdReturn(TEXTURE2D);
 												}
-<IN_UNIFORM_DECL>"Texture2DMS"					{
+<INITIAL,IN_UNIFORM_DECL>"usampler3D"			{
+													stdReturn(TEXTURE3D);
+												}
+<INITIAL,IN_UNIFORM_DECL>"Texture2D"			{
+													stdReturn(TEXTURE2D);
+												}
+<INITIAL,IN_UNIFORM_DECL>"Texture2DMS"			{
 													stdReturn(TEXTURE2DMS);
 												}
-<IN_UNIFORM_DECL>"sampler2DMS"					{
+<INITIAL,IN_UNIFORM_DECL>"sampler2DMS"			{
 													stdReturn(TEXTURE2DMS);
 												}
-<IN_UNIFORM_DECL>"RWTexture3D"					{
+<INITIAL,IN_UNIFORM_DECL>"RWTexture3D"			{
 													stdReturn(RW_TEXTURE3D);
 												}
-<IN_UNIFORM_DECL>"RWTexture2D"					{
+<INITIAL,IN_UNIFORM_DECL>"RWTexture2D"			{
 													stdReturn(RW_TEXTURE2D);
 												}  
-<IN_UNIFORM_DECL>"Texture2DArray"					{
+<INITIAL,IN_UNIFORM_DECL>"Texture2DArray"		{
 													stdReturn(RW_TEXTURE2DARRAY);
 												}  
-<IN_UNIFORM_DECL>"image3D"						{
+<INITIAL,IN_UNIFORM_DECL>"image3D"				{
 													stdReturn(IMAGE3D);
 												}
-<IN_UNIFORM_DECL>"StructuredBuffer"				{
+<INITIAL,IN_UNIFORM_DECL>"StructuredBuffer"		{
 													stdReturn(STRUCTUREDBUFFER);
 												}
-<IN_UNIFORM_DECL>"RWStructuredBuffer"			{
+<INITIAL,IN_UNIFORM_DECL>"RWStructuredBuffer"	{
 													stdReturn(RW_STRUCTUREDBUFFER);
 												}
 <IN_UNIFORM_DECL>"<"							{
@@ -681,9 +687,6 @@ warning
 												}
 <INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
 <INITIAL>"inout"	{
-												//	if(gLexPassthrough)
-												//		glfxWrite(yytext);
-												//	else
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -691,9 +694,6 @@ warning
 													}
 												}
 <INITIAL>"in"|"out"|"line"|"lineadj"|"point"	{
-												/*	if(gLexPassthrough)
-														glfxWrite(yytext);
-													else*/
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -704,9 +704,6 @@ warning
 <INITIAL>"true"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=1; stdReturn(NUM);}
 <INITIAL>"false"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=0; stdReturn(NUM);}
 <INITIAL>{ID_BLCK}								{
-													//if(gLexPassthrough)
-													//	glfxWrite(yytext);
-													//else
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -724,15 +721,9 @@ warning
 													}
 												}
 <INITIAL,IN_PRAGMA>"("									{
-													//if(gLexPassthrough)
-													//	glfxWrite(yytext);
-													//else
 														stdReturn('(');
 												}
 <INITIAL,IN_PRAGMA>")"									{
-													//if(gLexPassthrough)
-													//	glfxWrite(yytext);
-													//else
 														stdReturn(')');
 												}
 <INITIAL>"<"									{
@@ -787,11 +778,25 @@ warning
 														glfxWrite(yytext); // Single line comment (with possible continuation)
 
 												}
-<INITIAL,IN_RENDER_STATE,IN_SHADER>\/\*[^*]*\*(([^*/][^*]*)*\*)*\/		{
+<INITIAL,IN_RENDER_STATE,IN_SHADER>"/*"         {
+													glfxPushState(IN_MULTILINE_COMMENT);
 													if(gLexPassthrough)
-														glfxWrite(yytext); // Multiline comment
+														glfxWrite(yytext); 
 												}
-<INITIAL>[\t\n ]						{
+<IN_MULTILINE_COMMENT>"*/"						{
+													if(gLexPassthrough)
+														glfxWrite(yytext); 
+													glfxPopState();
+												}
+<IN_MULTILINE_COMMENT>[^"*"]+					{
+													if(gLexPassthrough)
+														glfxWrite(yytext);
+												}
+<IN_MULTILINE_COMMENT>"*"							{
+													if(gLexPassthrough)
+														glfxWrite(yytext);
+												}
+<INITIAL>[\t\n ]								{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
 <IN_RENDER_STATE,IN_STRUCT,IN_SHADER>[\t\n ]	{}// Without this line, the yylineno would get out of whack.

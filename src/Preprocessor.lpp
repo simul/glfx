@@ -3,7 +3,7 @@
 %option noyywrap
 %option prefix="prepro_"
 %option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
-%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 IN_MACRO_DEFINITION IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO
+%x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 IN_MACRO_DEFINITION IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO IN_MULTILINE_COMMENT
 
 %{
     #ifdef _MSC_VER
@@ -219,6 +219,24 @@ NUM_BLCK 0|([1-9][0-9]*)
 FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 
 %%
+<INITIAL>"/*"								 {
+												BEGIN IN_MULTILINE_COMMENT;
+												if (inActiveBlock())
+													Write();
+											}
+<IN_MULTILINE_COMMENT>"*/"					{
+												if (inActiveBlock())
+													Write();
+												BEGIN INITIAL;
+											}
+<IN_MULTILINE_COMMENT>[^"*"]+				{
+												if (inActiveBlock())
+													Write();
+											}
+<IN_MULTILINE_COMMENT>"*"					{
+											if (inActiveBlock())
+												Write();
+											}
 <INITIAL>"//"[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 												if (inActiveBlock())
 													Write();// Single line comment (with possible continuation)
