@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cassert>
 #include <iostream>
+#include <windows.h>
 
 #ifndef _MSC_VER
 typedef int errno_t;
@@ -28,41 +29,8 @@ typedef int errno_t;
 #endif
 #include "glfxScanner.h"
 #include "glfxProgram.h"
+#include "glfxErrorCheck.h"
 #include <set>
-
-void CheckGLError()
-{
-	int err=glGetError();
-	if(err)
-	{
-		printf("gl error");
-	}
-}
-
-#ifdef _WIN32
-#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
-#endif
-
-#ifdef __ORBIS__
-#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
-#include <libdbg.h>
-#endif
-
-/// This errno check can be disabled for production. ALWAYS_GLFX_ERRNO_CHECK must always be enabled as it is used for functionality.
-#if 0
-	#define GLFX_ERRNO_CHECK
-#else
-	#define GLFX_ERRNO_CHECK \
-		if(errno!=0)\
-		{\
-			char e[101];\
-			strerror_r(errno,e,100);\
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
-			errno=0;\
-		}
-#endif
-
-#define GLFX_ERROR_CHECK CheckGLError();GLFX_ERRNO_CHECK
 
 map<string,unsigned> Effect::glSamplerStates;
 Effect::Effect()

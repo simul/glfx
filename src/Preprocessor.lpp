@@ -24,6 +24,7 @@
 	#include <vector>			// for std::vector
 	#include "Preprocessor.h"
 	#include "PreprocessParser.h"
+	#include "glfxErrorCheck.h"
 	using namespace std;
 	int chars = 0;
 	int words = 0;
@@ -69,6 +70,7 @@
 	}
 	void Write(const char *tt)
 	{
+	GLFX_ERRNO_BREAK
 		const char *t=tt;
 		bool non_empty=false;
 		int num_lines=0;
@@ -94,6 +96,7 @@
 			WriteLineNumber(yylineno-num_lines);
 		current_state=YY_START;
 		preproOutput<<tt;
+	GLFX_ERRNO_BREAK
 	}
 	void Write()
 	{
@@ -208,6 +211,7 @@
 	}
 	static int ppReturn_(int u)
 	{
+	GLFX_ERRNO_CHECK
 		prepro_lval.str=yytext;
 		return (u);
 	}
@@ -280,6 +284,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 							}
 						}
 						const char *fn=yytext;
+	GLFX_ERRNO_BREAK
 						if(!newfile(fn))
 						{
 							ClearMacros();
@@ -453,6 +458,7 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 						stdReturn(EOL);
 					}
 <INITIAL>"#"define {
+	GLFX_ERRNO_BREAK
 						prepro_lval.str=yytext;
 						BEGIN DEFINING;
 						stdReturn(DEFINE);
@@ -543,19 +549,23 @@ void Preprocess(int argc, char **argv)
 int newfile(const char *fn)
 {
 	std::string fullPathName;
+	GLFX_ERRNO_BREAK
 	FILE *f = prepro_open(fn,fullPathName);
 	/* die if no file or no room */
 	if(!f)
 	{
+	GLFX_ERRNO_BREAK
 		prepro_error((string("File not found ")+fn).c_str());
 		return 0;
 	}
+	GLFX_ERRNO_BREAK
 	BufferStack *bs		=new BufferStack;
 	if(!bs)
 	{
 		prepro_error("malloc");
 		exit(1);
 	}
+	GLFX_ERRNO_BREAK
 	/* remember state */
 	if(currentBuffer)
 		currentBuffer->lineno	=yylineno;
@@ -576,6 +586,7 @@ int newfile(const char *fn)
 	bs->filename		=filenamesUtf8.find(fullPathName)->first.c_str();
 	//WriteLineNumber(yylineno);
 	Skip();
+	GLFX_ERRNO_BREAK
 	return 1;
 }
 
@@ -622,6 +633,8 @@ vector<string> GetPreprocessorFilenamesUtf8()
 }
 bool preprocess(const char *filenameUtf8, map<string, string> defines)
 {
+	errno=0;
+	GLFX_ERRNO_BREAK
 	ClearParserState();
 	BEGIN INITIAL;
 	preproOutput.str("");
@@ -635,7 +648,9 @@ bool preprocess(const char *filenameUtf8, map<string, string> defines)
 	preproOutput.str("");
 	filenamesUtf8.clear();
 	last_filenumber=0;
+	GLFX_ERRNO_BREAK
 	newfile(filenameUtf8);
+	GLFX_ERRNO_BREAK
 	//	prepro__scan_string(newsrc.c_str());
 	prepro_parse();
 	return !preproError;

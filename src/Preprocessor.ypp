@@ -24,6 +24,7 @@
 	#include "Preprocessor.h"
 	extern void prepro_error(const char *s);
 	#include "PreprocessLexer.h"
+	#include "glfxErrorCheck.h"
 	#define YYSTYPE PreprocessorType
 	#define YYDEBUG 1
 	using namespace std;
@@ -189,6 +190,7 @@ prepr : IF if_conditions
 		}
 		| DEFINE IDENTIFIER optional_param_decls optional_definition
 		{
+	GLFX_ERRNO_BREAK
 			string id=$2.str;
 			vector<string> def=$4.strs;
 			string params=$3.str;
@@ -201,6 +203,7 @@ prepr : IF if_conditions
 			for(int i=0;i<def.size();i++)
 				definition<<" "<<def[i];
 			definition<<"\n";
+	GLFX_ERRNO_BREAK
 			if(inActiveBlock())
 				Write(definition.str().c_str());
 		}

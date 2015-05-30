@@ -1,0 +1,39 @@
+#pragma once
+
+#include <iostream>
+
+#ifdef _WIN32
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#endif
+
+#ifdef __ORBIS__
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#include <libdbg.h>
+#endif
+extern void CheckGLError();
+extern void BreakIfDebugging();
+/// This errno check can be disabled for production. ALWAYS_GLFX_ERRNO_CHECK must always be enabled as it is used for functionality.
+#if 0
+	#define GLFX_ERRNO_CHECK
+	#define GLFX_ERRNO_BREAK
+#else
+	#define GLFX_ERRNO_CHECK \
+		if(errno!=0)\
+		{\
+			char e[101];\
+			strerror_r(errno,e,100);\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
+			errno=0;\
+		}
+	#define GLFX_ERRNO_BREAK \
+		if(errno!=0)\
+		{\
+			char e[101];\
+			strerror_r(errno,e,100);\
+			std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
+			errno=0;\
+			BreakIfDebugging();\
+		}
+#endif
+
+#define GLFX_ERROR_CHECK CheckGLError();GLFX_ERRNO_CHECK

@@ -28,8 +28,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
 
 #include "glfxClasses.h"
+
+#ifdef _WIN32
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#endif
+
+#ifdef __ORBIS__
+#define strerror_r(err_code, sys_msg, sizeofsys_msg) strerror_s(sys_msg, sizeofsys_msg, err_code)
+#include <libdbg.h>
+#endif
+
 
 using namespace std;
 using namespace glfxParser;

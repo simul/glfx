@@ -22,6 +22,7 @@
     <ClCompile Include="src\FileLoader.cpp" />
     <ClCompile Include="src\glfx.cpp" />
     <ClCompile Include="src\glfxEffect.cpp" />
+    <ClCompile Include="src\glfxErrorCheck.cpp" />
     <ClCompile Include="src\glfxLALRParser.cpp" />
     <ClCompile Include="src\glfxProgram.cpp" />
     <ClCompile Include="src\glfxScanner.cpp">
@@ -39,6 +40,7 @@
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
+    <ClInclude Include="src\glfxErrorCheck.h" />
     <ClInclude Include="src\glfxLALRParser.hpp" />
     <ClInclude Include="src\glfxParser.h" />
     <ClInclude Include="src\glfxProgram.h" />

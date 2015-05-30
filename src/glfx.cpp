@@ -55,6 +55,7 @@ typedef int errno_t;
 #include "StringToWString.h"
 #include "StringFunctions.h"
 #include "FileLoader.h"
+#include "glfxErrorCheck.h"
 #include <direct.h>
 
 #pragma optimize("",off)
@@ -66,7 +67,9 @@ FileLoader fileLoader;
 
 FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 {
+	GLFX_ERRNO_BREAK
 	fullPathNameUtf8	=fileLoader.FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+	GLFX_ERRNO_BREAK
 	if(!fullPathNameUtf8.length())
 		return NULL;
 	if(fullPathNameUtf8.find(":")>=fullPathNameUtf8.length())
@@ -75,8 +78,10 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 		_getcwd(pth,_MAX_PATH);
 		fullPathNameUtf8=(string(pth)+"/")+fullPathNameUtf8;
 	}
+	GLFX_ERRNO_BREAK
 	wstring filenamew=StringToWString(fullPathNameUtf8);
 	FILE *f=_wfopen(filenamew.c_str(),L"r");
+	GLFX_ERRNO_BREAK
 	string path=fullPathNameUtf8;
 	int last_slash=(int)path.find_last_of("/");
 	int last_bslash=(int)path.find_last_of("\\");
@@ -85,6 +90,7 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 	if(last_slash>0)
 		path=path.substr(0,last_slash);
 	shaderPathsUtf8.push_back(path);
+	GLFX_ERRNO_BREAK
 	return f;
 }
 
@@ -678,6 +684,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 		}
 		defines["GLFX"] = "1";
 		retVal&=preprocess(file, defines);
+	GLFX_ERRNO_CHECK
 		src=preproOutput.str();
 		gEffects[effect]->SetFilenameList(GetPreprocessorFilenamesUtf8());
 		if(!retVal)
@@ -687,6 +694,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	{
 	}
 	retVal&=glfxParseEffectFromMemory(effect,src.c_str(),file);
+	GLFX_ERRNO_CHECK
     return retVal;
 }
 
@@ -704,7 +712,9 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const 
         glfxset_lineno(1);
 		resetGlfxLex();
 		resetGlfxParse();
+	GLFX_ERRNO_CHECK
         glfxparse();
+	GLFX_ERRNO_CHECK
     }
     catch(const char* err)
 	{
