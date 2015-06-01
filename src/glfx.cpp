@@ -698,7 +698,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
     return retVal;
 }
 
-bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* src,const char *filename)
+bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const char *filename)
 {
     bool retVal=true;
     try
@@ -787,6 +787,11 @@ int GLFX_APIENTRY glfxGetProgramCount(int effect)
 int GLFX_APIENTRY glfxGetEffectTextureNumber(int e,const char *name)
 {
     return gEffects[e]->GetTextureNumber(name);
+}
+
+int GLFX_APIENTRY glfxGetEffectImageNumber(int e,const char *name)
+{
+    return gEffects[e]->GetImageNumber(name);
 }
 
 void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)

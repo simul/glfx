@@ -99,6 +99,7 @@ GLFXAPI void glfxApply(int effect,GLuint pass);
 GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);
 GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
+GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
 GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write);
 /**************************************************
 * glfxGetProgramName

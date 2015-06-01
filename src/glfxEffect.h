@@ -56,9 +56,10 @@ namespace glfxParser
 		static std::map<std::string,unsigned> glSamplerStates;
 
 		int current_texture_number;
+		int current_image_number;
 		struct TextureAssignment
 		{
-			unsigned tex;	//GLuint
+			unsigned tex;		//GLuint
 			int dims;
 			int depth;
 			unsigned format;	//GLenum
@@ -66,7 +67,6 @@ namespace glfxParser
 		};
 		std::map<std::string,int> textureNumberMap;
 		std::map<int,TextureAssignment> textureAssignmentMap;
-		std::map<int,std::string> textureNameMap;
 		unsigned current_pass;
 		// Create the gl objects for samplers defined in the fx file.
 		void CreateDefinedSamplers();
@@ -111,8 +111,9 @@ namespace glfxParser
 		friend int ::glfxlex();
 		TechniqueGroup *current_group;
 		int GetTextureNumber(const char *name);
+		int GetImageNumber(const char *name);
 		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write);
-		void SetTex(int texture_number,const TextureAssignment &t);
+		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
 	};
 	extern Effect *gEffect;
 }

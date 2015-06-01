@@ -38,6 +38,7 @@ Effect::Effect()
     , m_active(true)
 	,current_group(NULL)
 	,current_texture_number(0)
+	,current_image_number(0)
 	,current_pass(0)
 {
 }
@@ -67,8 +68,7 @@ int Effect::GetTextureNumber(const char *name)
 	}
 	else
 	{
-		textureNumberMap[n]=current_texture_number;
-		textureNameMap[current_texture_number]=n;
+		textureNumberMap[n]						=current_texture_number;
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
 		auto i=textureSamplersByTexture.find(n);
@@ -77,8 +77,6 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-			//	textureNumberMap[(*j)->textureSamplerName()]=current_texture_number;
-			//	textureNameMap[current_texture_number]=(*j)->textureSamplerName();
 				current_texture_number++;
 			}
 		}
@@ -86,88 +84,78 @@ int Effect::GetTextureNumber(const char *name)
 	return texture_number;
 }
 
-void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
+int Effect::GetImageNumber(const char *name)
 {
-	TextureAssignment &t=textureAssignmentMap[texture_number];
-	t.tex	=tex;
-	t.dims	=dims;
-	t.depth	=depth;
-	t.format=format;
-	t.write	=write;
+	int image_number=current_image_number;
+	std::string n(name);
+	if(textureNumberMap.find(n)!=textureNumberMap.end())
+	{
+		image_number			=textureNumberMap[n]-1000;
+	}
+	else
+	{
+		textureNumberMap[n]		=current_image_number+1000;
+		current_image_number++;
+	}
+	return image_number;
 }
 
-void Effect::SetTex(int texture_number,const TextureAssignment &t)
+void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
+{
+	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
+	t.tex		=tex;
+	t.dims		=dims;
+	t.depth		=depth;
+	t.format	=format;
+	t.write		=write;
+}
+
+void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
 {
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
 	// Fall out silently if this texture is not set.
 	if(!t.tex)
 		return;
-    glActiveTexture(GL_TEXTURE0+texture_number);
-	GLFX_ERROR_CHECK
-	if(t.dims==2)
+	if(t.write)
 	{
-		if(t.write)
-		{
-		//	texture_number=0;
-			glBindImageTexture(texture_number,
- 				t.tex,
- 				0,
- 				GL_FALSE,
- 				0,
- 				GL_READ_WRITE,
-				t.format);
+		texture_number-=1000;
+		glBindImageTexture(texture_number,
+ 			t.tex,
+ 			0,
+ 			t.dims==3,
+ 			0,
+ 			GL_READ_WRITE,
+			t.format);
+/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
+	GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
+	GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
 	GLFX_ERROR_CHECK
-		}
-		//glBindImageTexture(0, volume_tid, 0, /*layered=*/GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-		else
+	}
+	else
+	{
+		glActiveTexture(GL_TEXTURE0+texture_number);
+		GLFX_ERROR_CHECK
+		if(t.dims==2)
 		{
 			// 2D but depth>1? That's an ARRAY texture.
 			if(t.depth>1)
 				glBindTexture(GL_TEXTURE_2D_ARRAY,t.tex);
 			else
 				glBindTexture(GL_TEXTURE_2D,t.tex);
-	GLFX_ERROR_CHECK
+			GLFX_ERROR_CHECK
 		}
-	}
-	else if(t.dims==3)
-	{
-		if(t.write)
+		else if(t.dims==3)
 		{
-			texture_number=0;
-			glBindImageTexture(texture_number,
- 				t.tex,
- 				0,
- 				GL_TRUE,
- 				0,
- 				GL_READ_WRITE,
-				t.format);
-		//GL_RGBA32F);
-/*
-GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
-GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
-GL_INVALID_VALUE is generated if level or layer is less than zero.
-*/
+			glBindTexture(GL_TEXTURE_3D,t.tex);
+			GLFX_ERROR_CHECK
 		}
 		else
-			glBindTexture(GL_TEXTURE_3D,t.tex);
-	GLFX_ERROR_CHECK
+		{
+			throw std::runtime_error("Unknown texture dimension!");
+		}
 	}
-	else
-	{
-		throw std::runtime_error("Unknown texture dimension!");
-	}
-//	GLFX_ERROR_CHECK
- //   glActiveTexture(GL_TEXTURE0+texture_number);
-/*	if(current_pass)
-	{
-		const char *nn=textureNameMap[texture_number].c_str();
-		GLFX_ERROR_CHECK
-		GLint loc		=glGetUniformLocation(current_pass,nn);
-		GLFX_ERROR_CHECK
-		if(loc>=0)
-			glUniform1i(loc,texture_number);
-	}*/
+	glUniform1i(location_in_shader,texture_number);
 	GLFX_ERROR_CHECK
 }
 
@@ -192,11 +180,6 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 	{
 		std::cerr<<"Must have a technique"<<std::endl;
 		assert(tech.length());
-	/*	map<string, Program*>::const_iterator it = m_programs.find(pass);
-		if (it == m_programs.end())
-			return 0;
-
-		unsigned ret = it->second->CompileAndLink(log);*/
 		return 0;
 	}
 	else
@@ -268,6 +251,7 @@ Technique *Effect::GetTechniqueByName(const char *name)
 {
 	return (current_group->m_techniques.find(string(name)))->second;
 }
+
 TechniqueGroup *Effect::GetTechniqueGroupByIndex(int idx)
 {
 	int i=0;
@@ -289,24 +273,14 @@ TechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 	return group;
 }
 
-
 const vector<string>& Effect::GetFilenameList() const
 {
     return m_filenames;
 }
 
-
 void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 {
 	m_filenames=filenamesUtf8;
-	/*
-	m_filenames.clear();
-   const char **f=filenamesUtf8;
-	while(*f!=NULL)
-	{
-		m_filenames.push_back(*f);
-		f++;
-	}*/
 }
 
 void Effect::PopulateProgramList()
@@ -389,16 +363,12 @@ void Effect::ApplyPassTextures(unsigned pass)
 	GLFX_ERROR_CHECK
 		if(loc>=0)
 		{
-			SetTex(texture_number,ta);
-	GLFX_ERROR_CHECK
-			glUniform1i(loc,texture_number);
+			SetTex(texture_number,ta,loc);
 	GLFX_ERROR_CHECK
 		}
 		texture_number++;
 	GLFX_ERROR_CHECK
-		//0x8B4D
 		// The texture numbers after this are for sampler states for this texture.
-//		std::map<unsigned,PassState>::iterator i=passStates.find(pass);
 		if(j!=passStates.end())
 		{
 			PassState &passState=j->second;
@@ -411,17 +381,17 @@ void Effect::ApplyPassTextures(unsigned pass)
 					GLint loc2		=glGetUniformLocation(current_pass,(*l)->textureSamplerName().c_str()	);
 					if(loc2>=0)
 					{
-						SetTex(texture_number,ta);
+	GLFX_ERROR_CHECK
 						auto c=glSamplerStates.find((*l)->samplerStateName);
 						if(c!=glSamplerStates.end())
 						{
 							GLuint sampler_state=c->second;
 							glBindSampler(texture_number, sampler_state);
-							glUniform1i(loc2,texture_number);
+							SetTex(texture_number,ta,loc2);
 						}
 						else
 						{
-							glUniform1i(loc2,main_texture_number);
+							SetTex(main_texture_number,ta,loc2);
 						}
 					}
 					texture_number++;
