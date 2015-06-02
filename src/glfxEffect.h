@@ -91,6 +91,7 @@ namespace glfxParser
 		const vector<string>& GetTechniqueGroupList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
+		bool IsDeclared(string str);
 		Technique *GetTechniqueByName(const char *name) ;
 		TechniqueGroup *GetTechniqueGroupByName(const char *name);
 		TechniqueGroup *GetTechniqueGroupByIndex(int idx);

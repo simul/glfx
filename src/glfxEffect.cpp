@@ -278,6 +278,13 @@ const vector<string>& Effect::GetFilenameList() const
     return m_filenames;
 }
 
+bool Effect::IsDeclared(string name)
+{
+		if(m_samplerStates.find(name)!=m_samplerStates.end())
+			return true;
+		return false;
+}
+
 void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 {
 	m_filenames=filenamesUtf8;
@@ -364,6 +371,8 @@ void Effect::ApplyPassTextures(unsigned pass)
 		if(loc>=0)
 		{
 			SetTex(texture_number,ta,loc);
+			if(!ta.write)
+				glBindSampler(texture_number,0);
 	GLFX_ERROR_CHECK
 		}
 		texture_number++;

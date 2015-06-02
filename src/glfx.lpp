@@ -521,7 +521,7 @@ warning
 													glfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE_LOD);
 												}
-<IN_SHADER>"return"	{
+<IN_SHADER>"return"								{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(RETURN);
@@ -537,7 +537,9 @@ warning
 <IN_SHADER>"uniform"							{
 													stdReturn(UNIFORM);
 												}
-
+<IN_RENDER_STATE>"register"						{
+													stdReturn(REGISTER);
+												}
 <IN_SHADER>";"[ \t\n]*							{
 													stdReturn(';');
 												}
@@ -579,7 +581,7 @@ warning
 												}
 <IN_SHADER>"<"									stdReturn('<');
 <IN_SHADER>">"									stdReturn('>');
-<IN_SHADER>"."			{
+<IN_SHADER>"."									{
 													glfxlval.strs[0]=yytext;
 													stdReturn('.');
 												} 
@@ -770,7 +772,7 @@ warning
 <INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
 <INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
-<IN_STRUCT,IN_PRAGMA>":"						{
+<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"						{
 													stdReturn(':');
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{

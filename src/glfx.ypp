@@ -321,9 +321,20 @@
 		full_expr<<"}\n";
 		return full_expr.str();
 	}
+	bool IsDeclared(string name)
+	{
+		if(gEffect->IsDeclared(name))
+			return true;
+		for(auto i=buildFunction.parameters.begin();i!=buildFunction.parameters.end();i++)
+		{
+			if(i->identifier==name)
+				return true;
+		}
+		return false;
+	}
 %}
 
-%token WHITESPACE UNIFORM SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -469,7 +480,7 @@ prog : prog tok
 		// Set to default:
 		buildStruct					=Struct();
 	}
-	| RENDER_STATE_DECL IDENTIFIER optional_render_state_list ';'
+	| RENDER_STATE_DECL IDENTIFIER optional_object_semantic optional_render_state_list ';'
 	{
 		$$.lineno		=$4.lineno;
 		RenderState t=renderState;
@@ -1875,6 +1886,12 @@ postfix_exp		: primary_exp
 						string command			=$1.strs[2];
 						string samplerStateName	=$3.strs[0];
 						string otherParams		=$5.strs[0];
+
+						//
+						if(!IsDeclared(samplerStateName))
+						{
+							errSem(string("Undeclared sampler state ")+samplerStateName);
+						}
 						// The first argument is the sampler state, the second is the texcoords, the third if present is the lod.
 						// So: to translate this to GLSL, an expression like
 						//			mainTexture.Sample(samplerState1,texcoords)
@@ -2081,6 +2098,15 @@ read_parenthesis :
 	{ /* read parenthesis */
 		$$.strs[0]=glfxreadblock('(', ')');
 	};
+optional_object_semantic: ':' REGISTER '(' IDENTIFIER ')'
+					{
+						$$.strs[0]		=$2.strs[0];
+						$$.num=0;
+					}
+					|
+					{
+						$$.strs[0]="";
+					}
 optional_semantic: ':' IDENTIFIER
 					{
 						$$.strs[0]		=$2.strs[0];
