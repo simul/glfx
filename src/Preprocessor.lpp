@@ -211,6 +211,7 @@
 	}
 	static int ppReturn_(int u)
 	{
+		errno = 0;
 	GLFX_ERRNO_CHECK
 		prepro_lval.str=yytext;
 		return (u);

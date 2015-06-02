@@ -204,6 +204,15 @@ warning
 <INITIAL,IN_UNIFORM_DECL>"Texture2D"			{
 													stdReturn(TEXTURE2D);
 												}
+<INITIAL,IN_UNIFORM_DECL>"TextureCUBE"			{
+													stdReturn(TEXTURECUBE);
+												}
+<INITIAL,IN_UNIFORM_DECL>"TextureCube"			{
+													stdReturn(TEXTURECUBE);
+												}
+<INITIAL,IN_UNIFORM_DECL>"samplerCube"			{
+													stdReturn(TEXTURECUBE);
+												}
 <INITIAL,IN_UNIFORM_DECL>"Texture2DMS"			{
 													stdReturn(TEXTURE2DMS);
 												}

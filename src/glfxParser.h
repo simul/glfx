@@ -202,8 +202,10 @@ struct Function
 		for(auto i=f.textureSamplers.begin();i!=f.textureSamplers.end();i++)
 		{
 			TextureSampler *ts=new TextureSampler;
-			ts->samplerStateName=i->second->samplerStateName;
-			ts->textureName=i->second->textureName;
+			*ts=*(i->second);
+		//	ts->samplerStateName=i->second->samplerStateName;
+		//	ts->textureName=i->second->textureName;
+		//	ts->global=i->second->global;
 			textureSamplers[i->first]=ts;
 			textureSamplersBySampler[ts->samplerStateName].insert(ts);
 			textureSamplersByTexture[ts->textureName].insert(ts);
