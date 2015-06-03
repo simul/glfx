@@ -69,6 +69,7 @@ int Effect::GetTextureNumber(const char *name)
 	else
 	{
 		textureNumberMap[n]						=current_texture_number;
+		textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
 		auto i=textureSamplersByTexture.find(n);
@@ -77,6 +78,7 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
+				textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
 				current_texture_number++;
 			}
 		}
@@ -94,7 +96,8 @@ int Effect::GetImageNumber(const char *name)
 	}
 	else
 	{
-		textureNumberMap[n]		=current_image_number+1000;
+		textureNumberMap[n] = current_image_number + 1000;
+		textureDimensions[current_image_number + 1000] = GetTextureDimension(declaredTextures[n].type_enum);
 		current_image_number++;
 	}
 	return image_number;
@@ -104,10 +107,23 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
 	t.tex		=tex;
-	t.dims		=dims;
+	if (tex!=0&&textureDimensions[texture_number+(write?1000:0)] != dims)
+		GLFX_CERR << "Texture dimension mismatch" << std::endl;
 	t.depth		=depth;
 	t.format	=format;
 	t.write		=write;
+}
+
+void Effect::SetSamplerState(const char *name, unsigned sam)
+{
+	if (sam)
+		prepared_sampler_states[name] = sam;
+	else
+	{
+		auto i = prepared_sampler_states.find(name);
+		if (i != prepared_sampler_states.end())
+			prepared_sampler_states.erase(i);
+	}
 }
 
 void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
@@ -115,15 +131,15 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
 	// Fall out silently if this texture is not set.
-	if(!t.tex)
-		return;
+	//if(!t.tex)
+	//	return;
 	if(t.write)
 	{
 		texture_number-=1000;
 		glBindImageTexture(texture_number,
  			t.tex,
  			0,
- 			t.dims==3,
+			textureDimensions[texture_number] == 3,
  			0,
  			GL_READ_WRITE,
 			t.format);
@@ -136,7 +152,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	{
 		glActiveTexture(GL_TEXTURE0+texture_number);
 		GLFX_ERROR_CHECK
-		if(t.dims==2)
+		if (textureDimensions[texture_number] == 2)
 		{
 			// 2D but depth>1? That's an ARRAY texture.
 			if(t.depth>1)
@@ -145,7 +161,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 				glBindTexture(GL_TEXTURE_2D,t.tex);
 			GLFX_ERROR_CHECK
 		}
-		else if(t.dims==3)
+		else if (textureDimensions[texture_number] == 3)
 		{
 			glBindTexture(GL_TEXTURE_3D,t.tex);
 			GLFX_ERROR_CHECK
@@ -378,29 +394,37 @@ void Effect::ApplyPassTextures(unsigned pass)
 		texture_number++;
 	GLFX_ERROR_CHECK
 		// The texture numbers after this are for sampler states for this texture.
-		if(j!=passStates.end())
+		if (j != passStates.end())
 		{
-			PassState &passState=j->second;
-			auto k=passState.textureSamplersByTexture.find(i->first);
-			if(k!=passState.textureSamplersByTexture.end())
+			PassState &passState = j->second;
+			auto k = passState.textureSamplersByTexture.find(i->first);
+			if (k != passState.textureSamplersByTexture.end())
 			{
-				const vector<TextureSampler*> &ts=k->second;
-				for(auto l=ts.begin();l!=ts.end();l++)
+				const vector<TextureSampler*> &ts = k->second;
+				for (auto l = ts.begin(); l != ts.end(); l++)
 				{
-					GLint loc2		=glGetUniformLocation(current_pass,(*l)->textureSamplerName().c_str()	);
-					if(loc2>=0)
+					GLint loc2 = glGetUniformLocation(current_pass, (*l)->textureSamplerName().c_str());
+					if (loc2 >= 0)
 					{
-	GLFX_ERROR_CHECK
-						auto c=glSamplerStates.find((*l)->samplerStateName);
-						if(c!=glSamplerStates.end())
+						GLFX_ERROR_CHECK
+						auto b = prepared_sampler_states.find((*l)->samplerStateName);
+						auto c = glSamplerStates.find((*l)->samplerStateName);
+						// Have we set a sampler state override?
+						if (b!= prepared_sampler_states.end())
 						{
-							GLuint sampler_state=c->second;
+							GLuint sampler_state = b->second;
 							glBindSampler(texture_number, sampler_state);
-							SetTex(texture_number,ta,loc2);
+							SetTex(texture_number, ta, loc2);
+						}
+						else if (c != glSamplerStates.end())
+						{
+							GLuint sampler_state = c->second;
+							glBindSampler(texture_number, sampler_state);
+							SetTex(texture_number, ta, loc2);
 						}
 						else
 						{
-							SetTex(main_texture_number,ta,loc2);
+							SetTex(main_texture_number, ta, loc2);
 						}
 					}
 					texture_number++;

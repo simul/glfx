@@ -799,6 +799,11 @@ void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex
 	gEffects[effect]->SetTexture( texture_number, tex, dims, depth,format, write);
 }
 
+void GLFX_APIENTRY glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler)
+{
+	gEffects[effect]->SetSamplerState( name, sampler);
+}
+
 void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize)
 {
     const vector<string>& tmpList = gEffects[effect]->GetProgramList();

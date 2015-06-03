@@ -60,13 +60,15 @@ namespace glfxParser
 		struct TextureAssignment
 		{
 			unsigned tex;		//GLuint
-			int dims;
 			int depth;
 			unsigned format;	//GLenum
 			bool write;
 		};
 		std::map<std::string,int> textureNumberMap;
-		std::map<int,TextureAssignment> textureAssignmentMap;
+		std::map<int, TextureAssignment> textureAssignmentMap;
+		std::map<int, int> textureDimensions;
+		/// We keep a map of texture 
+		std::map<std::string, unsigned> prepared_sampler_states;
 		unsigned current_pass;
 		// Create the gl objects for samplers defined in the fx file.
 		void CreateDefinedSamplers();
@@ -79,8 +81,9 @@ namespace glfxParser
 			InterfaceDcl(string s, int l) : id(s), atLine(l) {}
 			InterfaceDcl() {}
 		};
-		map<string, InterfaceDcl>   m_interfaces;
-		map<std::string,Struct*>			m_structs;
+		map<std::string, InterfaceDcl>   m_interfaces;
+		map<std::string, Struct*>			m_structs;
+		map<std::string, DeclaredTexture> declaredTextures;
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
 		//unsigned BuildProgram(const string& prog) const;
@@ -114,6 +117,7 @@ namespace glfxParser
 		int GetTextureNumber(const char *name);
 		int GetImageNumber(const char *name);
 		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write);
+		void SetSamplerState(const char *name, unsigned sam);
 		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
 	};
 	extern Effect *gEffect;

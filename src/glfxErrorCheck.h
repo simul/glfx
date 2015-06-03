@@ -12,6 +12,7 @@
 #endif
 extern void CheckGLError();
 extern void BreakIfDebugging();
+#define GLFX_CERR std::cerr<<__FILE__<<"("<<__LINE__<<"): "
 /// This errno check can be disabled for production. ALWAYS_GLFX_ERRNO_CHECK must always be enabled as it is used for functionality.
 #if 0
 	#define GLFX_ERRNO_CHECK
@@ -22,7 +23,7 @@ extern void BreakIfDebugging();
 		{\
 			char e[101];\
 			strerror_r(errno,e,100);\
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): warning B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
+			GLFX_CERR<<"warning B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
 			errno=0;\
 		}
 	#define GLFX_ERRNO_BREAK \
@@ -30,7 +31,7 @@ extern void BreakIfDebugging();
 		{\
 			char e[101];\
 			strerror_r(errno,e,100);\
-			std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
+			GLFX_CERR<<": error B0001: "<<"WARNING: errno!=0: "<<e<<std::endl;\
 			errno=0;\
 			BreakIfDebugging();\
 		}

@@ -153,7 +153,6 @@
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
 	map<std::string,Function*> functions;
-	map<string,DeclaredTexture> declaredTextures;
 	map<string,DeclaredTexture> additionalTextureDeclarations;
 	
 	void DeclareTextureSampler(const TextureSampler *ts)
@@ -164,12 +163,12 @@
 
 		string tsname		=ts->textureSamplerName();
 		string texture_name	=ts->textureName;
-		if(declaredTextures.find(texture_name)!=declaredTextures.end())
+		if (gEffect->declaredTextures.find(texture_name) != gEffect->declaredTextures.end())
 		{
-			string sampler_type=declaredTextures[texture_name].type;
+			string sampler_type = gEffect->declaredTextures[texture_name].type;
 			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
 			additionalTextureDeclarations[tsname].type		=sampler_type;
-			additionalTextureDeclarations[tsname].type_enum =declaredTextures[texture_name].type_enum;
+			additionalTextureDeclarations[tsname].type_enum = gEffect->declaredTextures[texture_name].type_enum;
 			// We know that this texture-sampler combo will be used in this shader.
 		}
 		else
@@ -224,51 +223,16 @@
 			if(textureName==i->identifier)
 				return i->type_enum;
 		}
-		auto j=declaredTextures.find(textureName);
-		if(j!=declaredTextures.end())
+		auto j = gEffect->declaredTextures.find(textureName);
+		if (j != gEffect->declaredTextures.end())
 			return j->second.type_enum;
 		return 0;
 	}
-	/// The GLSL texture types. "g" stands for the data type - could be "u" for unsigned int, "i" for int, or nothing - for float.
-	enum GLTextureType
-	{
-		unknwownTextureType
-		,gsampler1D					//	GL_TEXTURE_1D						1D texture
-		,gsampler2D					//	GL_TEXTURE_2D						2D texture
-		,gsampler3D					//	GL_TEXTURE_3D						3D texture
-		,gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
-		,gsampler2DRect				//	GL_TEXTURE_RECTANGLE				Rectangle Texture
-		,gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
-		,gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
-		,gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
-		,gsamplerBuffer				//	GL_TEXTURE_BUFFER					Buffer Texture
-		,gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
-		,gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
-		,sampler1DShadow			//	GL_TEXTURE_1D
-		,sampler2DShadow			//	GL_TEXTURE_2D
-		,samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
-		,sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
-		,sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
-		,sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
-		,samplerCubeArrayShadow		//	GL_TEXTURE_CUBE_MAP_ARRAY
-		// Read-write textures - "images" in GLSL parlance:
-		,gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
-		,gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
-		,gimage3D					//	GL_TEXTURE_3D
-		,gimageCube					//	GL_TEXTURE_CUBE_MAP
-		,gimage2DRect				//	GL_TEXTURE_RECTANGLE
-		,gimage1DArray				//	GL_TEXTURE_1D_ARRAY
-		,gimage2DArray				//	GL_TEXTURE_2D_ARRAY
-		,gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
-		,gimageBuffer				//	GL_TEXTURE_BUFFER
-		,gimage2DMS					//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
-		,gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
-	};
 	GLTextureType ToGLTextureType(int t);
 	
 	string GetSizeFunction(string textureName,string x,string y,string z)
 	{
-		int glTextureType	=ToGLTextureType(GetTextureType(buildFunction,textureName));
+		int glTextureType	=(GetTextureType(buildFunction,textureName));
 		bool lod_param=false;
 		switch(glTextureType)
 		{
@@ -370,7 +334,7 @@ prog : prog tok
 	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
 	{
 		string texture_type=$2.strs[0];
-		int type_enum=$2.token;
+		GLTextureType type_enum = ToGLTextureType($2.token);
 		bool compute_only=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
 		
 		stringReplaceAll(texture_type,"RWTexture","image");
@@ -384,9 +348,9 @@ prog : prog tok
 			layout=GetLayoutForTemplateType(template_type)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
-		declaredTextures[texture_name].type=type;
-		declaredTextures[texture_name].type_enum=type_enum;
-		gEffect->m_sharedCode<<decl.str();
+		gEffect->declaredTextures[texture_name].type = type;
+		gEffect->declaredTextures[texture_name].type_enum = type_enum;
+		gEffect->m_sharedCode << decl.str(); 
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
 	}
@@ -645,7 +609,7 @@ prog : prog tok
 						TextureSampler *ts=*v;
 						string type=GetTypeOfParameter(f->parameters,ts->textureName);
 						if(type.length()==0)
-							type=declaredTextures[ts->textureName].type;
+							type = gEffect->declaredTextures[ts->textureName].type;
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						if(j->semantic.size())
 							params<<": "<<j->semantic;
@@ -676,7 +640,8 @@ prog : prog tok
 		// Note: This is only temporary until we stop including unused functions in the shared code.
 		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
 		{
-			TextureSampler *ts=i->second;
+			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
+			TextureSampler *ts=f->textureSamplers[i->first];
 			ts->global=true;
 			DeclareTextureSampler(i->second);
 		}
@@ -967,7 +932,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		var.type		=$3.strs[2];
 		var.identifier	=$3.strs[3];
 		var.semantic	=$3.strs[4];
-		var.type_enum	=$3.token;
+		var.type_enum = ToGLTextureType($3.token);
 		$$.vars->push_back(var);
 		buildFunction.parameters.push_back(var);
 	}
@@ -980,7 +945,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		var.type		=$1.strs[2];
 		var.identifier	=$1.strs[3];
 		var.semantic	=$1.strs[4];
-		var.type_enum	=$1.token;
+		var.type_enum = ToGLTextureType($1.token);
     
 		$$.vars = new vector<YYSTYPE::variable>;
 		$$.vars->push_back(var);
@@ -2361,7 +2326,7 @@ void resetGlfxParse()
 	buildFunction.clear();
 	functions.clear();
 	buildStruct					=Struct();
-	declaredTextures.clear();
+	gEffect->declaredTextures.clear();
 	read_shader=false;
 	read_function=false;
 }
