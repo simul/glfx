@@ -69,7 +69,16 @@ int Effect::GetTextureNumber(const char *name)
 	else
 	{
 		textureNumberMap[n]						=current_texture_number;
-		textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
+		if (declaredTextures.find(n) == declaredTextures.end())
+		{
+			GLFX_CERR << "Texture " << name << " is not declared." << std::endl;
+			current_texture_number++;
+			return texture_number;
+		}
+		else
+		{
+			textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
+		}
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
 		auto i=textureSamplersByTexture.find(n);
