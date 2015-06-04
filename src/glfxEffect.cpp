@@ -135,14 +135,14 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	//	return;
 	if(t.write)
 	{
-		texture_number-=1000;
-		glBindImageTexture(texture_number,
+		glBindImageTexture(texture_number-1000,
  			t.tex,
  			0,
 			textureDimensions[texture_number] == 3,
  			0,
  			GL_READ_WRITE,
 			t.format);
+		texture_number-=1000;
 /*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
 	GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
 	GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
