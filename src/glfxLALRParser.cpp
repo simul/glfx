@@ -4183,7 +4183,7 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 1662 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
-					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
+					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
     break;
 

@@ -1660,7 +1660,7 @@ logical_or_exp: logical_and_exp
 				}
 			| logical_or_exp OR logical_and_exp
 				{
-					$$.strs[0]=$1.strs[0];
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 				}
 logical_and_exp: inclusive_or_exp
 				{
