@@ -2115,6 +2115,10 @@ optional_semantic: ':' IDENTIFIER
 					{
 						$$.strs[0]		=$2.strs[0];
 					}
+					| ':' input_semantic
+					{
+						$$.strs[0]		=$2.strs[0];
+					}
 					|
 					{
 						$$.strs[0]="";

@@ -253,12 +253,12 @@ warning
 														glfxPushState(IN_STRUCT);
 														stdReturn(STRUCT);
 													}
-<INITIAL>"SV_DispatchThreadID"					glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
-<INITIAL>"gl_GlobalInvocationID"				glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
-<INITIAL>"SV_GroupID"							glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPID);
-<INITIAL>"SV_GroupThreadID"						glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPTHREADID);
-<INITIAL>"SV_VertexID"							glfxlval.strs[0]=yytext;	stdReturn(SV_VERTEXID);
-<INITIAL>"gl_VertexID"							glfxlval.strs[0]=yytext;	stdReturn(SV_VERTEXID);
+<INITIAL,IN_SHADER,IN_STRUCT>"SV_DispatchThreadID"		glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
+<INITIAL,IN_SHADER,IN_STRUCT>"gl_GlobalInvocationID"	glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
+<INITIAL,IN_SHADER,IN_STRUCT>"SV_GroupID"				glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPID);
+<INITIAL,IN_SHADER,IN_STRUCT>"SV_GroupThreadID"			glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPTHREADID);
+<INITIAL,IN_SHADER,IN_STRUCT>"SV_VertexID"				glfxlval.strs[0]=yytext;	modReturn(SV_VERTEXID,"gl_VertexID");
+<INITIAL,IN_SHADER,IN_STRUCT>"gl_VertexID"				glfxlval.strs[0]=yytext;	stdReturn(SV_VERTEXID);
 <INITIAL>"program"								glfxlval.boolean=false;		stdReturn(PROGRAM);
 <INITIAL>"stages"								glfxlval.boolean=true;		stdReturn(PROGRAM);
 <INITIAL>"technique"							glfxlval.boolean=false;		stdReturn(TECHNIQUE);
