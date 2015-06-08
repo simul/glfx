@@ -90,17 +90,22 @@ the last is C code to be copied verbatim to the output.
 	{
 		accw+=w;
 	}
-	int stdReturn_(int u)
+	int modReturn_(int u,const char *txt)
 	{
 		glfxlval.token=u;
 		glfxlval.lineno=yylineno;
-		glfxlval.strs[0]=yytext;//accw
+		glfxlval.strs[0] = txt;//accw
 		recent+=glfxlval.strs[0]+" ";
 		while(recent.length()>100)
 			recent.erase(0,1);
 		return (u);
 	}
+	int stdReturn_(int u)
+	{
+		return modReturn_(u, yytext);
+	}
 #define stdReturn return stdReturn_
+#define modReturn return modReturn_
 %}
 
 %x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE IN_PRAGMA IN_MULTILINE_COMMENT
@@ -186,38 +191,23 @@ warning
 													glfxPushState(IN_UNIFORM_DECL);
 													stdReturn(UNIFORM);
 												}
-<INITIAL,IN_UNIFORM_DECL>"sampler3D"			{
-													stdReturn(TEXTURE3D);
-												}
-<INITIAL,IN_UNIFORM_DECL>"Texture3D"			{
-													stdReturn(TEXTURE3D);
-												}
-<INITIAL,IN_UNIFORM_DECL>"sampler2D"			{
-													stdReturn(TEXTURE2D);
-												}
+<INITIAL,IN_UNIFORM_DECL>"sampler3D"|"Texture3D"	{
+														modReturn(TEXTURE3D,"sampler3D");
+													}
+<INITIAL,IN_UNIFORM_DECL>"sampler2D"|"Texture2D"	{
+													modReturn(TEXTURE2D, "sampler2D");
+													}
 <INITIAL,IN_UNIFORM_DECL>"usampler2D"			{
 													stdReturn(TEXTURE2D);
 												}
 <INITIAL,IN_UNIFORM_DECL>"usampler3D"			{
 													stdReturn(TEXTURE3D);
 												}
-<INITIAL,IN_UNIFORM_DECL>"Texture2D"			{
-													stdReturn(TEXTURE2D);
+<INITIAL,IN_UNIFORM_DECL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
+													modReturn(TEXTURECUBE,"samplerCube");
 												}
-<INITIAL,IN_UNIFORM_DECL>"TextureCUBE"			{
-													stdReturn(TEXTURECUBE);
-												}
-<INITIAL,IN_UNIFORM_DECL>"TextureCube"			{
-													stdReturn(TEXTURECUBE);
-												}
-<INITIAL,IN_UNIFORM_DECL>"samplerCube"			{
-													stdReturn(TEXTURECUBE);
-												}
-<INITIAL,IN_UNIFORM_DECL>"Texture2DMS"			{
-													stdReturn(TEXTURE2DMS);
-												}
-<INITIAL,IN_UNIFORM_DECL>"sampler2DMS"			{
-													stdReturn(TEXTURE2DMS);
+<INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"			{
+													modReturn(TEXTURE2DMS,"sampler2DMS");
 												}
 <INITIAL,IN_UNIFORM_DECL>"RWTexture3D"			{
 													stdReturn(RW_TEXTURE3D);
