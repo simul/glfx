@@ -326,7 +326,7 @@ extern int glfxlex (void);
 #undef YY_DECL
 #endif
 
-#line 825 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
+#line 878 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.lpp"
 
 
 #line 333 "src/glfxScanner.h"

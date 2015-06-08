@@ -191,68 +191,68 @@ warning
 													glfxPushState(IN_UNIFORM_DECL);
 													stdReturn(UNIFORM);
 												}
+<INITIAL,IN_UNIFORM_DECL>"sampler1D"|"Texture1D"	{
+														modReturn(TEXTURE3D,"sampler1D");
+													}
 <INITIAL,IN_UNIFORM_DECL>"sampler3D"|"Texture3D"	{
 														modReturn(TEXTURE3D,"sampler3D");
 													}
 <INITIAL,IN_UNIFORM_DECL>"sampler2D"|"Texture2D"	{
 													modReturn(TEXTURE2D, "sampler2D");
 													}
-<INITIAL,IN_UNIFORM_DECL>"usampler2D"			{
-													stdReturn(TEXTURE2D);
-												}
-<INITIAL,IN_UNIFORM_DECL>"usampler3D"			{
-													stdReturn(TEXTURE3D);
-												}
+<INITIAL,IN_UNIFORM_DECL>"usampler2D"				{
+														stdReturn(TEXTURE2D);
+													}
+<INITIAL,IN_UNIFORM_DECL>"usampler3D"				{
+														stdReturn(TEXTURE3D);
+													}
 <INITIAL,IN_UNIFORM_DECL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
 													modReturn(TEXTURECUBE,"samplerCube");
-												}
-<INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"			{
-													modReturn(TEXTURE2DMS,"sampler2DMS");
-												}
-<INITIAL,IN_UNIFORM_DECL>"RWTexture3D"			{
-													stdReturn(RW_TEXTURE3D);
-												}
-<INITIAL,IN_UNIFORM_DECL>"RWTexture2D"			{
-													stdReturn(RW_TEXTURE2D);
-												}  
-<INITIAL,IN_UNIFORM_DECL>"Texture2DArray"		{
-													stdReturn(RW_TEXTURE2DARRAY);
-												}  
-<INITIAL,IN_UNIFORM_DECL>"image3D"				{
-													stdReturn(IMAGE3D);
-												}
-<INITIAL,IN_UNIFORM_DECL>"StructuredBuffer"		{
-													stdReturn(STRUCTUREDBUFFER);
-												}
-<INITIAL,IN_UNIFORM_DECL>"RWStructuredBuffer"	{
-													stdReturn(RW_STRUCTUREDBUFFER);
-												}
-<IN_UNIFORM_DECL>"<"							{
-													stdReturn('<');
-												}
-<IN_UNIFORM_DECL>">"							{
-													stdReturn('>');
-												}
+													}
+<INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"	{
+														modReturn(TEXTURE2DMS,"sampler2DMS");
+													}
+<INITIAL,IN_UNIFORM_DECL>"RWTexture3D"|"image3D"	{
+														modReturn(RW_TEXTURE3D,"RWTexture3D");
+													}
+<INITIAL,IN_UNIFORM_DECL>"RWTexture2D"|"image2D"	{
+														stdReturn(RW_TEXTURE2D);
+													}  
+<INITIAL,IN_UNIFORM_DECL>"Texture2DArray"			{
+														stdReturn(RW_TEXTURE2DARRAY);
+													}  
+<INITIAL,IN_UNIFORM_DECL>"StructuredBuffer"			{
+														stdReturn(STRUCTUREDBUFFER);
+													}
+<INITIAL,IN_UNIFORM_DECL>"RWStructuredBuffer"		{
+														stdReturn(RW_STRUCTUREDBUFFER);
+													}
+<IN_UNIFORM_DECL>"<"								{
+														stdReturn('<');
+													}
+<IN_UNIFORM_DECL>">"								{
+														stdReturn('>');
+													}
 <IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}	{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
 														stdReturn(IDENTIFIER);
 													}
-<IN_UNIFORM_DECL>";"							{
-													glfxPopState();
-													stdReturn(';');
-												}
-<INITIAL>"layout"								{
-													/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
-													glfxlval.lineno=yylineno;
-													glfxlval.strs[0]=yytext;
-													glfxPushState(IN_SHADER_COMPILE);
-													stdReturn(LAYOUT);
-												}
-<INITIAL>"struct"								{
-													glfxPushState(IN_STRUCT);
-													stdReturn(STRUCT);
-												}
+<IN_UNIFORM_DECL>";"								{
+														glfxPopState();
+														stdReturn(';');
+													}
+<INITIAL>"layout"									{
+														/*layout(local_size_x=u,local_size_y=v,local_size_z=w) in;*/
+														glfxlval.lineno=yylineno;
+														glfxlval.strs[0]=yytext;
+														glfxPushState(IN_SHADER_COMPILE);
+														stdReturn(LAYOUT);
+													}
+<INITIAL>"struct"									{
+														glfxPushState(IN_STRUCT);
+														stdReturn(STRUCT);
+													}
 <INITIAL>"SV_DispatchThreadID"					glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
 <INITIAL>"gl_GlobalInvocationID"				glfxlval.strs[0]=yytext;	stdReturn(SV_DISPATCHTHREADID);
 <INITIAL>"SV_GroupID"							glfxlval.strs[0]=yytext;	stdReturn(SV_GROUPID);
@@ -502,15 +502,68 @@ warning
 													glfxlval.lineno=yylineno;
 													stdReturn(CONSTRUCT_GS_WITH_SO);
 												}
-<IN_SHADER>"vec2"	{
+<IN_SHADER>"vec2"								{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(IDENTIFIER);
 												}
-<IN_SHADER>"Sample"	{
+<IN_SHADER>"Sample"								{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE);
+												}
+<INITIAL,IN_SHADER>"GroupMemoryBarrierWithGroupSync"	{
+															modReturn(IDENTIFIER,"memoryBarrierShared");
+														}
+<INITIAL,IN_SHADER>"saturate"					{
+													stdReturn(SATURATE);
+												}
+<INITIAL,IN_SHADER>"inline"|"const"|"static"|"STATIC"	{
+												}
+<INITIAL,IN_SHADER>"asfloat"					{
+													modReturn(IDENTIFIER,"uintBitsToFloat");
+												}
+<INITIAL,IN_SHADER>"asint"						{
+													modReturn(IDENTIFIER,"floatBitsToInt");
+												}
+<INITIAL,IN_SHADER>"asuint"						{
+													modReturn(IDENTIFIER,"floatBitsToUint");
+												}
+<INITIAL,IN_SHADER>"f32tof16"					{
+													modReturn(IDENTIFIER,"floatBitsToUint");
+												}
+<INITIAL,IN_SHADER>"f16tof32"					{
+													modReturn(IDENTIFIER,"uintBitsToFloat");
+												}
+<INITIAL,IN_SHADER>"lerp"						{
+													modReturn(IDENTIFIER,"mix");
+												}
+<INITIAL,IN_SHADER>"atan2"						{
+													modReturn(IDENTIFIER,"atan");
+												}
+<INITIAL,IN_SHADER>"int2"						{
+													modReturn(IDENTIFIER,"ivec2");
+												}
+<INITIAL,IN_SHADER>"int3"						{
+													modReturn(IDENTIFIER,"ivec3");
+												}
+<INITIAL,IN_SHADER>"int4"						{
+													modReturn(IDENTIFIER,"ivec4");
+												}
+<INITIAL,IN_SHADER>"uint2"						{
+													modReturn(IDENTIFIER,"uvec2");
+												}
+<INITIAL,IN_SHADER>"uint3"						{
+													modReturn(IDENTIFIER,"uvec3");
+												}
+<INITIAL,IN_SHADER>"uint3"						{
+													modReturn(IDENTIFIER,"uvec3");
+												}
+<INITIAL,IN_SHADER>"uint4"						{
+													modReturn(IDENTIFIER,"uvec4");
+												}
+<INITIAL,IN_SHADER>"frac"						{
+													modReturn(IDENTIFIER,"fract");
 												}
 <IN_SHADER>"GetDimensions"						{
 													stdReturn(GET_DIMS);

@@ -416,18 +416,18 @@ void Effect::ApplyPassTextures(unsigned pass)
 					if (loc2 >= 0)
 					{
 						GLFX_ERROR_CHECK
-						auto b = prepared_sampler_states.find((*l)->samplerStateName);
-						auto c = glSamplerStates.find((*l)->samplerStateName);
+						auto b =prepared_sampler_states.find((*l)->samplerStateName);
+						auto c =glSamplerStates.find((*l)->samplerStateName);
 						// Have we set a sampler state override?
 						if (b!= prepared_sampler_states.end())
 						{
-							GLuint sampler_state = b->second;
+							GLuint sampler_state =b->second;
 							glBindSampler(texture_number, sampler_state);
 							SetTex(texture_number, ta, loc2);
 						}
 						else if (c != glSamplerStates.end())
 						{
-							GLuint sampler_state = c->second;
+							GLuint sampler_state =c->second;
 							glBindSampler(texture_number, sampler_state);
 							SetTex(texture_number, ta, loc2);
 						}
