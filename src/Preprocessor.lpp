@@ -68,6 +68,7 @@
 	{
 		WriteLineNumber(yylineno);
 	}
+	void Unput(int c);
 	void Write(const char *tt)
 	{
 	GLFX_ERRNO_BREAK
@@ -309,7 +310,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 							}
 							string str=ProcessMacro(prepro_lval.str,vector<string>());
 							if (inActiveBlock())
-								Write(str.c_str());
+							{
+								//Write(str.c_str());
+								const char *p = str.c_str();
+								const char *q = p + strlen(p);
+								while(q > p)
+									unput(*--q);
+							}
 						}
 						else
 						{
@@ -360,6 +367,12 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 								prepro_lval.str=yytext;
 								stdReturn(prepro_lval.str[0]);
 							}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"<"	{
+								stdReturn('<');
+							}
+<INSERTING_MACRO,IN_MACRO_DEFINITION>">"	{
+								stdReturn('>');
+							}
 <INSERTING_MACRO,IN_MACRO_DEFINITION>"{"	{
 								prepro_lval.str=yytext;
 								stdReturn('{');
@@ -368,10 +381,10 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 								prepro_lval.str=yytext;
 								stdReturn('}');
 							}
-<INSERTING_MACRO>"["	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"["	{
 							stdReturn('[');
 						}
-<INSERTING_MACRO>"]"	{
+<INSERTING_MACRO,IN_MACRO_DEFINITION>"]"	{
 							stdReturn(']');
 						}
 <INSERTING_MACRO>"("	{
@@ -655,4 +668,8 @@ bool preprocess(const char *filenameUtf8, map<string, string> defines)
 	//	prepro__scan_string(newsrc.c_str());
 	prepro_parse();
 	return !preproError;
+}
+void Unput(int c)
+{
+	unput(c);
 }

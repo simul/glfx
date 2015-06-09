@@ -152,7 +152,7 @@
 %token DEFINE IF IFDEF IFNDEF ELSE ENDIF IDENTIFIER IS_EQUAL BOOLEAN_NOT DEFINED AND OR WHITESPACE
 %token EOL MACRO_NAME
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
-%token LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
+%token LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ SYMBOL
 
 
 %%
@@ -175,7 +175,11 @@ prepr : IF if_conditions
 			{
 				string macro_name=$1.str;
 				string str=ProcessMacro(macro_name,$2.strs);
-				Write(str.c_str());
+				//Write(str.c_str());
+				const char *p = str.c_str();
+				const char *q = p + strlen(p);
+				while(q > p)
+					Unput(*--q);
 			}
 		}
 		| IFNDEF IDENTIFIER
@@ -246,6 +250,14 @@ symbol: '.'
 		{
 			$$.str=$1.str;
 		}
+		|'<'
+		{
+			$$.str=$1.str;
+		}
+		|'>'
+		{
+			$$.str=$1.str;
+		}
 		|'{'
 		{
 			$$.str=$1.str;
@@ -279,6 +291,18 @@ symbol: '.'
 			$$.str=$1.str;
 		}
 		|'-'
+		{
+			$$.str=$1.str;
+		}
+		|'['
+		{
+			$$.str=$1.str;
+		}
+		|']'
+		{
+			$$.str=$1.str;
+		}
+		|SYMBOL
 		{
 			$$.str=$1.str;
 		}

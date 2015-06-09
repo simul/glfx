@@ -30,6 +30,7 @@ struct MacroDefinition
 // These are the callback functions for file handling that we will send to the preprocessor.
 extern FILE* (*prepro_open)(const char *filename_utf8,std::string &fullPathName);
 extern void (*prepro_close)(FILE *f);
+extern void Unput(int c);
 extern std::ostringstream preproOutput;
 extern bool preprocess(const char *file, std::map<std::string, std::string> defines = std::map<std::string, std::string>());
 // Are we in an active  #if #endif block?

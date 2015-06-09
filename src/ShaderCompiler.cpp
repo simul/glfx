@@ -22,10 +22,10 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 		if(storage==string("inout"))
 		{
 			size_t brack_pos=type.find("<");
-			if(brack_pos<type.length())
+			if(it->semantic.size())
 			{
-				string output_type=type.substr(0,brack_pos);
-				type=type.substr(brack_pos+1,type.length()-brack_pos-2);
+				string output_type=type;
+				type=it->semantic;
 				stringReplaceAll(output_type,"PointStream","points");
 				stringReplaceAll(output_type,"LineStream","line_strip");
 				stringReplaceAll(output_type,"TriangleStream","triangle_strip");

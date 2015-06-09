@@ -108,7 +108,7 @@ the last is C code to be copied verbatim to the output.
 #define modReturn return modReturn_
 %}
 
-%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_SHADER_ATTRIBUTE IN_PRAGMA IN_MULTILINE_COMMENT
+%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_PRAGMA IN_MULTILINE_COMMENT
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -162,35 +162,29 @@ warning
 												glfxPushState(IN_UNDEFINE);
 												stdReturn(UNDEF);
 											}
-<INITIAL>^[ \t]*"[" {
-												glfxPushState(IN_SHADER_ATTRIBUTE);
-												stdReturn('[');
-											}
-<IN_SHADER_ATTRIBUTE>"maxvertexcount"		{
+<INITIAL>"maxvertexcount"		{
 												stdReturn(SA_MAXVERTEXCOUNT);
 											}
-<IN_SHADER_ATTRIBUTE>"numthreads"			{
-													stdReturn(SA_NUMTHREADS);
+<INITIAL>"numthreads"			{
+												stdReturn(SA_NUMTHREADS);
 											}
-<IN_SHADER_ATTRIBUTE>"]"					{
-												glfxPopState();
-												stdReturn(']');
-											}
+<INITIAL>"["									{stdReturn('[');}
+<INITIAL>"]"									{stdReturn(']');}
 <IN_DEFINE>[^\n]+							{
 													if(gLexPassthrough)
 														glfxWrite(yytext); 
 													stdReturn(MACRO_DEFINITION);
 											}
-<IN_DEFINE,IN_UNDEFINE,IN_PRAGMA>\n								{
+<IN_DEFINE,IN_UNDEFINE,IN_PRAGMA>\n			{
 												if(gLexPassthrough)
 													glfxWrite(yytext); 
 												glfxPopState();
 												stdReturn(EOL);
 											}
 <INITIAL>"uniform"							{
-													glfxPushState(IN_UNIFORM_DECL);
-													stdReturn(UNIFORM);
-												}
+												glfxPushState(IN_UNIFORM_DECL);
+												stdReturn(UNIFORM);
+											}
 <INITIAL,IN_UNIFORM_DECL>"sampler1D"|"Texture1D"	{
 														modReturn(TEXTURE3D,"sampler1D");
 													}
@@ -198,7 +192,7 @@ warning
 														modReturn(TEXTURE3D,"sampler3D");
 													}
 <INITIAL,IN_UNIFORM_DECL>"sampler2D"|"Texture2D"	{
-													modReturn(TEXTURE2D, "sampler2D");
+														modReturn(TEXTURE2D, "sampler2D");
 													}
 <INITIAL,IN_UNIFORM_DECL>"usampler2D"				{
 														stdReturn(TEXTURE2D);
@@ -233,6 +227,9 @@ warning
 <IN_UNIFORM_DECL>">"								{
 														stdReturn('>');
 													}
+<INITIAL,IN_UNIFORM_DECL,IN_RENDER_STATE>"register"						{
+													stdReturn(REGISTER);
+												}
 <IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}	{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -273,6 +270,9 @@ warning
 <INITIAL>"constant_buffer"						{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
+													stdReturn(CONSTANT_BUFFER);
+												}
+<INITIAL>"cbuffer"								{
 													stdReturn(CONSTANT_BUFFER);
 												}
 <INITIAL>"interface"							glfxlval.lineno=yylineno;	glfxlval.strs[0]=yytext;	stdReturn(INTERFACE);
@@ -512,8 +512,14 @@ warning
 													glfxlval.strs[0]=yytext;
 													stdReturn(SAMPLE);
 												}
+<IN_SHADER>"Load"								{
+													stdReturn(LOAD);
+												}
 <INITIAL,IN_SHADER>"GroupMemoryBarrierWithGroupSync"	{
 															modReturn(IDENTIFIER,"memoryBarrierShared");
+														}
+<INITIAL,IN_SHADER>"groupshared"	{
+															modReturn(IDENTIFIER,"shared");
 														}
 <INITIAL,IN_SHADER>"saturate"					{
 													stdReturn(SATURATE);
@@ -556,7 +562,7 @@ warning
 <INITIAL,IN_SHADER>"uint3"						{
 													modReturn(IDENTIFIER,"uvec3");
 												}
-<INITIAL,IN_SHADER>"uint3"						{
+<INITIAL,IN_SHADER>"uvec3"						{
 													modReturn(IDENTIFIER,"uvec3");
 												}
 <INITIAL,IN_SHADER>"uint4"						{
@@ -589,9 +595,6 @@ warning
 <IN_SHADER>"uniform"							{
 													stdReturn(UNIFORM);
 												}
-<IN_RENDER_STATE>"register"						{
-													stdReturn(REGISTER);
-												}
 <IN_SHADER>";"[ \t\n]*							{
 													stdReturn(';');
 												}
@@ -600,22 +603,22 @@ warning
 													glfxlval.fnum=(float)atof(yytext);
 													stdReturn(FLOAT);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE,IN_PRAGMA>{NUM_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_PRAGMA>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													stdReturn(NUM);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL,IN_SHADER_ATTRIBUTE>{ID_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
 													stdReturn(IDENTIFIER);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*"("[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"("[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('(');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*")"[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*")"[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(')');
 												}
@@ -627,7 +630,7 @@ warning
 													glfxlval.strs[0]=yytext;
 													stdReturn(']');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_SHADER_ATTRIBUTE>[ \t\n]*","[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,INITIAL>[ \t\n]*","[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(',');
 												}
@@ -774,23 +777,17 @@ warning
 														stdReturn(IDENTIFIER);
 													}
 												}
-<INITIAL,IN_PRAGMA>"("									{
-														stdReturn('(');
+<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>"("			{
+													stdReturn('(');
 												}
-<INITIAL,IN_PRAGMA>")"									{
-														stdReturn(')');
+<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>")"			{
+													stdReturn(')');
 												}
 <INITIAL>"<"									{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
-														stdReturn('<');
+													stdReturn('<');
 												}
 <INITIAL>">"									{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
-														stdReturn('>');
+													stdReturn('>');
 												}
 <INITIAL>[ \t\n]*"{"[ \t\n]*					{
 													if(gLexPassthrough)
@@ -813,17 +810,15 @@ warning
 														stdReturn('}');
 													}//"["[\t ]*"]"						if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(EMPTY_ARRAY_BRACKETS);}
 												}
-<INITIAL>"["									{stdReturn('[');}
-<INITIAL>"]"									{stdReturn(']');}
 <INITIAL,IN_PRAGMA>","									{
 													//if(gLexPassthrough)
 													//	glfxWrite(yytext);
 													//else
 														stdReturn(',');
 												}
-<INITIAL>"="									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
-<INITIAL>";"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
-<INITIAL>":"									if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(':');}
+<INITIAL,IN_UNIFORM_DECL>"="				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
+<INITIAL,IN_UNIFORM_DECL>";"				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
+<INITIAL,IN_UNIFORM_DECL>":"				{stdReturn(':');}
 <IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"						{
 													stdReturn(':');
 												}

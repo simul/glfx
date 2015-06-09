@@ -266,6 +266,9 @@
 		case gsampler2DArray:
 		case gsampler2DMSArray:
 		case sampler2DArrayShadow:
+		case gimage3D:
+		case gimage2DArray:
+		case gimage2DMSArray:
 			return_size=3;
 			break;
 		default:
@@ -274,7 +277,28 @@
 		ostringstream full_expr;
 		// NOTE the spaces around the textureName. We might need to replace it with a sampler name, so we make sure we can find it
 		// as a whole word easily.
-		full_expr<<"{ivec"<<return_size<<" iv=textureSize( "<<textureName<<" ";
+		full_expr<<"{ivec"<<return_size<<" iv=";
+		
+		switch(glTextureType)
+		{
+			case gimage1D:
+			case gimage2D:
+			case gimage3D:
+			case gimageCube:
+			case gimage2DRect:
+			case gimage1DArray:
+			case gimage2DArray:
+			case gimageCubeArray:
+			case gimageBuffer:
+			case gimage2DMS:
+			case gimage2DMSArray:
+				full_expr<<"imageSize";
+				break;
+			default:
+				full_expr<<"textureSize";
+		break;
+		}
+		full_expr<<"( "<<textureName<<" ";
 		if(lod_param)
 			full_expr<<",0";
 		full_expr<<"); "<<x<<"=iv.x;";
@@ -298,7 +322,7 @@
 	}
 %}
 
-%token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
+%token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD LOAD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
 %token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
@@ -316,6 +340,11 @@
 prog : prog tok
     | { // Initialization code
 	    gEffect->m_sharedCode.str("");    // clear the stream
+		gEffect->m_sharedCode<<"#define GLSL\n";
+// Some GLSL compilers can't abide seeing a "discard" in the source of a shader that isn't a fragment shader, even if it's in unused, shared code.
+	gEffect->m_sharedCode<<"#if !defined(GL_FRAGMENT_SHADER)\n"
+							"#define discard\n"
+						"#endif\n"
 		gEffect->m_sharedCode<<"float saturate(float x)"
 						"{"
 						"	return clamp(x,0.0,1.0);"
@@ -364,7 +393,7 @@ prog : prog tok
 	| PRAGMA WARNING '(' warning-specifier ':' NUM ')'
 	{
 	}
-	| UNIFORM texture_type optional_templateval IDENTIFIER ';'
+	| UNIFORM texture_type optional_templateval IDENTIFIER optional_register_semantic ';'
 	{
 		string texture_type=$2.strs[0];
 		GLTextureType type_enum = ToGLTextureType($2.token);
@@ -477,7 +506,7 @@ prog : prog tok
 		// Set to default:
 		buildStruct					=Struct();
 	}
-	| RENDER_STATE_DECL IDENTIFIER optional_object_semantic optional_render_state_list ';'
+	| RENDER_STATE_DECL IDENTIFIER optional_register_semantic optional_render_state_list ';'
 	{
 		$$.lineno		=$4.lineno;
 		RenderState t=renderState;
@@ -549,14 +578,16 @@ prog : prog tok
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
 	}
-	| CONSTANT_BUFFER IDENTIFIER shader_fx struct_definition ';' lex_passthrough
+	| CONSTANT_BUFFER IDENTIFIER optional_register_semantic shader_fx struct_definition ';' lex_passthrough
 	{
 		string bufferName	=$2.strs[0];
-		string def			=$4.strs[0];
+		string def			=$5.strs[0];
+		string semantic		=$3.strs[0];
+		int buffer_number	=$3.num;
 
 		ostringstream str;
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
-		str<< "constant_buffer"<<" "<<$2.strs[0]<<$4.strs[0]<<";\n";
+		str<< "layout(std140) uniform "<<$2.strs[0]<<$5.strs[0]<<";\n";
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 
 		glfxWrite(str.str().c_str());
@@ -611,8 +642,8 @@ prog : prog tok
 					TextureSampler *ts=*v;
 					usedSamplerStates.insert(ts->samplerStateName);
 					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
-					if(j->semantic.size())
-						params<<": "<<j->semantic;
+					//if(j->semantic.size())
+					//	params<<": "<<j->semantic;
 					glfxstype::variable p;
 					p.storage		=j->storage;
 					p.type			=j->type;
@@ -644,8 +675,8 @@ prog : prog tok
 						if(type.length()==0)
 							type = gEffect->declaredTextures[ts->textureName].type;
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
-						if(j->semantic.size())
-							params<<": "<<j->semantic;
+						//if(j->semantic.size())
+						//	params<<": "<<j->semantic;
 						glfxstype::variable p;
 						p.storage			=j->storage;
 						p.type				=type;
@@ -663,8 +694,8 @@ prog : prog tok
 					else
 						params<<", ";
 					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
-					if(j->semantic.size())
-						params<<": "<<j->semantic;
+					//if(j->semantic.size())
+					//	params<<": "<<j->semantic;
 				}
 			}
 		}
@@ -687,7 +718,7 @@ prog : prog tok
 
 		buildFunction.clear();
 	}
-	// GL-style, e.g. shader VSMain(in type param,out type param) function_content
+	// GL-style, e.g. shader VSMain(in type parameter,out type parameter) function_content
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
 	{
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
@@ -993,7 +1024,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 param_declaration: param opt_sq location
 {
     ostringstream prepend;
-	string semantic;
+	string semantic		=$1.strs[0];
 	string location		=$3.strs[1];
     switch($3.rType)
 	{
@@ -1012,7 +1043,7 @@ param_declaration: param opt_sq location
 	string storage	=prepend.str();
 	string type		=$1.strs[2];
 	string id		=$1.strs[3]+$2.strs[0];
-	string all		=$1.strs[0]+$2.strs[0]+$3.strs[0];
+	string all		=(($1.strs[1]+" ")+$1.strs[2]+" ")+id+$3.strs[0];
     $$.strs[0]	=all;
     $$.strs[1]	=storage;
     $$.strs[2]	=type;
@@ -1046,11 +1077,18 @@ param : opt_storage type_name optional_templateval IDENTIFIER
 		string storage	=$1.strs[0];
 		string type		=$2.strs[0];
 		string template_=$3.strs[0];
-		if(template_.length())
-			type+=string("<")+template_+string(">");
+		// TODO: We discard template information in parameters. Should we insert a layout spec?
+		//if(template_.length())
+			//type+=string("<")+template_+string(">");
 		string id		=$4.strs[0];
-		string all		=(($1.strs[0]+" ")+$2.strs[0]+$3.strs[0]+" ")+$4.strs[0];
-		$$.strs[0]		=all;
+		if(template_.length()>=4&&(template_.substr(0,4)==string("uint")||template_.substr(0,4)==string("uvec")))
+			type=string("u")+type;
+		else if(template_.length()>=4&&template_.substr(0,4)==string("ivec"))
+			type=string("i")+type;
+		else if(template_.length()>=3&&template_.substr(0,3)==string("int"))
+			type=string("i")+type;
+	//	string all		=((storage+" ")+type+" ")+id;
+		$$.strs[0]		=template_;
 		$$.strs[1]		=storage;
 		$$.strs[2]		=type;
 		$$.strs[3]		=id;
@@ -1832,6 +1870,10 @@ sampling_command: SAMPLE
 {
 	$$.strs[0]="textureLod";
 }
+| LOAD
+{
+	$$.strs[0]="texelFetch";
+}
 sampling_exp:	postfix_exp '.' sampling_command
 					{
 						string texture=$1.strs[0];
@@ -2102,14 +2144,22 @@ read_parenthesis :
 	{ /* read parenthesis */
 		$$.strs[0]=glfxreadblock('(', ')');
 	};
-optional_object_semantic: ':' REGISTER '(' IDENTIFIER ')'
+optional_register_semantic: ':' REGISTER '(' IDENTIFIER ')'
 					{
-						$$.strs[0]		=$2.strs[0];
-						$$.num=0;
+						string id	=$4.strs[0];
+						$$.strs[0]	=id;
+						$$.num		=-1;
+						if(id.length()>1)
+						{
+							string nstr	=id.substr(1,id.length()-1);
+							int num		=atoi(nstr.c_str());
+							$$.num		=num;
+						}
 					}
 					|
 					{
-						$$.strs[0]="";
+						$$.strs[0]	="";
+						$$.num		=-1;
 					}
 optional_semantic: ':' IDENTIFIER
 					{
