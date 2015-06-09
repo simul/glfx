@@ -344,7 +344,7 @@ prog : prog tok
 // Some GLSL compilers can't abide seeing a "discard" in the source of a shader that isn't a fragment shader, even if it's in unused, shared code.
 	gEffect->m_sharedCode<<"#if !defined(GL_FRAGMENT_SHADER)\n"
 							"#define discard\n"
-						"#endif\n"
+						"#endif\n";
 		gEffect->m_sharedCode<<"float saturate(float x)"
 						"{"
 						"	return clamp(x,0.0,1.0);"
@@ -1870,10 +1870,20 @@ sampling_command: SAMPLE
 {
 	$$.strs[0]="textureLod";
 }
-| LOAD
+tex_load_command: LOAD
 {
 	$$.strs[0]="texelFetch";
 }
+tex_load_exp:	postfix_exp '.' tex_load_command
+					{
+						string texture=$1.strs[0];
+						string command=$3.strs[0];
+						$$.strs[0]=texture+$2.strs[0]+command;
+						// Put the thing we're sampling into strs[1]
+						$$.strs[1]=texture;
+						// We put the command into strs[2]
+						$$.strs[2]=command;
+					}
 sampling_exp:	postfix_exp '.' sampling_command
 					{
 						string texture=$1.strs[0];
@@ -1920,6 +1930,41 @@ postfix_exp		: primary_exp
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
 						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
+					}
+					| tex_load_exp '(' assignment_exp ')'
+					{
+						string textureName		=$1.strs[1];
+						string command			=$1.strs[2];
+						string param			=$3.strs[0];
+						int glTextureType	=(GetTextureType(buildFunction,textureName));
+						int return_size=2;
+						switch(glTextureType)
+						{
+						case gsampler1D:
+						case sampler1DShadow:
+						case gsamplerBuffer:
+							return_size=1;
+							break;
+						case gsampler3D:
+						case gsamplerCubeArray:
+						case samplerCubeArrayShadow:
+						case gsampler2DArray:
+						case gsampler2DMSArray:
+						case sampler2DArrayShadow:
+						case gimage3D:
+						case gimage2DArray:
+						case gimage2DMSArray:
+							return_size=3;
+							break;
+						default:
+							break;
+						}
+						string full_expr		=((command+"(")+textureName+",")+param+".xy";
+						if(return_size==3)
+							full_expr+=string("z,")+param+".w)";
+						else
+							full_expr+=string(",")+param+".z)";
+						$$.strs[0]				=full_expr;
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{

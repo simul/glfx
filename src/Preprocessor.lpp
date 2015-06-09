@@ -650,6 +650,8 @@ bool preprocess(const char *filenameUtf8, map<string, string> defines)
 	errno=0;
 	GLFX_ERRNO_BREAK
 	ClearParserState();
+	vector<string> s;
+	DefineMacro("GLSL","",s);
 	BEGIN INITIAL;
 	preproOutput.str("");
 	for (map<string, string>::const_iterator i = defines.begin(); i != defines.end(); i++)
