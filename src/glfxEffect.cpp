@@ -305,9 +305,9 @@ const vector<string>& Effect::GetFilenameList() const
 
 bool Effect::IsDeclared(string name)
 {
-		if(m_samplerStates.find(name)!=m_samplerStates.end())
-			return true;
-		return false;
+	if(m_samplerStates.find(name)!=m_samplerStates.end())
+		return true;
+	return false;
 }
 
 void Effect::SetFilenameList(const vector<string> &filenamesUtf8)

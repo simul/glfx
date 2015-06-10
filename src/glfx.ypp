@@ -216,23 +216,44 @@
 		return "Unknown";
 		}
 	};
-	int GetTextureType(const Function &function,const string &textureName)
+	GLTextureType GetTextureType(const Function &function,const string &textureName)
 	{
 		for(vector<glfxstype::variable>::const_iterator i=function.parameters.begin();i!=function.parameters.end();i++)
 		{
 			if(textureName==i->identifier)
-				return i->type_enum;
+				return (GLTextureType)i->type_enum;
 		}
 		auto j = gEffect->declaredTextures.find(textureName);
 		if (j != gEffect->declaredTextures.end())
-			return j->second.type_enum;
-		return 0;
+			return (GLTextureType)j->second.type_enum;
+		return unknwownTextureType;
 	}
 	GLTextureType ToGLTextureType(int t);
-	
+	bool IsRWTexture(GLTextureType glTextureType)
+	{
+		switch(glTextureType)
+		{
+			case gimage1D:
+			case gimage2D:
+			case gimage3D:
+			case gimageCube:
+			case gimage2DRect:
+			case gimage1DArray:
+			case gimage2DArray:
+			case gimageCubeArray:
+			case gimageBuffer:
+			case gimage2DMS:
+			case gimage2DMSArray:
+				return true;
+				break;
+			default:
+				return false;
+		break;
+		}
+	}
 	string GetSizeFunction(string textureName,string x,string y,string z)
 	{
-		int glTextureType	=(GetTextureType(buildFunction,textureName));
+		GLTextureType glTextureType	=GetTextureType(buildFunction,textureName);
 		bool lod_param=false;
 		switch(glTextureType)
 		{
@@ -252,52 +273,17 @@
 			default:
 				break;
 		}
-		int return_size=2;
-		switch(glTextureType)
-		{
-		case gsampler1D:
-		case sampler1DShadow:
-		case gsamplerBuffer:
-			return_size=1;
-			break;
-		case gsampler3D:
-		case gsamplerCubeArray:
-		case samplerCubeArrayShadow:
-		case gsampler2DArray:
-		case gsampler2DMSArray:
-		case sampler2DArrayShadow:
-		case gimage3D:
-		case gimage2DArray:
-		case gimage2DMSArray:
-			return_size=3;
-			break;
-		default:
-			break;
-		}
+		int return_size=GetTextureDimension(glTextureType);
 		ostringstream full_expr;
 		// NOTE the spaces around the textureName. We might need to replace it with a sampler name, so we make sure we can find it
 		// as a whole word easily.
 		full_expr<<"{ivec"<<return_size<<" iv=";
-		
-		switch(glTextureType)
+		if(IsRWTexture(glTextureType))
 		{
-			case gimage1D:
-			case gimage2D:
-			case gimage3D:
-			case gimageCube:
-			case gimage2DRect:
-			case gimage1DArray:
-			case gimage2DArray:
-			case gimageCubeArray:
-			case gimageBuffer:
-			case gimage2DMS:
-			case gimage2DMSArray:
-				full_expr<<"imageSize";
-				break;
-			default:
-				full_expr<<"textureSize";
-		break;
+			full_expr<<"imageSize";
 		}
+		else
+			full_expr<<"textureSize";
 		full_expr<<"( "<<textureName<<" ";
 		if(lod_param)
 			full_expr<<",0";
@@ -1697,11 +1683,31 @@ assignment_exp: conditional_exp
 		}
 		| unary_exp assignment_operator assignment_exp
 		{
-			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+			string unary_exp			=$1.strs[0];
+			string assignment_operator	=$2.strs[0];
+			string assignment_exp		=$3.strs[0];
+			string varName				=$1.strs[1];
+			string index				=$1.strs[3];
+			// Is it actually a texture we're indexing?
+			GLTextureType glTextureType			=GetTextureType(buildFunction,varName);
+			if(glTextureType==0||!IsRWTexture(glTextureType))
+			{
+				$$.strs[0]=unary_exp+assignment_operator+assignment_exp;
+			}
+			else
+			{
+				ostringstream str;
+				if($2.token=='=')
+					str<<"imageStore("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),"<<assignment_exp<<")";
+				else
+					errSem(string("Unsupported operator for image store: ")+assignment_operator);
+				$$.strs[0]=str.str();
+			}
 		}
 assignment_operator: '='	
 				{
 					$$.strs[0]=$1.strs[0];
+					$$.token=$1.token;
 				}
 				| TIMES_EQUALS
 							| OVER_EQUALS
@@ -1715,6 +1721,7 @@ assignment_operator: '='
 							| OR_EQUALS
 	{
 		$$.strs[0]=$1.strs[0];
+		$$.token=$1.token;
 	}
 	conditional_exp		: logical_or_exp
 	{
@@ -1845,6 +1852,9 @@ cast_exp		: unary_exp
 unary_exp		: postfix_exp
 {
 	$$.strs[0]=$1.strs[0];
+	$$.strs[1]=$1.strs[1];
+	$$.strs[2]=$1.strs[2];
+	$$.strs[3]=$1.strs[3];
 }
 			| PLUS_PLUS unary_exp
 {
@@ -1912,8 +1922,32 @@ postfix_exp		: primary_exp
 					}
 					| postfix_exp '[' expression ']'
 					{
-						$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+						string varName=$1.strs[0];
+						string index=$3.strs[0];
+						$$.strs[1]=varName;
+						$$.strs[3]=index;
 						$$.strs[2]=$1.strs[2];			//Command
+
+						
+						// Is it actually a texture we're indexing?
+						GLTextureType glTextureType			=GetTextureType(buildFunction,varName);
+						if(glTextureType==0)
+						{
+							$$.strs[0]=varName+$2.strs[0]+index+$4.strs[0];
+						}
+						else
+						{
+							ostringstream str;
+							if(IsRWTexture(glTextureType))
+							{
+								str<<"imageLoad("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"))";
+							}
+							else
+							{
+								str<<"texelFetch("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),0)";
+							}
+							$$.strs[0]=str.str();
+						}
 					}
 					| get_dims_exp '(' assignment_exp ',' assignment_exp ')'
 					{
@@ -1931,11 +1965,20 @@ postfix_exp		: primary_exp
 						string z			=$7.strs[0];
 						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
 					}
-					| tex_load_exp '(' assignment_exp ')'
+					| tex_load_exp '(' argument_exp_list ')'
 					{
 						string textureName		=$1.strs[1];
 						string command			=$1.strs[2];
-						string param			=$3.strs[0];
+						string pos,msaa_index;
+						if($3.vars)
+						{
+							auto vars=*($3.vars);
+							delete $3.vars;
+							pos				=vars[0].identifier;
+							
+							if(vars.size()>1)
+								msaa_index=vars[1].identifier;
+						}
 						int glTextureType	=(GetTextureType(buildFunction,textureName));
 						int return_size=2;
 						switch(glTextureType)
@@ -1959,12 +2002,16 @@ postfix_exp		: primary_exp
 						default:
 							break;
 						}
-						string full_expr		=((command+"(")+textureName+",")+param+".xy";
+						ostringstream full_expr;
+						full_expr<<command<<"("<<textureName<<","<<pos<<".xy";
 						if(return_size==3)
-							full_expr+=string("z,")+param+".w)";
+							full_expr<<"z,"<<pos<<".w";
+						else if(!msaa_index.length())
+							full_expr<<","<<pos<<".z";
 						else
-							full_expr+=string(",")+param+".z)";
-						$$.strs[0]				=full_expr;
+							full_expr<<",int("<<msaa_index<<")";
+						full_expr<<")";
+						$$.strs[0]				=full_expr.str();
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{

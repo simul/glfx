@@ -206,17 +206,24 @@ enum GLTextureType
 	, gimage2DMS				//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 	, gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
-inline int GetTextureDimension(GLTextureType t)
+inline int GetTextureDimension(GLTextureType glTextureType)
 {
-	switch (t)
+	switch(glTextureType)
 	{
 	case gsampler1D:
 	case sampler1DShadow:
 	case gsamplerBuffer:
 		return 1;
 		break;
-	case gimage3D:
 	case gsampler3D:
+	case gsamplerCubeArray:
+	case samplerCubeArrayShadow:
+	case gsampler2DArray:
+	case gsampler2DMSArray:
+	case sampler2DArrayShadow:
+	case gimage3D:
+	case gimage2DArray:
+	case gimage2DMSArray:
 		return 3;
 		break;
 	default:
