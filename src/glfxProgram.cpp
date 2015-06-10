@@ -35,7 +35,8 @@ Technique::Technique(const map<std::string, Program>& passes)
 {
 }
 
-Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p,const map<string,set<TextureSampler*> > &textureSamplersByShader)
+Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
+	,const map<string,set<TextureSampler*> > &textureSamplersByShader)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
