@@ -706,9 +706,7 @@ warning
 													stdReturn(';');
 												}
 <INITIAL>{STR_BLCK}								{
-													if(gLexPassthrough)
-														glfxWrite(yytext);
-													else
+													
 													{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -742,7 +740,7 @@ warning
 														stdReturn(NUM);
 													}
 												}
-<INITIAL>{FLOAT_BLCK}							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
+<INITIAL>{FLOAT_BLCK}							{glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
 <INITIAL>"inout"	{
 													{
 														glfxlval.lineno=yylineno;
@@ -757,9 +755,9 @@ warning
 														stdReturn(STORAGEQ);
 													}
 												}
-<INITIAL>"gl_FragDepth"							if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
-<INITIAL>"true"									if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=1; stdReturn(NUM);}
-<INITIAL>"false"								if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.num=0; stdReturn(NUM);}
+<INITIAL>"gl_FragDepth"							{glfxlval.lineno=yylineno; glfxlval.strs[0]=yytext; stdReturn(GL_FRAGDEPTH);}
+<INITIAL>"true"									{glfxlval.num=1; stdReturn(NUM);}
+<INITIAL>"false"								{glfxlval.num=0; stdReturn(NUM);}
 <INITIAL>{ID_BLCK}								{
 													{
 														glfxlval.lineno=yylineno;

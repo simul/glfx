@@ -77,7 +77,7 @@ int Effect::GetTextureNumber(const char *name)
 		}
 		else
 		{
-			textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
+			textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum,true);
 		}
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
@@ -87,7 +87,7 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum);
+				textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum,true);
 				current_texture_number++;
 			}
 		}
@@ -106,7 +106,7 @@ int Effect::GetImageNumber(const char *name)
 	else
 	{
 		textureNumberMap[n] = current_image_number + 1000;
-		textureDimensions[current_image_number + 1000] = GetTextureDimension(declaredTextures[n].type_enum);
+		textureDimensions[current_image_number + 1000] = GetTextureDimension(declaredTextures[n].type_enum,true);
 		current_image_number++;
 	}
 	return image_number;
