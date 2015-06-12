@@ -90,11 +90,6 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 //GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
 
-/**************************************************
-* glfxGetProgramCount
-* Return value: Number of programs
-**************************************************/
-GLFXAPI int GLFX_APIENTRY glfxGetProgramCount(int effect);
 GLFXAPI void glfxApply(int effect,GLuint pass);
 GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);
@@ -102,23 +97,7 @@ GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
 GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
 GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write);
 GLFXAPI void glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler);
-/**************************************************
-* glfxGetProgramName
-* Input:
-*   effect  -- GLFX effect id
-*   program -- Index of program
-*   name    -- Destination address
-*   bufSize -- Size of the buffer
-**************************************************/
-GLFXAPI void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize);
 
-/**************************************************
-* glfxGetProgramIndex
-* Input:
-*   effect  -- GLFX effect id
-*   name -- name of program
-**************************************************/
-GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
 
 //! Get the number of techniques in the effect
 GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect);
@@ -180,7 +159,7 @@ GLFXAPI const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program);
 *   effect  -- GLFX effect id
 *   name -- name of program
 **************************************************/
-GLFXAPI size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name);
+GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueIndex(int effect, const char* name);
 
 /**************************************************
 * glfxGetEffectLog

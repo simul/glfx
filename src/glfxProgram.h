@@ -21,12 +21,13 @@ namespace glfxParser
 		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader);
 		Program();
 		Program(const Program& prog);
+		~Program();
 		const Program &operator=(const Program &);
-		unsigned CompileAndLink(string& log) const;
+		unsigned CompileAndLink(string& log) ;
+		unsigned programId;
         
 	private:
 		int CompileShader(unsigned shader, const Shader& shaderSrc, ostringstream& sLog) const;
-
 		Shader  m_shaders[NUM_OF_SHADER_TYPES];
 		bool    m_separable;
 		friend int ::glfxparse();
@@ -35,6 +36,7 @@ namespace glfxParser
 	{
 	public:
 		Technique(const map<std::string, Program>& passes);
+		~Technique();
 		map<string, Program> &GetPasses() 
 		{
 			return m_passes;
@@ -47,6 +49,7 @@ namespace glfxParser
 	{
 		vector<string> m_techniqueNames;
 	public:
+		~TechniqueGroup();
 		map<string,Technique*> m_techniques;
 		const vector<string> &GetTechniqueList();
 	};

@@ -35,8 +35,21 @@ Technique::Technique(const map<std::string, Program>& passes)
 {
 }
 
+Technique::~Technique()
+{
+	for (auto it = m_passes.begin(); it != m_passes.end(); ++it)
+		glDeleteProgram(it->second.programId);
+}
+
+TechniqueGroup::~TechniqueGroup()
+{
+	for (auto it = m_techniques.begin(); it != m_techniques.end(); ++it)
+		delete it->second;
+}
+
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	,const map<string,set<TextureSampler*> > &textureSamplersByShader)
+	: programId(0)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -64,12 +77,18 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 }
 
 Program::Program()
+: programId(0)
 {
 }
 
 Program::Program(const Program& prog)
 {
 	operator=(prog);
+}
+
+Program::~Program()
+{
+
 }
 
 const Program& Program::operator=(const Program& prog)
@@ -81,16 +100,17 @@ const Program& Program::operator=(const Program& prog)
 	m_separable = prog.m_separable;
 	
 	passState = prog.passState;
+	programId = prog.programId;
 	return *this;
 }
-
-unsigned Program::CompileAndLink(string& log) const
+unsigned Program::CompileAndLink(string& log) 
 {
     vector<GLuint> shaders;
     ostringstream sLog;
-    
-    GLuint programId=glCreateProgram();
-    
+	if (programId)
+		glDeleteProgram(programId);
+    programId=glCreateProgram();
+
     GLint res=1;
     GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
                                             GL_TESS_CONTROL_SHADER,

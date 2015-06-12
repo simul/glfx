@@ -32,7 +32,6 @@ typedef int errno_t;
 #include "glfxErrorCheck.h"
 #include <set>
 
-map<string,unsigned> Effect::glSamplerStates;
 Effect::Effect()
     : m_includes(0)
     , m_active(true)
@@ -45,10 +44,12 @@ Effect::Effect()
 
 Effect::~Effect()
 {
-    for(map<string,Program*>::iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-        delete it->second;
+  //  for(map<string,Program*>::iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
+  //      delete it->second;
     for(map<string,Sampler*>::iterator it=m_samplers.begin(); it!=m_samplers.end(); ++it)
-        delete it->second;
+		delete it->second;
+	for (auto it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
+		delete it->second;
 	std::set<CompiledShader*> comp;
     for(CompiledShaderMap::iterator it=m_compiledShaders.begin(); it!=m_compiledShaders.end(); ++it)
         comp.insert(it->second);
@@ -56,6 +57,8 @@ Effect::~Effect()
         delete (*it);
 	for(auto i=textureSamplers.begin();i!=textureSamplers.end();i++)
 		delete i->second;
+	for (auto i = glSamplerStates.begin(); i != glSamplerStates.end(); i++)
+		glDeleteSamplers(1,&(i->second));
 }
 
 int Effect::GetTextureNumber(const char *name)
@@ -210,18 +213,23 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 	else
 	{
 		TechniqueGroup *group=current_group;
-		map<string, Technique*>::const_iterator it = group->m_techniques.find(tech);
+		map<string, Technique*>::iterator it = group->m_techniques.find(tech);
 		if (it == group->m_techniques.end())
 			return 0;
 		Technique *t	=it->second;
-		map<string, Program>::const_iterator jt=t->GetPasses().begin();
+		map<string, Program>::iterator jt=t->GetPasses().begin();
 		if(pass.length())
 			jt=t->GetPasses().find(pass);
 		if(jt==t->GetPasses().end())
 			return 0;
-		unsigned ret	=jt->second.CompileAndLink(log);
-		passStates[ret]	=jt->second.passState;
-		return ret;
+		unsigned programId = jt->second.CompileAndLink(log);
+		glObjectLabel(GL_PROGRAM,
+			programId,
+			tech.length(),
+			tech.c_str());
+		GLFX_ERROR_CHECK
+		passStates[programId] = jt->second.passState;
+		return programId;
 	}
 }
 
@@ -255,11 +263,6 @@ void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &t
 		*t2=*t;
 		textureSamplersByShader[shaderName].insert(t2);
 	}
-}
-
-const vector<string>& Effect::GetProgramList() const
-{
-    return m_programNames;
 }
 
 const vector<string>& Effect::GetTechniqueList() const
@@ -317,9 +320,9 @@ void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 
 void Effect::PopulateProgramList()
 {
-    m_programNames.clear();
-    for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-		m_programNames.push_back(it->first);
+   // m_programNames.clear();
+   // for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
+	//	m_programNames.push_back(it->first);
 	m_techniqueNames.clear();
 	map<string, TechniqueGroup*>::const_iterator ig=m_techniqueGroups.find("");
 	if(ig!=m_techniqueGroups.end())

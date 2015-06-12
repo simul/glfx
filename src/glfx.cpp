@@ -779,10 +779,6 @@ const char* GLFX_APIENTRY glfxGetEffectLog(int effect)
     return gLog.c_str();
 }
 
-int GLFX_APIENTRY glfxGetProgramCount(int effect)
-{
-    return (int)gEffects[effect]->GetProgramList().size();
-}
 
 int GLFX_APIENTRY glfxGetEffectTextureNumber(int e,const char *name)
 {
@@ -804,38 +800,24 @@ void GLFX_APIENTRY glfxSetEffectSamplerState(int effect, const char *name, GLuin
 	gEffects[effect]->SetSamplerState( name, sampler);
 }
 
-void GLFX_APIENTRY glfxGetProgramName(int effect, int program, char* name, int bufSize)
-{
-    const vector<string>& tmpList = gEffects[effect]->GetProgramList();
-    if(program > (int)tmpList.size())
-        return;
-    strcpy_s(name, bufSize, tmpList[program].c_str());
-}
-
-const char* GLFX_APIENTRY glfxGetProgramName(int effect, int program)
-{
-    const vector<string>& tmpList = gEffects[effect]->GetProgramList();
-    if(program > (int)tmpList.size())
-        return "";
-    return tmpList[program].c_str();
-}
-
-size_t GLFX_APIENTRY glfxGetProgramIndex(int effect, const char* name)
-{
-    const vector<string>& tmpList = gEffects[effect]->GetProgramList();
-    for(int i=0;i<(int)tmpList.size();i++)
-	{
-		if(strcmp(tmpList[i].c_str(),name)==0)
-	        return i;
-	}
-    return tmpList.size();
-}
-
 size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
 {
 	if(gEffects[effect]->current_group==NULL)
 		gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByName("");
 	return (int)gEffects[effect]->current_group->GetTechniqueList().size();
+}
+
+size_t GLFX_APIENTRY glfxGetTechniqueIndex(int effect, const char* name)
+{
+	if (gEffects[effect]->current_group == NULL)
+		gEffects[effect]->current_group = gEffects[effect]->GetTechniqueGroupByName("");
+	const vector<string>& tmpList = gEffects[effect]->current_group->GetTechniqueList();
+	for (int i = 0; i<(int)tmpList.size(); i++)
+	{
+		if (strcmp(tmpList[i].c_str(), name) == 0)
+			return i;
+	}
+	return tmpList.size();
 }
 
 size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect)

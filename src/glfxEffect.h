@@ -19,8 +19,8 @@ namespace glfxParser
 	typedef std::map<std::string,int> ProfileMap;
 	class Effect
 	{
-		map<std::string,Program*>			m_programs;
-		vector<std::string>					m_programNames;
+		//map<std::string,Program*>			m_programs;
+		//vector<std::string>					m_programNames;
 		map<std::string,TechniqueGroup*>	m_techniqueGroups;
 		vector<std::string>					m_techniqueNames;
 		vector<std::string>					m_techniqueGroupNames;
@@ -46,14 +46,15 @@ namespace glfxParser
 		bool                        m_active;
 		string                      m_dir;
 		string						m_filename;
-		std::map<std::string,TextureSampler*> textureSamplers;
+		std::map<std::string, TextureSampler*> textureSamplers;
 		std::map<std::string,std::set<TextureSampler*> > textureSamplersByTexture;
 		std::map<std::string,std::set<TextureSampler*> > textureSamplersByShader;
 		// But to apply the ts, we must map them by pass.
 		std::map<unsigned,std::set<TextureSampler*> > textureSamplersByPass;
 
 		// sampler state objects by name
-		static std::map<std::string,unsigned> glSamplerStates;
+		//static std::map<std::string,unsigned> glSamplerStates;
+		map<string, unsigned> Effect::glSamplerStates;
 
 		int current_texture_number;
 		int current_image_number;
@@ -90,7 +91,6 @@ namespace glfxParser
 		unsigned CreateSampler(const string& sampler) const;
 		// merge in the textureSamplers:
 		void MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName);
-		const vector<string>& GetProgramList() const;
 		const vector<string>& GetTechniqueGroupList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
