@@ -204,6 +204,7 @@ string& Effect::Dir()
 
 unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log)
 {
+		GLFX_ERROR_CHECK
 	if (tech.length() == 0)
 	{
 		std::cerr<<"Must have a technique"<<std::endl;
@@ -223,6 +224,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		if(jt==t->GetPasses().end())
 			return 0;
 		unsigned programId = jt->second.CompileAndLink(log);
+		GLFX_ERROR_CHECK
 		glObjectLabel(GL_PROGRAM,
 			programId,
 			tech.length(),
@@ -402,6 +404,8 @@ void Effect::Unapply()
 
 void Effect::ApplyPassTextures(unsigned pass)
 {
+	if(!pass)
+		return;
 	GLFX_ERROR_CHECK
 	std::map<unsigned,PassState>::iterator j=passStates.find(pass);
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)

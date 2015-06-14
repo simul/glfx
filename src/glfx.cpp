@@ -802,8 +802,10 @@ void GLFX_APIENTRY glfxSetEffectSamplerState(int effect, const char *name, GLuin
 
 size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
 {
+	GLFX_ERROR_CHECK
 	if(gEffects[effect]->current_group==NULL)
 		gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByName("");
+	GLFX_ERROR_CHECK
 	return (int)gEffects[effect]->current_group->GetTechniqueList().size();
 }
 
@@ -856,31 +858,41 @@ const char* GLFX_APIENTRY glfxGetTechniqueGroupName(int effect, int g)
 const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
 {
 	TechniqueGroup *g = gEffects[effect]->current_group;
+	GLFX_ERROR_CHECK
 	const vector<string>& tmpList = g->GetTechniqueList();
+	GLFX_ERROR_CHECK
 	if (technum > (int)tmpList.size())
 		return "";
+	GLFX_ERROR_CHECK
 	return tmpList[technum].c_str();
 }
 
 size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
 {
+	GLFX_ERROR_CHECK
 	TechniqueGroup *g = gEffects[effect]->current_group;
+	GLFX_ERROR_CHECK
 	 Technique *tech=g->m_techniques[tech_name];
+	GLFX_ERROR_CHECK
 	if (!tech)
 		return 0;
+	GLFX_ERROR_CHECK
 	return tech->GetPasses().size();
 }
 
 const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int pass_num)
 {
+	GLFX_ERROR_CHECK
 	TechniqueGroup *g = gEffects[effect]->current_group;
+	GLFX_ERROR_CHECK
 	 Technique *tech=g->m_techniques[tech_name];
+	GLFX_ERROR_CHECK
 	if (!tech)
 		return 0;
+	GLFX_ERROR_CHECK
 	std::map<string, Program>::const_iterator i = tech->GetPasses().begin();
-	for (int j = 0; j < pass_num; j++,i++)
-	{
-	}
+	for(int j=0;j<pass_num&&i!=tech->GetPasses().end();j++,i++);
+	GLFX_ERROR_CHECK
 	return i->first.c_str();
 }
 
@@ -890,6 +902,7 @@ GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const ch
 	Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
+	GLFX_ERROR_CHECK
 	const Program &p=tech->GetPasses()[string(pass_name)];
 	GLuint pr=glfxCompileProgram(effect, tech_name, pass_name);
 	return pr;
@@ -904,6 +917,7 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
 {
 	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL || !gEffects[effect]->Active())
         return 0;
+	GLFX_ERROR_CHECK
 
     string slog;
 	string technique_str;
