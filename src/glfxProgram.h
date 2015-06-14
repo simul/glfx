@@ -25,11 +25,15 @@ namespace glfxParser
 		const Program &operator=(const Program &);
 		unsigned CompileAndLink(string& log) ;
 		unsigned programId;
-        
+		bool IsTransformFeedbackShader() const
+		{
+			return transformFeedback;
+		}
 	private:
 		int CompileShader(unsigned shader, const Shader& shaderSrc, ostringstream& sLog) const;
 		Shader  m_shaders[NUM_OF_SHADER_TYPES];
 		bool    m_separable;
+		bool    transformFeedback;
 		friend int ::glfxparse();
 	};
 	class Technique

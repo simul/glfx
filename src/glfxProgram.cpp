@@ -49,7 +49,7 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	,const map<string,set<TextureSampler*> > &textureSamplersByShader)
-	: programId(0)
+	: programId(0), transformFeedback(false)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -74,6 +74,11 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
     }
 
     m_separable=false;
+	if (m_shaders[VERTEX_SHADER].name.length() || m_shaders[GEOMETRY_SHADER].name.length())
+	{
+		if (!m_shaders[FRAGMENT_SHADER].name.length())
+			transformFeedback = true;
+	}
 }
 
 Program::Program()
@@ -97,12 +102,13 @@ const Program& Program::operator=(const Program& prog)
 	{
 		m_shaders[i] = prog.m_shaders[i];
 	}
-	m_separable = prog.m_separable;
-	
 	passState = prog.passState;
 	programId = prog.programId;
+	m_separable = prog.m_separable;
+	transformFeedback = prog.transformFeedback;
 	return *this;
 }
+
 unsigned Program::CompileAndLink(string& log) 
 {
     vector<GLuint> shaders;

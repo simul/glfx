@@ -22,12 +22,13 @@ void CheckGLError()
 				case GL_OUT_OF_MEMORY:          error="OUT_OF_MEMORY";          break;
 				case GL_INVALID_FRAMEBUFFER_OPERATION:  error="INVALID_FRAMEBUFFER_OPERATION";  break;
 				default:
-				error="UNKNOWN";
+					error="UNKNOWN";
 				break;
 			}
 			if(error)
 				cerr <<" "<<err<<" GL_" << error;
 			err=glGetError();
+			BreakIfDebugging();
         }
 		std::cerr<<std::endl;
 	}

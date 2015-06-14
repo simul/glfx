@@ -229,6 +229,8 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			tech.c_str());
 		GLFX_ERROR_CHECK
 		passStates[programId] = jt->second.passState;
+		if (jt->second.IsTransformFeedbackShader())
+			transformFeedbackShaders.insert(programId);
 		return programId;
 	}
 }
@@ -363,6 +365,11 @@ void Effect::CreateDefinedSamplers()
 	}
 }
 
+bool Effect::PassHasTransformFeedback(unsigned pass)
+{
+	return (transformFeedbackShaders.find(pass) != transformFeedbackShaders.end());
+}
+
 void Effect::Apply(unsigned pass)
 {
 	GLFX_ERROR_CHECK
@@ -370,7 +377,11 @@ void Effect::Apply(unsigned pass)
 	GLFX_ERROR_CHECK
 	current_pass=pass;
 	ApplyPassTextures(pass);
-
+	if (PassHasTransformFeedback(pass))
+	{
+		glEnable(GL_RASTERIZER_DISCARD);
+		glBeginTransformFeedback(GL_TRIANGLES);
+	}
 }
 
 void Effect::Reapply(unsigned pass)
@@ -380,6 +391,11 @@ void Effect::Reapply(unsigned pass)
 
 void Effect::Unapply()
 {
+	if (glIsEnabled(GL_RASTERIZER_DISCARD))
+	{
+		glEndTransformFeedback();
+		glDisable(GL_RASTERIZER_DISCARD);
+	}
 	glUseProgram(0);
 	current_pass=0;
 }
