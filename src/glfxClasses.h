@@ -81,6 +81,13 @@ namespace glfxParser
 		,SetBlendState
 		,NumShaderCommands
 	};
+	enum Topology
+	{
+		UNDEFINED_TOPOLOGY=0
+		,POINTS
+		,LINES
+		,TRIANGLES
+	};
 }
 namespace glfxParser
 {
@@ -179,10 +186,14 @@ namespace glfxParser
 	};
 	struct PassState
 	{
+		PassState() :transformFeedbackTopology(UNDEFINED_TOPOLOGY)
+		{
+		}
 		std::string depthStencilState;
 		std::string blendState;
 		// When setting a texture, set the appropriate sampler states as well.
 		std::map<std::string,std::vector<TextureSampler*> > textureSamplersByTexture;
+		Topology transformFeedbackTopology;//POINTS, LINES, TRIANGLES
 	};
 
 } // glfxParser

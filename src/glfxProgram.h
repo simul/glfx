@@ -16,9 +16,10 @@ namespace glfxParser
 			string  name;
 			string  src;
 			string  layout;
+			string	compiledShaderName;
 		};
 
-		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader);
+		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout);
 		Program();
 		Program(const Program& prog);
 		~Program();
@@ -30,7 +31,8 @@ namespace glfxParser
 			return transformFeedback;
 		}
 	private:
-		int CompileShader(unsigned shader, const Shader& shaderSrc, ostringstream& sLog) const;
+		int CompileShader(unsigned shader, const Shader& shaderSrc, ShaderType type,  ostringstream& sLog) const;
+		std::string computeLayout;
 		Shader  m_shaders[NUM_OF_SHADER_TYPES];
 		bool    m_separable;
 		bool    transformFeedback;

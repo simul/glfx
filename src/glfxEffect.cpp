@@ -224,15 +224,19 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		if(jt==t->GetPasses().end())
 			return 0;
 		unsigned programId = jt->second.CompileAndLink(log);
-		GLFX_ERROR_CHECK
-		glObjectLabel(GL_PROGRAM,
-			programId,
-			tech.length(),
-			tech.c_str());
-		GLFX_ERROR_CHECK
-		passStates[programId] = jt->second.passState;
-		if (jt->second.IsTransformFeedbackShader())
-			transformFeedbackShaders.insert(programId);
+		if (programId)
+		{
+			GLFX_ERROR_CHECK
+				glObjectLabel(GL_PROGRAM,
+				programId,
+				tech.length(),
+				tech.c_str());
+
+			GLFX_ERROR_CHECK
+				passStates[programId] = jt->second.passState;
+			if (jt->second.IsTransformFeedbackShader())
+				transformFeedbackShaders.insert(programId);
+		}
 		return programId;
 	}
 }
@@ -382,6 +386,19 @@ void Effect::Apply(unsigned pass)
 	if (PassHasTransformFeedback(pass))
 	{
 		glEnable(GL_RASTERIZER_DISCARD);
+	//	If no geometry shader is present, while transform feedback is active the mode parameter to glDrawArrays must match those specified in the following table :
+
+	//	Transform Feedback primitiveMode	Allowed Render Primitive modes
+	//		GL_POINTS	GL_POINTS
+	//		GL_LINES	GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LINES_ADJACENCY, GL_LINE_STRIP_ADJACENCY
+	//		GL_TRIANGLES	GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES_ADJACENCY, GL_TRIANGLE_STRIP_ADJACENCY
+	//		If a geometry shader is present, the output primitive type from the geometry shader must match those provided in the following table :
+
+	//	Transform Feedback primitiveMode	Allowed Geometry Shader Output Primitive Type
+	//		GL_POINTS	points
+	//		GL_LINES	line_strip
+//			GL_TRIANGLES	triangle_strip
+
 		glBeginTransformFeedback(GL_TRIANGLES);
 	}
 }

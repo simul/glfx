@@ -153,12 +153,11 @@
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
 	map<std::string,Function*> functions;
-	map<string,DeclaredTexture> additionalTextureDeclarations;
 	
 	void DeclareTextureSampler(const TextureSampler *ts)
 	{
-		auto i=additionalTextureDeclarations.find(ts->textureSamplerName());
-		if(i!=additionalTextureDeclarations.end())
+		auto i=gEffect->additionalTextureDeclarations.find(ts->textureSamplerName());
+		if(i!=gEffect->additionalTextureDeclarations.end())
 			return;
 
 		string tsname		=ts->textureSamplerName();
@@ -167,8 +166,8 @@
 		{
 			string sampler_type = gEffect->declaredTextures[texture_name].type;
 			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-			additionalTextureDeclarations[tsname].type		=sampler_type;
-			additionalTextureDeclarations[tsname].type_enum = gEffect->declaredTextures[texture_name].type_enum;
+			gEffect->additionalTextureDeclarations[tsname].type		=sampler_type;
+			gEffect->additionalTextureDeclarations[tsname].type_enum = gEffect->declaredTextures[texture_name].type_enum;
 			// We know that this texture-sampler combo will be used in this shader.
 		}
 		else
@@ -1181,7 +1180,7 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-    $$.prog = new Program(*($1.shaders),buildPassState,gEffect->textureSamplersByShader);
+	$$.prog = new Program(*($1.shaders), buildPassState, gEffect->textureSamplersByShader, $1.strs[2]);
     delete $1.shaders;
 	buildPassState			=PassState();
 };
@@ -1192,9 +1191,11 @@ shaders_list : shaders_list shader_def
 		ShaderType sType	=$2.sType;
 		string src			=$2.strs[0];
 		string name			=$2.strs[1];
-		(*map1)[sType].src	=src;
-		(*map1)[sType].name	=name;
-		$$.shaders			=map1;
+		$$.strs[2]			=$1.strs[2]+$2.strs[2];// compute layout
+		(*map1)[sType].src					=src;
+		(*map1)[sType].name					=name;
+		(*map1)[sType].compiledShaderName	=$$.strs[3];
+		$$.shaders							=map1;
 	}
 	| shader_def
 	{
@@ -1202,11 +1203,14 @@ shaders_list : shaders_list shader_def
 		string src			=$1.strs[0];
 		string name			=$1.strs[1];
 		ShaderType sType	=$1.sType;
-		$$.strs[0]			=src;
-		$$.strs[1]			=name;
-		$$.sType			=sType;
-		(*map1)[sType].src	=src;
-		(*map1)[sType].name	=name;
+		$$.strs[0]			=$1.strs[0];
+		$$.strs[1]			=$1.strs[1];
+		$$.strs[2]			=$1.strs[2];
+		$$.strs[3]			=$1.strs[3];
+		$$.sType							=sType;
+		(*map1)[sType].src					=src;
+		(*map1)[sType].name					=name;
+		(*map1)[sType].compiledShaderName	=$$.strs[3];
 		$$.shaders=map1;
 	}
 	| shaders_list shader_fn
@@ -1215,6 +1219,7 @@ shaders_list : shaders_list shader_def
 		$$.shaders=$1.shaders;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
+		$$.strs[2]	=$1.strs[2];
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	}
 	| shader_fn
@@ -1223,6 +1228,7 @@ shaders_list : shaders_list shader_def
 		$$.shaders=map1;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
+		$$.strs[2]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
 vec4: IDENTIFIER '(' FLOAT ',' FLOAT ',' FLOAT ',' FLOAT ')'
@@ -1254,13 +1260,17 @@ shader_fn : SET_RASTERIZER_COMMAND '(' IDENTIFIER ')' ';'
 
 shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_main;
 			{
+				$$.strs[0] = "";
+				$$.strs[1] = "";
+				$$.strs[2] = "";
 				errSem("Pass definitions like vs(430)=vs_main are no longer supported. Please use SetVertexShader() etc.");
 			}
 			// For example: SetVertexShader(vs_main);
 			| SHADER_COMMAND '(' shader_compile ')' ';'
 			{
-				$$.strs[1]="";
-				$$.strs[0]="";
+				$$.strs[0]	="";
+				$$.strs[1]	="";
+				$$.strs[2]	="";
 				$$.sType	=$1.sType;//(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
@@ -1292,18 +1302,10 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 					ostringstream theShader;
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-					// Because there's no such thing in GLSL:
-					theShader<<"#define SamplerState int\n";
-					for(map<std::string,SamplerState*>::const_iterator i=gEffect->m_samplerStates.begin();i!=gEffect->m_samplerStates.end();i++)
+					for(auto i=gEffect->additionalTextureDeclarations.begin();i!=gEffect->additionalTextureDeclarations.end();i++)
 					{
-						theShader<<"int "<<i->first<<"=0;\n";
+						theShader << "uniform " << i->second.type << " " << i->first << ";\n";
 					}
-					for(auto i=additionalTextureDeclarations.begin();i!=additionalTextureDeclarations.end();i++)
-					{
-						theShader<<"uniform "<<i->second.type<<" "<<i->first<<";\n";
-					}
-					if(shaderCommand==COMPUTE_SHADER)
-						theShader<<"#define IN_COMPUTE_SHADER 1"<<endl;
 					if(shaderCommand<NumShaderCommands)
 					{
 						string shaderName=compiledShader->m_functionName;
@@ -1319,15 +1321,18 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 							}
 							else
 							{
-								if(shaderCommand==COMPUTE_SHADER)
-									theShader<<gEffect->m_shaderLayouts[shaderName].text()<<"\n";
+								if (shaderCommand == COMPUTE_SHADER)
+									theShader << gEffect->m_shaderLayouts[shaderName].text() << "\n";
 								// Currently in case of error it never returns (throw)
 								// TODO: Handle continuation in case of error
-									theShader<<it->second;
+								theShader<<it->second;
 							}
 						}
-						$$.strs[1]=shaderName;
-						$$.strs[0]=theShader.str();
+						$$.strs[0]	=theShader.str();
+						$$.strs[1]	=shaderName;
+						$$.strs[3]	=compiledShaderName;
+						//if (shaderCommand == COMPUTE_SHADER)
+						//	$$.strs[2] = gEffect->m_shaderLayouts[shaderName].text();
 					}
 				}
 			};
@@ -1382,8 +1387,6 @@ shader_compile: IDENTIFIER
 			string shaderName=$5.strs[0];
 			CompilableShader &sh=*(compilableShaders[shaderName]);
 			gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
-			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
-			gEffect->m_shaders[shaderName]			=Compile($1.sType,sh);
 
 			gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
@@ -1397,7 +1400,10 @@ shader_compile: IDENTIFIER
 			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
 			compiledShader->m_functionName					=$5.strs[0];
 			compiledShader->shaderType						=$1.sType;
-			compiledShader->version							=$$.num=version_num;
+			compiledShader->version							= $$.num = version_num;
+			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
+			Compile($1.sType, sh, compiledShader);
+			gEffect->m_shaders[shaderName] = compiledShader->source; 
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
 				{

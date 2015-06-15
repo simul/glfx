@@ -410,6 +410,7 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 		int first_colon		=(int)line.find(":");
 		int second_colon	=(int)line.find(":",first_colon+1);
 		int third_colon		=(int)line.find(":",second_colon+1);
+		int fourth_colon	=(int)line.find(":",third_colon+1);
 		int first_bracket	=(int)line.find("(");
 		int second_bracket	=(int)line.find(")",first_bracket+1);
 		int numberstart,numberlen=0;
@@ -442,13 +443,13 @@ static std::string RewriteErrorLine(std::string line,const vector<string> &sourc
 		{
 			std::string filenumber_str=line.substr(numberstart,numberlen);
 			std::string err_msg=line.substr(numberstart+numberlen,line.length()-numberstart-numberlen);
-			if(third_colon>=0)
+			if(third_colon>=0&&fourth_colon!=third_colon+1)
 			{
 				third_colon-=numberstart+numberlen;
 				err_msg.replace(0,1,"(");
 			}
 			const char *err_warn	=is_error?"error":"warning";
-			if(third_colon>=0)
+			if(third_colon>=0&&fourth_colon!=third_colon+1)
 			{
 				std::string rep="): ";
 				rep+=err_warn;

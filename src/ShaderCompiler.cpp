@@ -4,8 +4,9 @@
 using namespace std;
 using namespace glfxParser;
 
-string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
+void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,CompiledShader *compiledShader)
 {
+	compiledShader->transformFeedbackTopology = UNDEFINED_TOPOLOGY;
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
@@ -97,6 +98,24 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 			// layout (triangle_strip, max_vertices=6) out;
 			if(storage==string("line")||storage==string("point")||storage==string("triangle")||storage==string("lineadj")||storage==string("triangleadj"))
 			{
+				// primitive type			vertices per primitive
+				//	points					1
+				//	lines					2
+				//	lines_adjacency			4
+				//	triangles				3
+				//	triangles_adjacency		6
+				if (storage == string("point"))
+				{
+					compiledShader->transformFeedbackTopology = POINTS;
+				}
+				else if (storage == string("line") || storage == string("lineadj"))
+				{
+					compiledShader->transformFeedbackTopology = LINES;
+				}
+				else if (storage == string("triangle") || storage == string("triangleadj"))
+				{
+					compiledShader->transformFeedbackTopology = TRIANGLES;
+				}
 				storage+="s";
 				stringReplaceAll(storage,"adjs","s_adjacency");
 				shaderCode<<"layout("<<storage<<") in;\n";
@@ -245,6 +264,7 @@ string Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh)
 	shaderCode<<"#line "<<sh.content_linenumber<<" "<<sh.current_filenumber<<endl;
 	shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
 
-	return shaderCode.str();
+	compiledShader->source=shaderCode.str();
+
 	// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 }

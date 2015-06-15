@@ -48,8 +48,8 @@ TechniqueGroup::~TechniqueGroup()
 }
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
-	,const map<string,set<TextureSampler*> > &textureSamplersByShader)
-	: programId(0), transformFeedback(false)
+	, const map<string, set<TextureSampler*> > &textureSamplersByShader, const string &compute_layout)
+	: programId(0), transformFeedback(false), computeLayout(compute_layout)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -106,6 +106,7 @@ const Program& Program::operator=(const Program& prog)
 	programId = prog.programId;
 	m_separable = prog.m_separable;
 	transformFeedback = prog.transformFeedback;
+	computeLayout = prog.computeLayout;
 	return *this;
 }
 
@@ -118,6 +119,7 @@ unsigned Program::CompileAndLink(string& log)
     programId=glCreateProgram();
 
     GLint res=1;
+	// This MUST match up with ShaderType enum definition.
     GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
                                             GL_TESS_CONTROL_SHADER,
                                             GL_TESS_EVALUATION_SHADER,
@@ -129,7 +131,7 @@ unsigned Program::CompileAndLink(string& log)
         if(m_shaders[i].src.size()>0)
 		{
             shaders.push_back(glCreateShader(shaderTypes[i]));
-            res&=CompileShader(shaders.back(), m_shaders[i], sLog);
+			res &= CompileShader(shaders.back(), m_shaders[i], (ShaderType)i,  sLog);
             glAttachShader(programId, shaders.back());
         }
     }
@@ -171,11 +173,19 @@ unsigned Program::CompileAndLink(string& log)
     return programId;
 }
 
-int Program::CompileShader( unsigned shader, const Shader& shaderSrc, ostringstream& sLog ) const
+int Program::CompileShader(unsigned shader, const Shader& shaderSrc, ShaderType type, ostringstream& sLog) const
 {
-    const char* strSrc=shaderSrc.src.c_str();
-    const char* layout=shaderSrc.layout.c_str();
-    glShaderSource(shader,1,&strSrc, NULL);
+	const char* layout = shaderSrc.layout.c_str();
+	ostringstream s;
+	if (type == COMPUTE_SHADER)
+	{
+		s << "#define IN_COMPUTE_SHADER 1" << endl;
+		s << computeLayout << "\n"; 
+	}
+	//s << shaderSrc.src;
+	string str = s.str();
+	const char* strSrc[] = { str.c_str(), shaderSrc.src.c_str() };
+	glShaderSource(shader, 2, strSrc, NULL);
     glCompileShader(shader);
     
     GLint tmp,res;
