@@ -204,8 +204,8 @@ string& Effect::Dir()
 
 unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log)
 {
-		GLFX_ERROR_CHECK
-	if (tech.length() == 0)
+	GLFX_ERROR_CHECK
+	if(tech.length() == 0)
 	{
 		std::cerr<<"Must have a technique"<<std::endl;
 		assert(tech.length());
@@ -223,19 +223,26 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			jt=t->GetPasses().find(pass);
 		if(jt==t->GetPasses().end())
 			return 0;
-		unsigned programId = jt->second.CompileAndLink(log);
-		if (programId)
+
+		unsigned programId = jt->second.CompileAndLink(m_sharedCode.str(),log);
+		if(programId)
 		{
 			GLFX_ERROR_CHECK
-				glObjectLabel(GL_PROGRAM,
+			glObjectLabel(GL_PROGRAM,
 				programId,
 				tech.length(),
 				tech.c_str());
-
 			GLFX_ERROR_CHECK
-				passStates[programId] = jt->second.passState;
-			if (jt->second.IsTransformFeedbackShader())
-				transformFeedbackShaders.insert(programId);
+			passStates[programId] = jt->second.passState;
+			passProgramMap[programId]=&jt->second;
+			if(jt->second.IsTransformFeedbackShader()&&jt->second.GetShader(GEOMETRY_SHADER))
+			{
+				Program::Shader *gs=jt->second.GetShader(GEOMETRY_SHADER);
+				string geometryCompiledShader=gs->compiledShaderName;
+				auto i=m_compiledShaders.find(geometryCompiledShader);
+				if(i!=m_compiledShaders.end())
+					jt->second.SetInputTopology(i->second->transformFeedbackTopology);
+			}
 		}
 		return programId;
 	}
@@ -343,6 +350,13 @@ void Effect::PopulateProgramList()
 	for (map<string, TechniqueGroup*>::const_iterator it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		m_techniqueGroupNames.push_back(it->first);
 	CreateDefinedSamplers();
+
+	ostringstream decl;
+	for(auto i=additionalTextureDeclarations.begin();i!=gEffect->additionalTextureDeclarations.end();i++)
+	{
+		decl << "uniform " << i->second.type << " " << i->first << ";\n";
+	}
+	m_sharedCode.str(decl.str()+m_sharedCode.str());
 }
 
 void Effect::CreateDefinedSamplers()
@@ -373,7 +387,10 @@ void Effect::CreateDefinedSamplers()
 
 bool Effect::PassHasTransformFeedback(unsigned pass)
 {
-	return (transformFeedbackShaders.find(pass) != transformFeedbackShaders.end());
+	auto i=passProgramMap.find(pass);
+	if(i==passProgramMap.end())
+		return false;
+	return (i->second->IsTransformFeedbackShader());
 }
 
 void Effect::Apply(unsigned pass)
@@ -398,8 +415,38 @@ void Effect::Apply(unsigned pass)
 	//		GL_POINTS	points
 	//		GL_LINES	line_strip
 //			GL_TRIANGLES	triangle_strip
+		
+		auto i=passProgramMap.find(pass);
+		if(i!=passProgramMap.end())
+		{
+			if(i->second->IsTransformFeedbackShader())
+			{
+				Topology t=i->second->GetInputTopology();
+				/*
+If Transform Feedback is active, the transform feedback mode must match the applicable primitive mode.
 
-		glBeginTransformFeedback(GL_TRIANGLES);
+That mode is determined as follows:
+	If a Geometry Shader is active, then the applicable primitive mode is the GS's output primitive type.
+	If no GS is active but a Tessellation Evaluation Shader is active, then the applicable primitive mode is the TES's output primitive type.
+	Otherwise, the applicable primitive type is the primitive mode provided to the drawing command.
+				*/
+
+				switch(t)
+				{
+					case TRIANGLES:
+						glBeginTransformFeedback(GL_TRIANGLES);
+					break;
+					case LINES:
+						glBeginTransformFeedback(GL_LINES);
+					break;
+					case POINTS:
+						glBeginTransformFeedback(GL_POINTS);
+					break;
+				default:
+					break;
+				};
+			}
+		}
 	}
 }
 

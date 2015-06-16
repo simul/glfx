@@ -13,8 +13,12 @@ namespace glfxParser
 		PassState passState;
 		struct Shader
 		{
+			Shader():src(NULL)
+			{
+			}
 			string  name;
-			string  src;
+			string preamble;
+			string  *src;
 			string  layout;
 			string	compiledShaderName;
 		};
@@ -24,19 +28,32 @@ namespace glfxParser
 		Program(const Program& prog);
 		~Program();
 		const Program &operator=(const Program &);
-		unsigned CompileAndLink(string& log) ;
+		unsigned CompileAndLink(const std::string &shared_src,std::string& log) ;
 		unsigned programId;
 		bool IsTransformFeedbackShader() const
 		{
 			return transformFeedback;
 		}
+		Topology GetInputTopology() const
+		{
+			return transformFeedbackTopology;
+		}
+		void SetInputTopology(Topology t)
+		{
+			transformFeedbackTopology=t;
+		}
+		Shader *GetShader(ShaderType type)
+		{
+			return &(m_shaders[type]);
+		}
 	private:
-		int CompileShader(unsigned shader, const Shader& shaderSrc, ShaderType type,  ostringstream& sLog) const;
-		std::string computeLayout;
-		Shader  m_shaders[NUM_OF_SHADER_TYPES];
-		bool    m_separable;
-		bool    transformFeedback;
-		friend int ::glfxparse();
+		int CompileShader(unsigned shader, const std::string& name,const std::string &shared, const std::string &src, ShaderType type,ostringstream& sLog) const;
+		std::string	computeLayout;
+		Shader		m_shaders[NUM_OF_SHADER_TYPES];
+		bool		m_separable;
+		bool		transformFeedback;
+		Topology transformFeedbackTopology;
+		friend int	::glfxparse();
 	};
 	class Technique
 	{

@@ -12,19 +12,18 @@ namespace glfxParser
 	typedef std::map<std::string,int> ProfileMap;
 	class Effect
 	{
-		std::map<std::string,TechniqueGroup*>	m_techniqueGroups;
+		std::map<std::string,TechniqueGroup*>		m_techniqueGroups;
 		std::vector<std::string>					m_techniqueNames;
 		std::vector<std::string>					m_techniqueGroupNames;
-		std::map<std::string,Sampler*>			m_samplers;
-		std::map<std::string,BlendState*>		m_blendStates;
+		std::map<std::string,Sampler*>				m_samplers;
+		std::map<std::string,BlendState*>			m_blendStates;
 		std::map<std::string,DepthStencilState*>	m_depthStencilStates;
-		std::map<std::string,SamplerState*>		m_samplerStates;
-		std::map<std::string,RasterizerState*>	m_rasterizerStates;
-		std::map<std::string,std::string>		m_shaders;
-		std::map<std::string,ComputeLayout>		m_shaderLayouts;
-		std::map<unsigned,PassState>		passStates;
-		std::set<unsigned>					transformFeedbackShaders;
-		std::map<std::string, unsigned>			samplerObjects;
+		std::map<std::string,SamplerState*>			m_samplerStates;
+		std::map<std::string,RasterizerState*>		m_rasterizerStates;
+		std::map<std::string,ComputeLayout>			m_shaderLayouts;
+		std::map<unsigned,PassState>				passStates;
+		std::map<unsigned,Program*>					passProgramMap;
+		std::map<std::string, unsigned>				samplerObjects;
 		//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 		//! We will use the keyword Profile.
 		//! e.g.

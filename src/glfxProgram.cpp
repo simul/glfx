@@ -49,7 +49,7 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	, const map<string, set<TextureSampler*> > &textureSamplersByShader, const string &compute_layout)
-	: programId(0), transformFeedback(false), computeLayout(compute_layout)
+	: programId(0), transformFeedback(false), computeLayout(compute_layout),transformFeedbackTopology(TRIANGLES)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -106,11 +106,12 @@ const Program& Program::operator=(const Program& prog)
 	programId = prog.programId;
 	m_separable = prog.m_separable;
 	transformFeedback = prog.transformFeedback;
+	transformFeedbackTopology = prog.transformFeedbackTopology;
 	computeLayout = prog.computeLayout;
 	return *this;
 }
 
-unsigned Program::CompileAndLink(string& log) 
+unsigned Program::CompileAndLink(const string &shared_src,string& log) 
 {
     vector<GLuint> shaders;
     ostringstream sLog;
@@ -128,10 +129,10 @@ unsigned Program::CompileAndLink(string& log)
                                             GL_COMPUTE_SHADER};
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-        if(m_shaders[i].src.size()>0)
+        if(m_shaders[i].src&&m_shaders[i].src->size()>0)
 		{
             shaders.push_back(glCreateShader(shaderTypes[i]));
-			res &= CompileShader(shaders.back(), m_shaders[i], (ShaderType)i,  sLog);
+			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,*m_shaders[i].src, (ShaderType)i,  sLog);
             glAttachShader(programId, shaders.back());
         }
     }
@@ -173,19 +174,18 @@ unsigned Program::CompileAndLink(string& log)
     return programId;
 }
 
-int Program::CompileShader(unsigned shader, const Shader& shaderSrc, ShaderType type, ostringstream& sLog) const
+int Program::CompileShader(unsigned shader, const string& name,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
-	const char* layout = shaderSrc.layout.c_str();
 	ostringstream s;
 	if (type == COMPUTE_SHADER)
 	{
 		s << "#define IN_COMPUTE_SHADER 1" << endl;
 		s << computeLayout << "\n"; 
 	}
-	//s << shaderSrc.src;
 	string str = s.str();
-	const char* strSrc[] = { str.c_str(), shaderSrc.src.c_str() };
-	glShaderSource(shader, 2, strSrc, NULL);
+	string preamble = m_shaders[type].preamble;
+	const char* strSrc[] = { preamble.c_str(),str.c_str(),shared.c_str(),src.c_str() };
+	glShaderSource(shader, 4, strSrc, NULL);
     glCompileShader(shader);
     
     GLint tmp,res;
@@ -194,13 +194,13 @@ int Program::CompileShader(unsigned shader, const Shader& shaderSrc, ShaderType 
     //if(!tmp)
 	{
 		if(!tmp)
-			sLog<<"Status: "<<shaderSrc.name<<" shader compiled with errors"<<endl;
+			sLog<<"Status: "<<name<<" shader compiled with errors"<<endl;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
 
 		char* infoLog=new char[tmp];
 		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
 		if (strlen(infoLog)>0)
-			sLog<<"Compilation details for "<<shaderSrc.name<<" shader:"<<endl<<infoLog<<endl;
+			sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
 		//if(!res&&IsDebuggerPresent())
 		//	DebugBreak();
 		delete[] infoLog;

@@ -316,7 +316,6 @@ struct CompilableShader
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
-	//glfxParser::ShaderType shaderType;
 };
 //! A shader to be compiled. 
 struct CompiledShader

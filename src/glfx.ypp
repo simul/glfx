@@ -1188,34 +1188,46 @@ prog_def : shaders_list
 shaders_list : shaders_list shader_def
 	{
 		map<ShaderType, Program::Shader>* map1=$1.shaders;
-		ShaderType sType	=$2.sType;
-		string src			=$2.strs[0];
-		string name			=$2.strs[1];
-		$$.strs[2]			=$1.strs[2]+$2.strs[2];// compute layout
-		(*map1)[sType].src					=src;
+		ShaderType sType				=$2.sType;
+		string preamble					=$2.strs[0];
+		string name						=$2.strs[1];
+		string compiledShaderName		=$2.strs[3];
+		$$.strs[2]						=$1.strs[2]+$2.strs[2];// compute layout
+		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
+		if(i!=gEffect->m_compiledShaders.end())
+			(*map1)[sType].src					=&i->second->source;
+		else if(compiledShaderName.length())
+			errSem(string("Compiled shader not found: ")+compiledShaderName);
+		(*map1)[sType].preamble				=preamble;
 		(*map1)[sType].name					=name;
-		(*map1)[sType].compiledShaderName	=$$.strs[3];
+		(*map1)[sType].compiledShaderName	=compiledShaderName;
 		$$.shaders							=map1;
 	}
 	| shader_def
 	{
 		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
-		string src			=$1.strs[0];
-		string name			=$1.strs[1];
-		ShaderType sType	=$1.sType;
-		$$.strs[0]			=$1.strs[0];
-		$$.strs[1]			=$1.strs[1];
-		$$.strs[2]			=$1.strs[2];
-		$$.strs[3]			=$1.strs[3];
+		string preamble				=$1.strs[0];
+		string name					=$1.strs[1];
+		string compiledShaderName	=$1.strs[3];
+		ShaderType sType			=$1.sType;
+		$$.strs[0]					=$1.strs[0];
+		$$.strs[1]					=$1.strs[1];
+		$$.strs[2]					=$1.strs[2];
+		$$.strs[3]					=compiledShaderName;
+		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
 		$$.sType							=sType;
-		(*map1)[sType].src					=src;
+		if(i!=gEffect->m_compiledShaders.end())
+			(*map1)[sType].src					=&i->second->source;
+		else if(compiledShaderName.length())
+			errSem(string("Compiled shader not found: ")+compiledShaderName);
 		(*map1)[sType].name					=name;
-		(*map1)[sType].compiledShaderName	=$$.strs[3];
+		(*map1)[sType].compiledShaderName	=compiledShaderName;
+		(*map1)[sType].preamble				=preamble;
 		$$.shaders=map1;
 	}
 	| shaders_list shader_fn
 	{
-		map<ShaderType, Program::Shader>* map1=$1.shaders;
+		//.map<ShaderType, Program::Shader>* map1=$1.shaders;
 		$$.shaders=$1.shaders;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
@@ -1225,7 +1237,7 @@ shaders_list : shaders_list shader_def
 	| shader_fn
 	{
 		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
-		$$.shaders=map1;
+		$$.shaders	=map1;
 		$$.strs[0]	="";
 		$$.strs[1]	="";
 		$$.strs[2]	="";
@@ -1302,30 +1314,26 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 					ostringstream theShader;
 					theShader << "#version " << compiledShader->version << endl;
 					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-					for(auto i=gEffect->additionalTextureDeclarations.begin();i!=gEffect->additionalTextureDeclarations.end();i++)
-					{
-						theShader << "uniform " << i->second.type << " " << i->first << ";\n";
-					}
 					if(shaderCommand<NumShaderCommands)
 					{
 						string shaderName=compiledShader->m_functionName;
 						if(_stricmp(shaderName.c_str(),"NULL")!=0)
 						{
-							theShader<<gEffect->m_sharedCode.str();
-							map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
-							if(it==gEffect->m_shaders.end())
+							//theShader<<gEffect->m_sharedCode.str();
+							//map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
+							/*if(it==gEffect->m_shaders.end())
 							{
 								ostringstream errMsg;
 								errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
 								errSem(errMsg.str(), $3.lineno);
 							}
-							else
+							else*/
 							{
 								if (shaderCommand == COMPUTE_SHADER)
 									theShader << gEffect->m_shaderLayouts[shaderName].text() << "\n";
 								// Currently in case of error it never returns (throw)
 								// TODO: Handle continuation in case of error
-								theShader<<it->second;
+								//theShader<<compiledShader->source;
 							}
 						}
 						$$.strs[0]	=theShader.str();
@@ -1403,7 +1411,7 @@ shader_compile: IDENTIFIER
 			compiledShader->version							= $$.num = version_num;
 			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
 			Compile($1.sType, sh, compiledShader);
-			gEffect->m_shaders[shaderName] = compiledShader->source; 
+			//gEffect->m_shaders[shaderName] = compiledShader->source; 
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
 				{
