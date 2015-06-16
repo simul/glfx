@@ -238,10 +238,8 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			if(jt->second.IsTransformFeedbackShader()&&jt->second.GetShader(GEOMETRY_SHADER))
 			{
 				Program::Shader *gs=jt->second.GetShader(GEOMETRY_SHADER);
-				string geometryCompiledShader=gs->compiledShaderName;
-				auto i=m_compiledShaders.find(geometryCompiledShader);
-				if(i!=m_compiledShaders.end())
-					jt->second.SetInputTopology(i->second->transformFeedbackTopology);
+				if(gs->compiledShader)
+					jt->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
 			}
 		}
 		return programId;
@@ -421,7 +419,7 @@ void Effect::Apply(unsigned pass)
 		{
 			if(i->second->IsTransformFeedbackShader())
 			{
-				Topology t=i->second->GetInputTopology();
+				Topology t=i->second->GetOutputTopology();
 				/*
 If Transform Feedback is active, the transform feedback mode must match the applicable primitive mode.
 

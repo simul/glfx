@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include "glfxClasses.h"
+struct CompiledShader;
 namespace glfxParser
 {
 	struct TextureSampler;
@@ -13,14 +14,13 @@ namespace glfxParser
 		PassState passState;
 		struct Shader
 		{
-			Shader():src(NULL)
+			Shader():compiledShader(NULL)
 			{
 			}
 			string  name;
 			string preamble;
-			string  *src;
+			CompiledShader  *compiledShader;
 			string  layout;
-			string	compiledShaderName;
 		};
 
 		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout);
@@ -34,11 +34,11 @@ namespace glfxParser
 		{
 			return transformFeedback;
 		}
-		Topology GetInputTopology() const
+		Topology GetOutputTopology() const
 		{
 			return transformFeedbackTopology;
 		}
-		void SetInputTopology(Topology t)
+		void SetOutputTopology(Topology t)
 		{
 			transformFeedbackTopology=t;
 		}

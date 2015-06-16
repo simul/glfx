@@ -90,7 +90,7 @@ struct glfxstype
         string	storage;
         string	type;
         string	identifier;
-        string	semantic;
+        string	template_;
 		int type_enum;		// corresponds to yytokentype enum
     };
 
@@ -323,6 +323,7 @@ struct CompiledShader
 	ShaderType shaderType;
 	int version;
 	Topology transformFeedbackTopology;
+	std::string feedbackOutput;
 	std::string m_functionName;
 	std::string source;
 };

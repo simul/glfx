@@ -129,14 +129,15 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
                                             GL_COMPUTE_SHADER};
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-        if(m_shaders[i].src&&m_shaders[i].src->size()>0)
+        if(m_shaders[i].compiledShader)
 		{
             shaders.push_back(glCreateShader(shaderTypes[i]));
-			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,*m_shaders[i].src, (ShaderType)i,  sLog);
+			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
             glAttachShader(programId, shaders.back());
         }
     }
-    
+   // const GLchar* feedbackVaryings[] = { "outValue" };
+//glTransformFeedbackVaryings(programId, 1, feedbackVaryings, GL_INTERLEAVED_ATTRIBS);
     if(m_separable)
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
 	

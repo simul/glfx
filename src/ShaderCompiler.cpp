@@ -23,10 +23,10 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		if(storage==string("inout"))
 		{
 			size_t brack_pos=type.find("<");
-			if(it->semantic.size())
+			if(it->template_.size())
 			{
 				string output_type=type;
-				type=it->semantic;
+				type=it->template_;
 				stringReplaceAll(output_type,"PointStream","points");
 				stringReplaceAll(output_type,"LineStream","line_strip");
 				stringReplaceAll(output_type,"TriangleStream","triangle_strip");
@@ -48,11 +48,20 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		//	triangle_strip
 			if(storage==string("inout"))
 			{
-				size_t brack_pos=type.find("<");
-				if(brack_pos<type.length())
+				string output_type=it->type;
 				{
-					string output_type=type.substr(0,brack_pos);
-					type=type.substr(brack_pos+1,type.length()-brack_pos-2);
+					if (output_type.find("PointStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = POINTS;
+					}
+					if (output_type.find("LineStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = LINES;
+					}
+					if (output_type.find("TriangleStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = TRIANGLES;
+					}
 					stringReplaceAll(output_type,"PointStream","points");
 					stringReplaceAll(output_type,"LineStream","line_strip");
 					stringReplaceAll(output_type,"TriangleStream","triangle_strip");
@@ -104,18 +113,6 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				//	lines_adjacency			4
 				//	triangles				3
 				//	triangles_adjacency		6
-				if (storage == string("point"))
-				{
-					compiledShader->transformFeedbackTopology = POINTS;
-				}
-				else if (storage == string("line") || storage == string("lineadj"))
-				{
-					compiledShader->transformFeedbackTopology = LINES;
-				}
-				else if (storage == string("triangle") || storage == string("triangleadj"))
-				{
-					compiledShader->transformFeedbackTopology = TRIANGLES;
-				}
 				storage+="s";
 				stringReplaceAll(storage,"adjs","s_adjacency");
 				shaderCode<<"layout("<<storage<<") in;\n";
@@ -168,9 +165,9 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		{
 			type+=varType->second.id;
 		}
-		if(it->semantic.length()>0)
+		if(it->template_.length()>0)
 		{
-			extraDeclarations<<it->type<<" "<<structInstanceName<<"="<<it->semantic<<";\n"<<endl;
+			extraDeclarations<<it->type<<" "<<structInstanceName<<"="<<it->template_<<";\n"<<endl;
 		}
 		else
 		{

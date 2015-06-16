@@ -627,13 +627,13 @@ prog : prog tok
 					TextureSampler *ts=*v;
 					usedSamplerStates.insert(ts->samplerStateName);
 					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
-					//if(j->semantic.size())
-					//	params<<": "<<j->semantic;
+				
+					
 					glfxstype::variable p;
 					p.storage		=j->storage;
 					p.type			=j->type;
 					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
-					p.semantic		=j->semantic;
+					p.template_		=j->template_;
 					f->expanded_parameters.push_back(p);
 					buildFunction.removeTextureSampler(ts->textureSamplerName());
 				}
@@ -666,7 +666,7 @@ prog : prog tok
 						p.storage			=j->storage;
 						p.type				=type;
 						p.identifier		=ts->textureSamplerName();
-						p.semantic			=j->semantic;
+						p.template_			=j->template_;
 						f->expanded_parameters.push_back(p);
 						buildFunction.removeTextureSampler(ts->textureSamplerName());
 					}
@@ -720,7 +720,7 @@ prog : prog tok
 		ostringstream finalCode;
 		sh.function.parameters	=*$5.vars;
 
-		//ostringstream str;
+		
 		sh.function.textureSamplers					=buildFunction.textureSamplers;
 		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
 		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
@@ -979,7 +979,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		var.storage		=$3.strs[1];
 		var.type		=$3.strs[2];
 		var.identifier	=$3.strs[3];
-		var.semantic	=$3.strs[4];
+		var.template_	=$3.strs[4];
 		var.type_enum = ToGLTextureType($3.token);
 		$$.vars->push_back(var);
 		buildFunction.parameters.push_back(var);
@@ -992,7 +992,7 @@ param_declaration_list : param_declaration_list ',' param_declaration
 		var.storage		=$1.strs[1];
 		var.type		=$1.strs[2];
 		var.identifier	=$1.strs[3];
-		var.semantic	=$1.strs[4];
+		var.template_	=$1.strs[4];
 		var.type_enum = ToGLTextureType($1.token);
     
 		$$.vars = new vector<YYSTYPE::variable>;
@@ -1008,8 +1008,8 @@ param_declaration_list : param_declaration_list ',' param_declaration
 param_declaration: param opt_sq location
 {
     ostringstream prepend;
-	string semantic		=$1.strs[0];
-	string location		=$3.strs[1];
+	string template_		=$1.strs[0];
+	string location			=$3.strs[1];
     switch($3.rType)
 	{
     case REGISTER_INT:
@@ -1019,7 +1019,7 @@ param_declaration: param opt_sq location
         prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     case SEMANTIC:
-		semantic=getGLInputSemantic($3.num);
+		template_=getGLInputSemantic($3.num);
         break;
     }
     prepend<<$1.strs[1];
@@ -1033,7 +1033,7 @@ param_declaration: param opt_sq location
     $$.strs[2]	=type;
     $$.strs[3]	=id;
 	$$.token	=$1.token;
-    $$.strs[4]	=semantic;
+    $$.strs[4]	=template_;
 };
 
 opt_sq: '[' opt_num ']'
@@ -1194,14 +1194,13 @@ shaders_list : shaders_list shader_def
 		string compiledShaderName		=$2.strs[3];
 		$$.strs[2]						=$1.strs[2]+$2.strs[2];// compute layout
 		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i!=gEffect->m_compiledShaders.end())
-			(*map1)[sType].src					=&i->second->source;
-		else if(compiledShaderName.length())
-			errSem(string("Compiled shader not found: ")+compiledShaderName);
-		(*map1)[sType].preamble				=preamble;
-		(*map1)[sType].name					=name;
-		(*map1)[sType].compiledShaderName	=compiledShaderName;
-		$$.shaders							=map1;
+		if(i==gEffect->m_compiledShaders.end())
+			(*map1)[sType].compiledShader	=NULL;
+		else
+			(*map1)[sType].compiledShader	=i->second;
+		(*map1)[sType].preamble			=preamble;
+		(*map1)[sType].name				=name;
+		$$.shaders						=map1;
 	}
 	| shader_def
 	{
@@ -1215,13 +1214,12 @@ shaders_list : shaders_list shader_def
 		$$.strs[2]					=$1.strs[2];
 		$$.strs[3]					=compiledShaderName;
 		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
+		if(i==gEffect->m_compiledShaders.end())
+			(*map1)[sType].compiledShader	=NULL;
+		else
+			(*map1)[sType].compiledShader	=i->second;
 		$$.sType							=sType;
-		if(i!=gEffect->m_compiledShaders.end())
-			(*map1)[sType].src					=&i->second->source;
-		else if(compiledShaderName.length())
-			errSem(string("Compiled shader not found: ")+compiledShaderName);
 		(*map1)[sType].name					=name;
-		(*map1)[sType].compiledShaderName	=compiledShaderName;
 		(*map1)[sType].preamble				=preamble;
 		$$.shaders=map1;
 	}
@@ -1375,6 +1373,7 @@ shader_compile: IDENTIFIER
 			//	gEffect->m_compiledShaders[]=i->second;
 			}
 			$$.strs[0]										=gsName;
+			i->second->feedbackOutput								=definition;
 		}
 		| COMPILE_SHADER '(' SHADER_PROFILE ',' IDENTIFIER '(' ')' ')' 
 		{
@@ -1411,7 +1410,6 @@ shader_compile: IDENTIFIER
 			compiledShader->version							= $$.num = version_num;
 			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
 			Compile($1.sType, sh, compiledShader);
-			//gEffect->m_shaders[shaderName] = compiledShader->source; 
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
 				{
