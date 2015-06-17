@@ -212,8 +212,11 @@ warning
 <INITIAL,IN_UNIFORM_DECL>"RWTexture2D"|"image2D"	{
 														stdReturn(RW_TEXTURE2D);
 													}  
-<INITIAL,IN_UNIFORM_DECL>"Texture2DArray"			{
+<INITIAL,IN_UNIFORM_DECL>"RWTexture2DArray"			{
 														stdReturn(RW_TEXTURE2DARRAY);
+													}  
+<INITIAL,IN_UNIFORM_DECL>"Texture2DArray"			{
+														stdReturn(TEXTURE2DARRAY);
 													}  
 <INITIAL,IN_UNIFORM_DECL>"StructuredBuffer"			{
 														stdReturn(STRUCTUREDBUFFER);

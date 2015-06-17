@@ -49,7 +49,7 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	, const map<string, set<TextureSampler*> > &textureSamplersByShader, const string &compute_layout)
-	: programId(0), transformFeedback(false), computeLayout(compute_layout),transformFeedbackTopology(TRIANGLES)
+	: programId(0), transformFeedback(false), computeLayout(compute_layout),transformFeedbackTopology(POINTS)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -138,6 +138,18 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
     }
    // const GLchar* feedbackVaryings[] = { "outValue" };
 //glTransformFeedbackVaryings(programId, 1, feedbackVaryings, GL_INTERLEAVED_ATTRIBS);
+	if(IsTransformFeedbackShader()&&m_shaders[GEOMETRY_SHADER].compiledShader)
+	{
+		const vector<string> &feedbackOutput=m_shaders[GEOMETRY_SHADER].compiledShader->feedbackOutput;
+		GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
+		for(int i=0;i<feedbackOutput.size();i++)
+		{
+			Strings[i]=feedbackOutput[i].c_str();
+			//[] = {"gl_Position", "block.Color"}; 
+		}
+		glTransformFeedbackVaryings(programId, feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
+		delete Strings;
+	}
     if(m_separable)
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
 	

@@ -323,9 +323,11 @@ struct CompiledShader
 	ShaderType shaderType;
 	int version;
 	Topology transformFeedbackTopology;
-	std::string feedbackOutput;
+	std::vector<std::string> feedbackOutput;
 	std::string m_functionName;
 	std::string source;
+	std::string outputStruct;
+	std::string outputStructName;
 };
 extern void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,CompiledShader *com);
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);

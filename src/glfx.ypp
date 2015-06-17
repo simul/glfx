@@ -312,7 +312,7 @@
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
 %token WARNING DEF MESSAGE PACK_MATRIX
-%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE3D TEXTURECUBE IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE2DARRAY TEXTURE3D TEXTURECUBE IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -547,8 +547,7 @@ prog : prog tok
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
 		string compiledShaderName		=$2.strs[0];
-		CompiledShader *cs				=gEffect->m_compiledShaders[$4.strs[0]];
-		CompiledShader *compiledShader	=NULL;
+		CompiledShader *compiledShader	=gEffect->m_compiledShaders[$4.strs[0]];
 		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
 		if(i!=gEffect->m_compiledShaders.end())
 		{
@@ -558,7 +557,7 @@ prog : prog tok
 		}
 		if($1.sType!=$4.sType)
 			errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't assign ")+ShaderTypeToString($4.sType)+" shader to ")+ShaderTypeToString($1.sType)+" shader").c_str());
-		gEffect->m_compiledShaders[compiledShaderName]=compiledShader=cs;
+		gEffect->m_compiledShaders[compiledShaderName]=compiledShader;
 	}
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
@@ -771,7 +770,7 @@ prog : prog tok
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
 	}
-	texture_type: TEXTURE2D|TEXTURE3D|TEXTURE2DMS|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY|TEXTURECUBE
+	texture_type: TEXTURE2D|TEXTURE3D|TEXTURE2DMS|TEXTURE2DARRAY|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY|TEXTURECUBE
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
@@ -1307,38 +1306,38 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 					$$.sCommand						=$1.sCommand;
 					$$.sType						=$1.sType;
 					if($$.sType!=$3.sType)
-						errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't call ")+$1.strs[0]+" with ")+ShaderTypeToString($3.sType)+" shader as input.").c_str());
-
-					ostringstream theShader;
-					theShader << "#version " << compiledShader->version << endl;
-					glfxParser::ShaderCommand shaderCommand=$1.sCommand;
-					if(shaderCommand<NumShaderCommands)
 					{
-						string shaderName=compiledShader->m_functionName;
-						if(_stricmp(shaderName.c_str(),"NULL")!=0)
+						if($$.sType==GEOMETRY_SHADER&&$3.sType==VERTEX_SHADER)
 						{
-							//theShader<<gEffect->m_sharedCode.str();
-							//map<string, string>::const_iterator it=gEffect->m_shaders.find(shaderName);
-							/*if(it==gEffect->m_shaders.end())
-							{
-								ostringstream errMsg;
-								errMsg<<"Unable to find referenced shader \""<<shaderName<<'\"';
-								errSem(errMsg.str(), $3.lineno);
-							}
-							else*/
-							{
-								if (shaderCommand == COMPUTE_SHADER)
-									theShader << gEffect->m_shaderLayouts[shaderName].text() << "\n";
-								// Currently in case of error it never returns (throw)
-								// TODO: Handle continuation in case of error
-								//theShader<<compiledShader->source;
-							}
+							$$.strs[0]	="";
+							$$.strs[1]	="";
+							$$.strs[3]	="NULL";
 						}
-						$$.strs[0]	=theShader.str();
-						$$.strs[1]	=shaderName;
-						$$.strs[3]	=compiledShaderName;
-						//if (shaderCommand == COMPUTE_SHADER)
-						//	$$.strs[2] = gEffect->m_shaderLayouts[shaderName].text();
+						else
+						{
+							errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't call ")+$1.strs[0]+" with ")+ShaderTypeToString($3.sType)+" shader as input.").c_str());
+						}
+					}
+					else
+					{
+						ostringstream preamble;
+						preamble << "#version " << compiledShader->version << endl;
+						glfxParser::ShaderCommand shaderCommand=$1.sCommand;
+						if(shaderCommand<NumShaderCommands)
+						{
+							string shaderName=compiledShader->m_functionName;
+							if(_stricmp(shaderName.c_str(),"NULL")!=0)
+							{
+								
+								if (shaderCommand == COMPUTE_SHADER)
+									preamble << gEffect->m_shaderLayouts[shaderName].text() << "\n";
+							}
+							$$.strs[0]	=preamble.str();
+							$$.strs[1]	=shaderName;
+							$$.strs[3]	=compiledShaderName;
+							//if (shaderCommand == COMPUTE_SHADER)
+							//	$$.strs[2] = gEffect->m_shaderLayouts[shaderName].text();
+						}
 					}
 				}
 			};
@@ -1356,11 +1355,15 @@ shader_compile: IDENTIFIER
 		}
 		| CONSTRUCT_GS_WITH_SO '(' IDENTIFIER ',' QUOTED_STRING ')' 
 		{
-			$$.lineno				=$5.lineno;
-			$$.sType				=GEOMETRY_SHADER;
-			string gsName			=$3.strs[0];
-			string definition		=$5.strs[0];
-			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(gsName);
+			$$.lineno						=$5.lineno;
+			$$.sType						=GEOMETRY_SHADER;
+			string gsName					=$3.strs[0];
+			string definition				=$5.strs[0];
+			CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(gsName);
+			string tempName					=gsName+"_GS_with_SO";
+			$$.strs[0]						=tempName;
+			CompiledShader *new_cs			=NULL;
+			gEffect->m_compiledShaders[tempName]=new_cs=new CompiledShader;
 			if(i==gEffect->m_compiledShaders.end())
 			{
 				ostringstream msg;
@@ -1369,11 +1372,51 @@ shader_compile: IDENTIFIER
 			}
 			else
 			{
-				// gl doesn't really care.
-			//	gEffect->m_compiledShaders[]=i->second;
+				CompiledShader *compiledShader	=i->second;
+				*new_cs=*compiledShader;
+				if(definition.size())
+				{
+					find_and_replace(definition,"\"","");
+					std::vector<std::string> elements=split(definition,';');
+					i->second->feedbackOutput.clear();
+					auto u=gEffect->m_structs.find(new_cs->outputStruct);
+					if(u==gEffect->m_structs.end())
+					{
+						errSem(string("can't find output struct ")+new_cs->outputStruct);
+					}
+					else
+					for(int i=0;i<elements.size();i++)
+					{
+						const Struct *struc=(u->second);
+						string decl=elements[i];
+						vector<string> parts=split(decl,'.');
+						if(parts.size()!=1&&parts.size()!=2)
+						{
+							errSem("Invalid Streamout definition");
+							continue;
+						}
+						string semantic=parts[0];
+						string swizzle;
+						if(parts.size()==2)
+							swizzle=parts[1];
+						for(int i=0;i<(int)struc->m_structMembers.size();i++)
+						{
+							const StructMember &m=struc->m_structMembers[i];
+							if(m.semantic==semantic)
+							{
+								string modified=(new_cs->outputStructName+".")+m.name;
+								if(swizzle.size())
+								{
+								//	modified+=".";
+								//	modified+=swizzle;
+								}
+								new_cs->feedbackOutput.push_back(modified);
+								break;
+							}
+						}
+					}
+				}
 			}
-			$$.strs[0]										=gsName;
-			i->second->feedbackOutput								=definition;
 		}
 		| COMPILE_SHADER '(' SHADER_PROFILE ',' IDENTIFIER '(' ')' ')' 
 		{
@@ -1392,24 +1435,32 @@ shader_compile: IDENTIFIER
 			else
 				version_num=i->second;
 			string shaderName=$5.strs[0];
-			CompilableShader &sh=*(compilableShaders[shaderName]);
-			gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
-
-			gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
-
 			stringstream ss;
 			ss << $5.strs[0]<<"Compiled"<<version_num;
 			string compiledShaderName						=ss.str();
 			$$.strs[0]										=compiledShaderName;
+			auto u=compilableShaders.find(shaderName);
+			if(u==compilableShaders.end())
+			{
+				errSem(string("Can't find shader ")+shaderName);
+			}
+			else
+			{
+				CompilableShader &sh=*(u->second);
+				gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
 
-			CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
+				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-			gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
-			compiledShader->m_functionName					=$5.strs[0];
-			compiledShader->shaderType						=$1.sType;
-			compiledShader->version							= $$.num = version_num;
-			// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
-			Compile($1.sType, sh, compiledShader);
+
+				CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
+
+				gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
+				compiledShader->m_functionName					=$5.strs[0];
+				compiledShader->shaderType						=$1.sType;
+				compiledShader->version							= $$.num = version_num;
+				// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
+				Compile($1.sType, sh, compiledShader);
+			}
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
 				{
@@ -1508,7 +1559,8 @@ init_declarator		: declarator
 		{
 			// An expression of the form vec2 c=....;
 			// Pass-through normally, but most GLSL compilers cannot handle array initializers.
-			string initializer=$3.strs[0];
+			string declarator	=$1.strs[0];
+			string initializer	=$3.strs[0];
 			if($3.children.size()<=1)
 			{
 				$$.strs[0]=$1.strs[0]+$2.strs[0]+initializer;
@@ -1529,15 +1581,25 @@ init_declarator		: declarator
 										poss[1]=vec2(1.0, 1.0);
 				Only trouble is, we don't yet have the "vec2" or whatever the type is. So we will insert a special %type% wildcard for now.
 										*/
+				
 				string name=$1.strs[0];
-				int sq_pos=(int)name.find("[");
-				name=name.substr(0,sq_pos);
-				for(int i=0;i<$3.children.size();i++)
+				size_t sq_pos=(int)name.find("[");
+				// Ugly test to see if we're initializing a list here:
+				if(sq_pos<name.length())
 				{
-					string c=$3.children[i].strs[0];
-					std::replace( c.begin(), c.end(), '{', '('); 
-					std::replace( c.begin(), c.end(), '}', ')'); 
-					declare_lines<<"\t"<<name<<"["<<i<<"]=%type%"<<c<<";\n";
+					name=name.substr(0,sq_pos);
+					for(int i=0;i<$3.children.size();i++)
+					{
+						string c=$3.children[i].strs[0];
+						std::replace( c.begin(), c.end(), '{', '('); 
+						std::replace( c.begin(), c.end(), '}', ')'); 
+						declare_lines<<"\t"<<name<<"["<<i<<"]=%type%"<<c<<";\n";
+					}
+				}
+				else
+				{
+					// So we're probably initializing a struct instead.
+					errSem("Don't yet know how to handle initialization lists for non-arrays!");
 				}
 				$$.strs[0]=declare_lines.str();
 			}
@@ -2454,6 +2516,8 @@ type_spec: IDENTIFIER
 			return gsampler3D;
 		case TEXTURECUBE:
 			return gsamplerCube;
+		case TEXTURE2DARRAY:
+			return gsampler2DArray;
 		case RW_TEXTURE2D:
 			return gimage2D;
 		case IMAGE3D:

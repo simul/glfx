@@ -235,11 +235,20 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			GLFX_ERROR_CHECK
 			passStates[programId] = jt->second.passState;
 			passProgramMap[programId]=&jt->second;
-			if(jt->second.IsTransformFeedbackShader()&&jt->second.GetShader(GEOMETRY_SHADER))
+			if(jt->second.IsTransformFeedbackShader())
 			{
 				Program::Shader *gs=jt->second.GetShader(GEOMETRY_SHADER);
-				if(gs->compiledShader)
-					jt->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
+				if(gs)
+				{
+					if(gs->compiledShader)
+						jt->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
+				}
+			/*	else
+				{
+					Program::Shader *vs=jt->second.GetShader(VERTEX_SHADER);
+					if(vs->compiledShader)
+						jt->second.SetOutputTopology(vs->compiledShader->transformFeedbackTopology);
+				}*/
 			}
 		}
 		return programId;

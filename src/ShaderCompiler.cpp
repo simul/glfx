@@ -4,6 +4,15 @@
 using namespace std;
 using namespace glfxParser;
 
+bool IsIntegerType(const string &type)
+{
+	if(type.substr(0,3)=="int"||type.substr(0,4)=="ivec"||type.substr(0,4)=="uvec"||type.substr(0,4)=="uint")
+	{
+		return true;
+	}
+	return false;
+}
+
 void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,CompiledShader *compiledShader)
 {
 	compiledShader->transformFeedbackTopology = UNDEFINED_TOPOLOGY;
@@ -30,7 +39,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				stringReplaceAll(output_type,"PointStream","points");
 				stringReplaceAll(output_type,"LineStream","line_strip");
 				stringReplaceAll(output_type,"TriangleStream","triangle_strip");
-				shaderCode<<"layout("<<output_type<<") out;\n";
+				//shaderCode<<"layout("<<output_type<<") out;\n";
 			}
 		}
 		map<string,Struct*>::const_iterator u=gEffect->m_structs.find(type);
@@ -48,6 +57,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		//	triangle_strip
 			if(storage==string("inout"))
 			{
+				compiledShader->outputStruct=type;
 				string output_type=it->type;
 				{
 					if (output_type.find("PointStream")<output_type.length())
@@ -132,7 +142,10 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
-					shaderCode<<'\t'<<m.type<<' '<<m.name<<";"<<endl;
+					shaderCode<<'\t';
+					if(IsIntegerType(m.type))
+						shaderCode<<"flat ";
+					shaderCode<<m.type<<' '<<m.name<<";"<<endl;
 				}
 				shaderCode<<"} "<<interfaceName<<";\n";
 				// Now we have to copy... EVERY MEMBER from the "interface" to the struct instance. Thanks, OpenGL!
@@ -142,6 +155,8 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					const StructMember &m=s->m_structMembers[i];
 					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<interfaceName<<"."<<m.name<<";\n";
 				}
+				if(shaderType==GEOMETRY_SHADER)
+					compiledShader->outputStructName=type+"IO";
 			}
 			else
 			{
@@ -198,9 +213,17 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
-					shaderCode<<"\t"<<m.type<<" "<<m.name<<";\n";
+					shaderCode<<"\t";
+					if(IsIntegerType(m.type))
+						shaderCode<<"flat ";
+					shaderCode<<m.type<<" "<<m.name<<";\n";
 				}
 				shaderCode<<"} "<<structInstanceName<<";"<<endl;
+				if(shaderType==VERTEX_SHADER)
+				{
+					compiledShader->outputStruct=sh.function.returnType;
+					compiledShader->outputStructName=structInstanceName;
+				}
 			}
 			string returnVariable=sh.returnable;
 			if(returnVariable.find("(")<returnVariable.length())

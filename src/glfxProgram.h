@@ -17,10 +17,11 @@ namespace glfxParser
 			Shader():compiledShader(NULL)
 			{
 			}
-			string  name;
-			string preamble;
+			string	name;
+			string	preamble;
 			CompiledShader  *compiledShader;
 			string  layout;
+			string	outputStruct;
 		};
 
 		Program(const map<ShaderType, Shader>& shaders,const PassState &p,const std::map<std::string,std::set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout);
