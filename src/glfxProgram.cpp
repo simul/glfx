@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cstdio>
 #include <cassert>
+#include <fstream>
 
 #ifndef _MSC_VER
 typedef int errno_t;
@@ -199,6 +200,15 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	string preamble = m_shaders[type].preamble;
 	const char* strSrc[] = { preamble.c_str(),str.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 4, strSrc, NULL);
+
+	string binaryFilename=string(glfxGetBinaryDirectory())+"/";
+	binaryFilename+=name+".glsl";
+	std::ofstream ofstr(binaryFilename);
+	ofstr.write(src.c_str(),strlen(src.c_str()));
+	if(errno!=0)
+	{
+		DebugBreak();
+	}
     glCompileShader(shader);
     
     GLint tmp,res;
@@ -209,13 +219,10 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 		if(!tmp)
 			sLog<<"Status: "<<name<<" shader compiled with errors"<<endl;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
-
 		char* infoLog=new char[tmp];
 		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
 		if (strlen(infoLog)>0)
 			sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
-		//if(!res&&IsDebuggerPresent())
-		//	DebugBreak();
 		delete[] infoLog;
 	}
     return res;

@@ -90,6 +90,8 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 //GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
 
+GLFXAPI void GLFX_APIENTRY glfxSetBinaryDirectory(const char *dir);
+GLFXAPI const char * GLFX_APIENTRY glfxGetBinaryDirectory();
 GLFXAPI void glfxApply(int effect,GLuint pass);
 GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);

@@ -822,6 +822,16 @@ size_t GLFX_APIENTRY glfxGetTechniqueIndex(int effect, const char* name)
 	}
 	return tmpList.size();
 }
+static std::string binaryDirectory;
+GLFXAPI void GLFX_APIENTRY glfxSetBinaryDirectory(const char *dir)
+{
+	binaryDirectory=dir;
+}
+
+GLFXAPI const char * GLFX_APIENTRY glfxGetBinaryDirectory()
+{
+	return binaryDirectory.c_str();
+}
 
 size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect)
 {
