@@ -13,7 +13,7 @@
 extern void CheckGLError();
 extern void BreakIfDebugging();
 #define GLFX_CERR std::cerr<<__FILE__<<"("<<__LINE__<<"): "
-/// This errno check can be disabled for production. ALWAYS_GLFX_ERRNO_CHECK must always be enabled as it is used for functionality.
+/// This errno check can be disabled for production.
 #if 0
 	#define GLFX_ERRNO_CHECK
 	#define GLFX_ERRNO_BREAK

@@ -217,6 +217,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					if(IsIntegerType(m.type))
 						shaderCode<<"flat ";
 					shaderCode<<m.type<<" "<<m.name<<";\n";
+					compiledShader->feedbackOutput.push_back(m.name);
 				}
 				shaderCode<<"} "<<structInstanceName<<";"<<endl;
 				if(shaderType==VERTEX_SHADER)

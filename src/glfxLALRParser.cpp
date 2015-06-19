@@ -3736,7 +3736,7 @@ yyreduce:
 				{
 					find_and_replace(definition,"\"","");
 					std::vector<std::string> elements=split(definition,';');
-					i->second->feedbackOutput.clear();
+					new_cs->feedbackOutput.clear();
 					auto u=gEffect->m_structs.find(new_cs->outputStruct);
 					if(u==gEffect->m_structs.end())
 					{

@@ -17,6 +17,7 @@ typedef int errno_t;
 #include "gl/glfx.h"
 #include "glfxClasses.h"
 #include "glfxParser.h"
+#include "glfxErrorCheck.h"
 
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
@@ -137,19 +138,22 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
             glAttachShader(programId, shaders.back());
         }
     }
-   // const GLchar* feedbackVaryings[] = { "outValue" };
-//glTransformFeedbackVaryings(programId, 1, feedbackVaryings, GL_INTERLEAVED_ATTRIBS);
-	if(IsTransformFeedbackShader()&&m_shaders[GEOMETRY_SHADER].compiledShader)
+   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
+	// values from the shader.
+	if(IsTransformFeedbackShader())
 	{
-		const vector<string> &feedbackOutput=m_shaders[GEOMETRY_SHADER].compiledShader->feedbackOutput;
-		GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
-		for(int i=0;i<feedbackOutput.size();i++)
+		ShaderType outputShader=m_shaders[GEOMETRY_SHADER].compiledShader?GEOMETRY_SHADER:VERTEX_SHADER;
+		const vector<string> &feedbackOutput=m_shaders[outputShader].compiledShader->feedbackOutput;
+		if(feedbackOutput.size())
 		{
-			Strings[i]=feedbackOutput[i].c_str();
-			//[] = {"gl_Position", "block.Color"}; 
+			GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
+			for(int i=0;i<feedbackOutput.size();i++)
+			{
+				Strings[i]=feedbackOutput[i].c_str();
+			}
+			glTransformFeedbackVaryings(programId, feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
+			delete Strings;
 		}
-		glTransformFeedbackVaryings(programId, feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
-		delete Strings;
 	}
     if(m_separable)
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
@@ -201,13 +205,18 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	const char* strSrc[] = { preamble.c_str(),str.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 4, strSrc, NULL);
 
-	string binaryFilename=string(glfxGetBinaryDirectory())+"/";
-	binaryFilename+=name+".glsl";
-	std::ofstream ofstr(binaryFilename);
-	ofstr.write(src.c_str(),strlen(src.c_str()));
-	if(errno!=0)
+	string bin_dir=(glfxGetBinaryDirectory());
+	if(bin_dir.length())
 	{
-		DebugBreak();
+		string binaryFilename=bin_dir+"/";
+		binaryFilename+=name+".glsl";
+		std::ofstream ofstr(binaryFilename);
+		ofstr.write(src.c_str(),strlen(src.c_str()));
+		if(errno!=0)
+		{
+			GLFX_CERR<<"Can't write cached file "<<binaryFilename.c_str()<<std::endl;
+			DebugBreak();
+		}
 	}
     glCompileShader(shader);
     
