@@ -24,7 +24,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 	for(vector<glfxstype::variable>::const_iterator it=sh.function.parameters.begin();it!=sh.function.parameters.end();++it)
 	{
 		bool as_interface=(shaderType!=VERTEX_SHADER);
-		string structInstanceName=it->identifier;
+		string outBlockNamespace=it->identifier;
 		string type(it->type);
 		string storage(it->storage);
 		if(storage.length()==0)
@@ -79,7 +79,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				}
 				// In the actual shader code, convert HLSL-style member function calls to GLSL type
 				// stream commands:
-				string appendcall=structInstanceName+".Append";
+				string appendcall=outBlockNamespace+".Append";
 				size_t pos=shaderContent.find(appendcall);
 				while(pos<shaderContent.size())
 				{
@@ -100,14 +100,14 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					for(int i=0;i<(int)s->m_structMembers.size();i++)
 					{
 						const StructMember &m=s->m_structMembers[i];
-						vertexEmitCode<<structInstanceName<<"."<<m.name<<"="<<localStructName<<"."<<m.name<<"; ";
+						vertexEmitCode<<outBlockNamespace<<"."<<m.name<<"="<<localStructName<<"."<<m.name<<"; ";
 					}
 					vertexEmitCode<<"EmitVertex()";
 					shaderContent.replace(shaderContent.begin()+pos,shaderContent.begin()+endpos+1,vertexEmitCode.str());
 					pos=shaderContent.find(appendcall,endpos);
 			
 				}
-				stringReplaceAll(shaderContent,structInstanceName+".RestartStrip()","EndPrimitive();");
+				stringReplaceAll(shaderContent,outBlockNamespace+".RestartStrip()","EndPrimitive();");
 				as_interface=true;
 				storage="out";
 			}
@@ -131,11 +131,11 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 			}
 			if(as_interface)
 			{
-				string interfaceName	=structInstanceName;
+				string interfaceName	=outBlockNamespace;
 				if(shaderType!=GEOMETRY_SHADER)
 				{
 					interfaceName+="IO";
-					extraDeclarations<<type<<" "<<structInstanceName<<";\n";
+					extraDeclarations<<type<<" "<<outBlockNamespace<<";\n";
 				}
 				shaderCode<<storage<<" "<<type<<"IO\n";
 				shaderCode<<"{\n";
@@ -153,14 +153,14 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
-					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<interfaceName<<"."<<m.name<<";\n";
+					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<interfaceName<<"."<<m.name<<";\n";
 				}
 				if(shaderType==GEOMETRY_SHADER)
 					compiledShader->outputStructName=type+"IO";
 			}
 			else
 			{
-				extraDeclarations<<type<<" "<<structInstanceName<<";\n";
+				extraDeclarations<<type<<" "<<outBlockNamespace<<";\n";
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
@@ -171,7 +171,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 						sem=m.semantic;
 					//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 					shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
-					extraDeclarations<<structInstanceName<<"."<<m.name<<"="<<sem<<";\n";
+					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
 				}
 			}
 			continue;
@@ -182,7 +182,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		}
 		if(it->template_.length()>0)
 		{
-			extraDeclarations<<it->type<<" "<<structInstanceName<<"="<<it->template_<<";\n"<<endl;
+			extraDeclarations<<it->type<<" "<<outBlockNamespace<<"="<<it->template_<<";\n"<<endl;
 		}
 		else
 		{
@@ -206,10 +206,11 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 		{
 			bool as_interface=(shaderType!=FRAGMENT_SHADER);
 			const Struct *s=u->second;
-			string structInstanceName="structInstanceName";
+			string outBlockNamespace="outBlockNamespace";
 			if(as_interface)
 			{
-				shaderCode<<"out "<<sh.function.returnType<<"IO\n{\n";
+				string output_name=sh.function.returnType+"IO";
+				shaderCode<<"out "<<output_name<<"\n{\n";
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
 					const StructMember &m=s->m_structMembers[i];
@@ -217,13 +218,14 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					if(IsIntegerType(m.type))
 						shaderCode<<"flat ";
 					shaderCode<<m.type<<" "<<m.name<<";\n";
-					compiledShader->feedbackOutput.push_back(m.name);
+					string output_member_name=(output_name+".")+m.name;
+					compiledShader->feedbackOutput.push_back(output_member_name);
 				}
-				shaderCode<<"} "<<structInstanceName<<";"<<endl;
+				shaderCode<<"} "<<outBlockNamespace<<";"<<endl;
 				if(shaderType==VERTEX_SHADER)
 				{
 					compiledShader->outputStruct=sh.function.returnType;
-					compiledShader->outputStructName=structInstanceName;
+					compiledShader->outputStructName=sh.function.returnType+"IO";
 				}
 			}
 			string returnVariable=sh.returnable;
@@ -267,7 +269,9 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				}
 				if(as_interface)
 				{
-					finalCode<<structInstanceName<<"."<<m.name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+					if(outBlockNamespace.length())
+						finalCode<<outBlockNamespace<<".";
+					finalCode<<m.name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
 				}
 				else
 				{

@@ -173,8 +173,6 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 			char infoLog[1024];
 			glGetProgramInfoLog(programId,1024,&len,infoLog);
 			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
-			if(!res&&IsDebuggerPresent())
-				DebugBreak();
 		}
 	}
 	
