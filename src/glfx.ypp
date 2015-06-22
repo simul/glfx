@@ -1539,6 +1539,8 @@ declaration	: type_spec init_declarator_list
 			string type_spec=$1.strs[0];
 			$$.strs[0]=type_spec+" ";
 			string init_declarator_list=$2.strs[0];
+			if(type_spec=="float")
+				type_spec="";
 			stringReplaceAll(init_declarator_list,"%type%",type_spec);
 			stringReplaceAll(init_declarator_list,type_spec+type_spec,type_spec);
 			$$.strs[0]+=init_declarator_list;
