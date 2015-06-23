@@ -575,6 +575,8 @@ void Effect::ApplyPassState(unsigned pass)
 		if(!num)
 		{
 			glDisable(GL_BLEND);
+			glBlendEquationSeparatei(0, GL_FUNC_ADD,GL_FUNC_ADD);
+			glBlendFuncSeparatei(0,  GL_ONE, GL_ZERO,   GL_ONE, GL_ZERO);
 			GLFX_ERROR_CHECK
 		}
 		else
