@@ -204,8 +204,10 @@ prepr : IF if_conditions
 			definition<<"#define "<<id;
 			if(params.length())
 				definition<<"("<<params<<")";
+		if (def.size())
+			definition << " ";
 			for(int i=0;i<def.size();i++)
-				definition<<" "<<def[i];
+			definition<<def[i];
 			definition<<"\n";
 	GLFX_ERRNO_BREAK
 			if(inActiveBlock())
@@ -602,8 +604,17 @@ if_test: IS_EQUAL NUMBER
 						$$.num=1;
 						$$.test=NONZERO;
 					};
-
-optional_definition : optional_definition definition_element
+optional_definition: WHITESPACE opt_definition
+		{
+			$$.str = "";
+			$$.strs= $2.strs;
+		}
+			|
+		{
+			$$.strs.clear();
+			$$.str = "";
+		}
+opt_definition: opt_definition definition_element
 					  {
 							string &el=$2.str;
 							vector<string> &defs=$$.strs;
@@ -626,6 +637,22 @@ definition_element: IDENTIFIER
 					  {
 						  $$.str=$1.str;
 					  }
+					 | '['
+					  {
+						  $$.str=$1.str;
+					  }
+					 | ']'
+					  {
+						  $$.str=$1.str;
+					  }
+					 | '<'
+					  {
+						  $$.str=$1.str;
+					  }
+					 | '>'
+					  {
+						  $$.str=$1.str;
+					  }
 					 | '('
 					  {
 						  $$.str=$1.str;
@@ -634,9 +661,17 @@ definition_element: IDENTIFIER
 					  {
 						  $$.str=$1.str;
 					  }
+					 | ','
+					  {
+						  $$.str=$1.str;
+					  }
 						| NUMBER
 						{
 						  $$.str=$1.str;
+						}
+						| DOUBLE_HASH IDENTIFIER
+						{
+							$$.str = $1.str+$2.str;
 						}
 						| symbol
 						{

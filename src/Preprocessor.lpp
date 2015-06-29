@@ -198,7 +198,7 @@
 			{
 				string param=i->second->parameters[k];
 				string rep=replacements[k];
-				if(el==param)
+				if(el==param||el==(string("##")+param))
 				{
 					outp+=rep;//+" ";
 					found=true;
@@ -496,12 +496,13 @@ FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*
 						BEGIN DEFINING4;
 						stdReturn(')');
 					}
-<DEFINING2,DEFINING4>[ \t]	{
+<DEFINING2,DEFINING4>[ \t]+	{
 						prepro_lval.str=yytext;
 						BEGIN IN_MACRO_DEFINITION;			// The ACTUAL macro definition follows,
 													// e.g. in #define texture_clamp(tex,texc) texture(tex,texc)
 													// this would be texture(tex,texc)
 					// so in the IN_MACRO_DEFINITION, we should recognize ID_BLCK, brackets, NUM_BLCK, all the standard stuff.
+						// We won't use this whitespace though.
 						stdReturn(WHITESPACE);
 					}
 <PREPRO,DEFINING,DEFINING2,DEFINING4,IN_MACRO_DEFINITION,IF_STATEMENT>\n	{
