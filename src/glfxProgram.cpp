@@ -9,8 +9,15 @@
 #ifndef _MSC_VER
 typedef int errno_t;
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #else
 #include <Windows.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <direct.h>
+#include <io.h>
 #endif
 
 #include "GL/glew.h"
@@ -151,7 +158,7 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 			{
 				Strings[i]=feedbackOutput[i].c_str();
 			}
-			glTransformFeedbackVaryings(programId, feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
+			glTransformFeedbackVaryings(programId,(GLsizei)feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
 			delete Strings;
 		}
 	}
@@ -190,6 +197,67 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
     return programId;
 }
 
+static int dirExists(const char *path)
+{
+    struct stat info;
+
+    if(stat( path, &info ) != 0)
+        return 0;
+    else if(info.st_mode & S_IFDIR)
+        return 1;
+    else
+        return 0;
+}
+typedef struct stat Stat;
+
+static std::wstring Utf8ToWString(const char *src_utf8)
+{
+	int src_length=(int)strlen(src_utf8);
+#ifdef _MSC_VER
+	int length = MultiByteToWideChar(CP_UTF8, 0, src_utf8,src_length, 0, 0);
+#else
+	int length=src_length;
+#endif
+	wchar_t *output_buffer = new wchar_t [length+1];
+#ifdef _MSC_VER
+	MultiByteToWideChar(CP_UTF8, 0, src_utf8, src_length, output_buffer, length);
+#else
+	mbstowcs(output_buffer, src_utf8, (size_t)length );
+#endif
+	output_buffer[length]=0;
+	std::wstring wstr=std::wstring(output_buffer);
+	delete [] output_buffer;
+	return wstr;
+}
+
+static int do_mkdir(const char *path_utf8)
+{
+    int             status = 0;
+#ifdef _MSC_VER
+    struct _stat64i32            st;
+	std::wstring wstr=Utf8ToWString(path_utf8);
+    if (_wstat (wstr.c_str(), &st) != 0)
+#else
+    Stat            st;
+    if (stat(path_utf8, &st)!=0)
+#endif
+    {
+        /* Directory does not exist. EEXIST for race condition */
+#ifdef _MSC_VER
+        if (_wmkdir(wstr.c_str()) != 0 && errno != EEXIST)
+#else
+        if (mkdir(path_utf8,S_IRWXU) != 0 && errno != EEXIST)
+#endif
+            status = -1;
+    }
+    else if (!(st.st_mode & S_IFDIR))
+    {
+        //errno = ENOTDIR;
+        status = -1;
+    }
+	errno=0;
+    return(status);
+}
 int Program::CompileShader(unsigned shader, const string& name,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
 	ostringstream s;
@@ -203,16 +271,17 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	const char* strSrc[] = { preamble.c_str(),str.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 4, strSrc, NULL);
 
-	string bin_dir=(glfxGetBinaryDirectory());
+	string bin_dir=glfxGetBinaryDirectory();
 	if(bin_dir.length())
 	{
+		do_mkdir(bin_dir.c_str());
 		string binaryFilename=bin_dir+"/";
 		binaryFilename+=name+".glsl";
 		std::ofstream ofstr(binaryFilename);
 		ofstr.write(src.c_str(),strlen(src.c_str()));
 		if(errno!=0)
 		{
-			GLFX_CERR<<"Can't write cached file "<<binaryFilename.c_str()<<std::endl;
+			GLFX_CERR<<"Error: Can't write cached file "<<binaryFilename.c_str()<<"; does the directory exist?"<<std::endl;
 			DebugBreak();
 		}
 	}
