@@ -19,6 +19,7 @@ namespace glfxParser
 		std::map<std::string,BlendState*>			m_blendStates;
 		std::map<std::string,DepthStencilState*>	m_depthStencilStates;
 		std::map<std::string,SamplerState*>			m_samplerStates;
+		std::map<std::string,DeclaredTexture>		m_declaredTextures;
 		std::map<std::string,RasterizerState*>		m_rasterizerStates;
 		std::map<std::string,ComputeLayout>			m_shaderLayouts;
 		std::map<unsigned,PassState>				passStates;
@@ -76,8 +77,12 @@ namespace glfxParser
 		};
 		std::map<std::string, InterfaceDcl>   m_interfaces;
 		std::map<std::string, Struct*>			m_structs;
-		std::map<std::string, DeclaredTexture> declaredTextures;
 		std::map<string, DeclaredTexture> additionalTextureDeclarations;
+		const std::map<std::string,DeclaredTexture> &GetDeclaredTextures() const
+		{
+			return m_declaredTextures;
+		}
+		void Clear();
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
 		//unsigned BuildProgram(const string& prog) const;
@@ -87,7 +92,8 @@ namespace glfxParser
 		const vector<string>& GetTechniqueGroupList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
-		bool IsDeclared(string str);
+		bool IsDeclared(std::string str);
+		string GetDeclaredType(std::string str);
 		Technique *GetTechniqueByName(const char *name) ;
 		TechniqueGroup *GetTechniqueGroupByName(const char *name);
 		TechniqueGroup *GetTechniqueGroupByIndex(int idx);

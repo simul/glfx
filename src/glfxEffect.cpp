@@ -61,6 +61,24 @@ Effect::~Effect()
 		glDeleteSamplers(1,&(i->second));
 }
 
+void Effect::Clear()
+{
+	m_techniqueGroups.clear();
+	m_techniqueNames.clear();
+	m_techniqueGroupNames.clear();
+	m_samplers.clear();
+	m_blendStates.clear();
+	m_depthStencilStates.clear();
+	m_samplerStates.clear();
+	m_declaredTextures.clear();
+	m_rasterizerStates.clear();
+	m_shaderLayouts.clear();
+	passStates.clear();
+	passProgramMap.clear();
+	samplerObjects.clear();
+}
+
+
 int Effect::GetTextureNumber(const char *name)
 {
 	int texture_number=current_texture_number;
@@ -72,7 +90,7 @@ int Effect::GetTextureNumber(const char *name)
 	else
 	{
 		textureNumberMap[n]						=current_texture_number;
-		if (declaredTextures.find(n) == declaredTextures.end())
+		if (m_declaredTextures.find(n) == m_declaredTextures.end())
 		{
 			GLFX_CERR << "Texture " << name << " is not declared." << std::endl;
 			current_texture_number++;
@@ -80,7 +98,7 @@ int Effect::GetTextureNumber(const char *name)
 		}
 		else
 		{
-			textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum,true);
+			textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
 		}
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
@@ -90,7 +108,7 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureDimensions[current_texture_number] = GetTextureDimension(declaredTextures[n].type_enum,true);
+				textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
 				current_texture_number++;
 			}
 		}
@@ -109,7 +127,7 @@ int Effect::GetImageNumber(const char *name)
 	else
 	{
 		textureNumberMap[n] = current_image_number + 1000;
-		textureDimensions[current_image_number + 1000] = GetTextureDimension(declaredTextures[n].type_enum,true);
+		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
 		current_image_number++;
 	}
 	return image_number;
@@ -332,7 +350,19 @@ bool Effect::IsDeclared(string name)
 {
 	if(m_samplerStates.find(name)!=m_samplerStates.end())
 		return true;
+	if(m_declaredTextures.find(name)!=m_declaredTextures.end())
+		return true;
 	return false;
+}
+
+string Effect::GetDeclaredType(std::string name)
+{
+	if(m_samplerStates.find(name)!=m_samplerStates.end())
+		return "SamplerState";
+	auto i=m_declaredTextures.find(name);
+	if(i!=m_declaredTextures.end())
+		return i->second.type;
+	return "unknown";
 }
 
 void Effect::SetFilenameList(const vector<string> &filenamesUtf8)

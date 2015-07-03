@@ -114,7 +114,7 @@ ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
 HEX_BLCK 0x[0-9A-Fa-f][0-9A-Fa-f]*
 STR_BLCK \"[^"\n]*\"
-FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*f?
+FLOAT_BLCK [0-9]*((\.[0-9])|([0-9]\.))[0-9]*((e|E)-?[0-9][0-9]*)?f?
 
 /* The %% means that we are done with the CONTROL section, and now move onto the token definitions
 <INITIAL>"patch"|"centroid"						if(gLexPassthrough) glfxWrite(yytext); else {glfxlval.strs[0]=yytext; stdReturn(STORAGET);}*/

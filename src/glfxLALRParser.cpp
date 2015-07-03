@@ -232,12 +232,13 @@
 
 		string tsname		=ts->textureSamplerName();
 		string texture_name	=ts->textureName;
-		if (gEffect->declaredTextures.find(texture_name) != gEffect->declaredTextures.end())
+		if (gEffect->IsDeclared(texture_name))
 		{
-			string sampler_type = gEffect->declaredTextures[texture_name].type;
+			string sampler_type =(gEffect->GetDeclaredTextures()).find(texture_name)->second.type;
 			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
 			gEffect->additionalTextureDeclarations[tsname].type		=sampler_type;
-			gEffect->additionalTextureDeclarations[tsname].type_enum = gEffect->declaredTextures[texture_name].type_enum;
+			auto d=gEffect->GetDeclaredTextures();
+			gEffect->additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
 			// We know that this texture-sampler combo will be used in this shader.
 		}
 		else
@@ -292,8 +293,8 @@
 			if(textureName==i->identifier)
 				return (GLTextureType)i->type_enum;
 		}
-		auto j = gEffect->declaredTextures.find(textureName);
-		if (j != gEffect->declaredTextures.end())
+		auto j = gEffect->GetDeclaredTextures().find(textureName);
+		if (j != gEffect->GetDeclaredTextures().end())
 			return (GLTextureType)j->second.type_enum;
 		return unknwownTextureType;
 	}
@@ -375,9 +376,20 @@
 		}
 		return false;
 	}
+	string GetDeclaredType(string name)
+	{
+		if(gEffect->IsDeclared(name))
+			return gEffect->GetDeclaredType(name);
+		for(auto i=buildFunction.parameters.begin();i!=buildFunction.parameters.end();i++)
+		{
+			if(i->identifier==name)
+				return i->type;
+		}
+		return "unknown";
+	}
 
 /* Line 371 of yacc.c  */
-#line 381 "src/glfxLALRParser.cpp"
+#line 393 "src/glfxLALRParser.cpp"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -540,7 +552,7 @@ int glfxparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 544 "src/glfxLALRParser.cpp"
+#line 556 "src/glfxLALRParser.cpp"
 
 #ifdef short
 # undef short
@@ -951,33 +963,33 @@ static const yytype_int16 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   325,   325,   326,   368,   372,   375,   378,   381,   414,
-     430,   436,   440,   446,   449,   455,   461,   467,   471,   477,
-     494,   534,   544,   562,   565,   582,   706,   740,   744,   747,
-     755,   762,   768,   773,   773,   773,   773,   773,   773,   773,
-     773,   773,   779,   779,   785,   791,   795,   809,   812,   815,
-     819,   822,   826,   836,   840,   845,   849,   853,   857,   861,
-     869,   875,   879,   884,   891,   898,   905,   909,   916,   921,
-     926,   929,   934,   940,   945,   964,   969,   972,   986,  1002,
-    1007,  1038,  1044,  1048,  1054,  1058,  1080,  1085,  1090,  1095,
-    1098,  1103,  1108,  1113,  1118,  1123,  1129,  1135,  1140,  1147,
-    1159,  1173,  1180,  1187,  1204,  1225,  1234,  1243,  1252,  1256,
-    1262,  1270,  1278,  1344,  1356,  1421,  1465,  1476,  1483,  1486,
-    1491,  1495,  1500,  1504,  1513,  1520,  1524,  1537,  1548,  1552,
-    1556,  1560,  1609,  1613,  1617,  1622,  1626,  1630,  1636,  1641,
-    1646,  1652,  1657,  1669,  1674,  1679,  1685,  1690,  1695,  1700,
-    1715,  1721,  1725,  1730,  1732,  1737,  1741,  1747,  1751,  1755,
-    1759,  1782,  1787,  1788,  1789,  1790,  1791,  1792,  1793,  1794,
-    1795,  1796,  1801,  1805,  1810,  1814,  1818,  1822,  1826,  1830,
-    1834,  1838,  1842,  1846,  1851,  1855,  1859,  1863,  1867,  1871,
-    1875,  1879,  1883,  1887,  1891,  1895,  1899,  1903,  1907,  1911,
-    1915,  1919,  1923,  1927,  1934,  1938,  1942,  1946,  1946,  1946,
-    1946,  1946,  1946,  1950,  1954,  1958,  1962,  1972,  1982,  1992,
-    1998,  2027,  2035,  2043,  2091,  2134,  2199,  2205,  2212,  2216,
-    2220,  2228,  2236,  2241,  2248,  2255,  2262,  2269,  2273,  2278,
-    2282,  2286,  2290,  2294,  2302,  2311,  2314,  2327,  2331,  2335,
-    2340,  2343,  2347,  2350,  2355,  2359,  2468,  2473,  2479,  2485,
-    2488,  2493,  2498,  2503
+       0,   337,   337,   338,   392,   396,   399,   402,   405,   438,
+     454,   460,   464,   470,   473,   479,   485,   491,   495,   501,
+     518,   558,   568,   586,   589,   606,   730,   764,   768,   771,
+     779,   786,   792,   797,   797,   797,   797,   797,   797,   797,
+     797,   797,   803,   803,   809,   815,   819,   833,   836,   839,
+     843,   846,   850,   860,   864,   869,   873,   877,   881,   885,
+     893,   899,   903,   908,   915,   922,   929,   933,   940,   945,
+     950,   953,   958,   964,   969,   988,   993,   996,  1010,  1026,
+    1031,  1062,  1068,  1072,  1078,  1082,  1104,  1109,  1114,  1119,
+    1122,  1127,  1132,  1137,  1142,  1147,  1153,  1159,  1164,  1171,
+    1183,  1197,  1204,  1211,  1228,  1249,  1258,  1267,  1276,  1280,
+    1286,  1294,  1302,  1368,  1380,  1445,  1488,  1499,  1506,  1509,
+    1514,  1518,  1523,  1527,  1536,  1543,  1547,  1560,  1571,  1575,
+    1579,  1583,  1632,  1636,  1640,  1645,  1649,  1653,  1659,  1664,
+    1669,  1675,  1680,  1692,  1697,  1702,  1708,  1713,  1718,  1723,
+    1738,  1744,  1748,  1753,  1755,  1760,  1764,  1770,  1774,  1778,
+    1782,  1805,  1810,  1811,  1812,  1813,  1814,  1815,  1816,  1817,
+    1818,  1819,  1824,  1828,  1833,  1837,  1841,  1845,  1849,  1853,
+    1857,  1861,  1865,  1869,  1874,  1878,  1882,  1886,  1890,  1894,
+    1898,  1902,  1906,  1910,  1914,  1918,  1922,  1926,  1930,  1934,
+    1938,  1942,  1946,  1950,  1957,  1961,  1965,  1969,  1969,  1969,
+    1969,  1969,  1969,  1973,  1977,  1981,  1985,  1995,  2005,  2015,
+    2021,  2050,  2058,  2066,  2114,  2165,  2230,  2236,  2243,  2247,
+    2251,  2259,  2267,  2272,  2279,  2286,  2293,  2300,  2304,  2309,
+    2313,  2317,  2321,  2325,  2333,  2342,  2345,  2358,  2362,  2366,
+    2371,  2374,  2378,  2381,  2386,  2390,  2499,  2504,  2510,  2516,
+    2519,  2524,  2529,  2534
 };
 #endif
 
@@ -2301,7 +2313,7 @@ yyreduce:
     {
         case 3:
 /* Line 1792 of yacc.c  */
-#line 326 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 338 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { // Initialization code
 	    gEffect->m_sharedCode.str("");    // clear the stream
 		gEffect->m_sharedCode<<"#define GLSL\n";
@@ -2333,14 +2345,26 @@ yyreduce:
 	gEffect->m_sharedCode<<"vec4 mul(mat4 m,vec4 v)"
 							"{"
 							"	return m*v;"
-							"}"
+							"}\n"
 							"vec3 mul(mat3 m,vec3 v)"
 							"{"
 							"	return m*v;"
-							"}"
+							"}\n"
 							"vec2 mul(mat2 m,vec2 v)"
 							"{"
 							"	return m*v;"
+							"}\n"
+							"vec4 mul(vec4 v,mat4 m)"
+							"{"
+							"	return v*m;"
+							"}\n"
+							"vec3 mul(vec3 v,mat3 m)"
+							"{"
+							"	return v*m;"
+							"}\n"
+							"vec2 mul(vec2 v,mat2 m)"
+							"{"
+							"	return v*m;"
 							"}\n";
 	    gLexPassthrough=true;
 	}
@@ -2348,7 +2372,7 @@ yyreduce:
 
   case 4:
 /* Line 1792 of yacc.c  */
-#line 369 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 393 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		gEffect->m_interfaces[(yyvsp[(3) - (6)]).strs[0]]=Effect::InterfaceDcl((yyvsp[(4) - (6)]).strs[0], (yyvsp[(1) - (6)]).lineno);
 	}
@@ -2356,28 +2380,28 @@ yyreduce:
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 373 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 397 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 6:
 /* Line 1792 of yacc.c  */
-#line 376 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 400 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 7:
 /* Line 1792 of yacc.c  */
-#line 379 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 403 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 8:
 /* Line 1792 of yacc.c  */
-#line 382 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 406 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string texture_type=(yyvsp[(2) - (6)]).strs[0];
 		GLTextureType type_enum = ToGLTextureType((yyvsp[(2) - (6)]).token);
@@ -2394,8 +2418,8 @@ yyreduce:
 			layout=GetLayoutForTemplateType(template_type)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
-		gEffect->declaredTextures[texture_name].type = type;
-		gEffect->declaredTextures[texture_name].type_enum = type_enum;
+		gEffect->m_declaredTextures[texture_name].type = type;
+		gEffect->m_declaredTextures[texture_name].type_enum = type_enum;
 		gEffect->m_sharedCode << decl.str(); 
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -2404,7 +2428,7 @@ yyreduce:
 
   case 9:
 /* Line 1792 of yacc.c  */
-#line 415 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 439 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string buffer_type=(yyvsp[(2) - (5)]).strs[0];
 		bool compute_only=true;
@@ -2424,7 +2448,7 @@ yyreduce:
 
   case 10:
 /* Line 1792 of yacc.c  */
-#line 431 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 455 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		ostringstream decl;
 		decl<<(yyvsp[(1) - (4)]).strs[0]<<" "<<(yyvsp[(2) - (4)]).strs[0]<<" "<<(yyvsp[(3) - (4)]).strs[0]<<";";
@@ -2434,7 +2458,7 @@ yyreduce:
 
   case 11:
 /* Line 1792 of yacc.c  */
-#line 437 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 461 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		maxVertexCount=(yyvsp[(4) - (6)]).num;
 	}
@@ -2442,7 +2466,7 @@ yyreduce:
 
   case 12:
 /* Line 1792 of yacc.c  */
-#line 441 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 465 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		currentCsLayout.x=(yyvsp[(4) - (10)]).num;
 		currentCsLayout.y=(yyvsp[(6) - (10)]).num;
@@ -2452,14 +2476,14 @@ yyreduce:
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 447 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 471 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 14:
 /* Line 1792 of yacc.c  */
-#line 450 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 474 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string str=(yyvsp[(1) - (2)]).strs[0]+" "+(yyvsp[(2) - (2)]).strs[0];
 		glfxWrite(str.c_str());
@@ -2469,7 +2493,7 @@ yyreduce:
 
   case 15:
 /* Line 1792 of yacc.c  */
-#line 456 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 480 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string str="layout(rgba32f) uniform image3D ";
 		str+=(yyvsp[(2) - (3)]).strs[0]+";";
@@ -2479,7 +2503,7 @@ yyreduce:
 
   case 16:
 /* Line 1792 of yacc.c  */
-#line 462 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 486 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string str="layout(rgba32f) image3D ";
 		str+=(yyvsp[(2) - (3)]).strs[0]+",";
@@ -2489,7 +2513,7 @@ yyreduce:
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 468 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 492 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string name					=(yyvsp[(2) - (3)]).strs[0];
 	}
@@ -2497,7 +2521,7 @@ yyreduce:
 
   case 18:
 /* Line 1792 of yacc.c  */
-#line 472 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 496 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string name		=(yyvsp[(2) - (3)]).strs[0];
 		string str		=string("#undef ")+name+"\n";
@@ -2507,7 +2531,7 @@ yyreduce:
 
   case 19:
 /* Line 1792 of yacc.c  */
-#line 478 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 502 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		Struct *rs					=new Struct;
 		*rs							=buildStruct;
@@ -2528,7 +2552,7 @@ yyreduce:
 
   case 20:
 /* Line 1792 of yacc.c  */
-#line 495 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 519 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).lineno		=(yyvsp[(4) - (5)]).lineno;
 		RenderState t=renderState;
@@ -2572,7 +2596,7 @@ yyreduce:
 
   case 21:
 /* Line 1792 of yacc.c  */
-#line 535 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 559 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string profileName		=(yyvsp[(2) - (6)]).strs[0];
 		int profileNum			=(yyvsp[(4) - (6)]).num;
@@ -2586,7 +2610,7 @@ yyreduce:
 
   case 22:
 /* Line 1792 of yacc.c  */
-#line 545 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 569 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
@@ -2608,14 +2632,14 @@ yyreduce:
 
   case 23:
 /* Line 1792 of yacc.c  */
-#line 563 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 587 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 24:
 /* Line 1792 of yacc.c  */
-#line 566 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 590 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string bufferName	=(yyvsp[(2) - (7)]).strs[0];
 		string def			=(yyvsp[(5) - (7)]).strs[0];
@@ -2635,7 +2659,7 @@ yyreduce:
 
   case 25:
 /* Line 1792 of yacc.c  */
-#line 583 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 607 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string functionName		=(yyvsp[(2) - (8)]).strs[0];
 		Function *f				=new Function;
@@ -2703,7 +2727,7 @@ yyreduce:
 				{
 					// the type must become sampler2D, sampler3D etc. EITHER
 					// the type is declared for the texture in the vars list, OR it is
-					// in declaredTextures.
+					// in m_declaredTextures.
 					for(auto v=u->second.begin();v!=u->second.end();v++)
 					{
 						if(start)
@@ -2713,7 +2737,7 @@ yyreduce:
 						TextureSampler *ts=*v;
 						string type=GetTypeOfParameter(f->parameters,ts->textureName);
 						if(type.length()==0)
-							type = gEffect->declaredTextures[ts->textureName].type;
+							type = gEffect->m_declaredTextures[ts->textureName].type;
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						//if(j->semantic.size())
 						//	params<<": "<<j->semantic;
@@ -2762,7 +2786,7 @@ yyreduce:
 
   case 26:
 /* Line 1792 of yacc.c  */
-#line 707 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 731 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		CompilableShader &sh=*(compilableShaders[(yyvsp[(3) - (9)]).strs[0]]=new CompilableShader);
 		sh.shaderName			=(yyvsp[(3) - (9)]).strs[0];
@@ -2800,7 +2824,7 @@ yyreduce:
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 741 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 765 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyvsp[(5) - (7)]).prog->m_separable=(yyvsp[(1) - (7)]).boolean;
 	}
@@ -2808,14 +2832,14 @@ yyreduce:
 
   case 28:
 /* Line 1792 of yacc.c  */
-#line 745 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 769 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	}
     break;
 
   case 29:
 /* Line 1792 of yacc.c  */
-#line 748 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 772 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string groupName=(yyvsp[(3) - (7)]).strs[0];
 		if(gEffect->m_techniqueGroups.find(groupName)==gEffect->m_techniqueGroups.end())
@@ -2827,7 +2851,7 @@ yyreduce:
 
   case 30:
 /* Line 1792 of yacc.c  */
-#line 756 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 780 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		last_linenumber		=(yyvsp[(3) - (5)]).num;
 		current_filenumber	=(yyvsp[(4) - (5)]).num;
@@ -2838,7 +2862,7 @@ yyreduce:
 
   case 31:
 /* Line 1792 of yacc.c  */
-#line 763 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 787 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		last_linenumber		=(yyvsp[(2) - (3)]).num;
 		current_filenumber	=(yyvsp[(3) - (3)]).num;
@@ -2848,7 +2872,7 @@ yyreduce:
 
   case 32:
 /* Line 1792 of yacc.c  */
-#line 769 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 793 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	=(yyvsp[(1) - (2)]).strs[0];
 		(yyval).lineno	=(yyvsp[(1) - (2)]).lineno;
@@ -2857,7 +2881,7 @@ yyreduce:
 
   case 41:
 /* Line 1792 of yacc.c  */
-#line 774 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 798 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num		=(yyvsp[(1) - (1)]).num;
@@ -2867,7 +2891,7 @@ yyreduce:
 
   case 43:
 /* Line 1792 of yacc.c  */
-#line 780 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 804 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num		=(yyvsp[(1) - (1)]).num;
@@ -2877,7 +2901,7 @@ yyreduce:
 
   case 44:
 /* Line 1792 of yacc.c  */
-#line 786 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 810 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	=(yyvsp[(2) - (3)]).strs[0];
 		(yyval).num		=1;
@@ -2886,7 +2910,7 @@ yyreduce:
 
   case 45:
 /* Line 1792 of yacc.c  */
-#line 791 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 815 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	="";
 		(yyval).num		=0;
@@ -2895,7 +2919,7 @@ yyreduce:
 
   case 46:
 /* Line 1792 of yacc.c  */
-#line 796 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 820 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	std::string ret="(";
 	ret+=(yyvsp[(2) - (7)]).strs[0];
@@ -2913,35 +2937,35 @@ yyreduce:
 
   case 47:
 /* Line 1792 of yacc.c  */
-#line 810 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 834 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			  }
     break;
 
   case 48:
 /* Line 1792 of yacc.c  */
-#line 813 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 837 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			  }
     break;
 
   case 49:
 /* Line 1792 of yacc.c  */
-#line 816 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 840 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			  }
     break;
 
   case 50:
 /* Line 1792 of yacc.c  */
-#line 820 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 844 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			  }
     break;
 
   case 51:
 /* Line 1792 of yacc.c  */
-#line 823 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 847 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		buildTechniqueGroup.m_techniques[(yyvsp[(2) - (5)]).strs[0]] = (yyvsp[(4) - (5)]).tech;
 	}
@@ -2949,7 +2973,7 @@ yyreduce:
 
   case 52:
 /* Line 1792 of yacc.c  */
-#line 827 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 851 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		if(gEffect->m_techniqueGroups.find("")==gEffect->m_techniqueGroups.end())
 		{
@@ -2963,7 +2987,7 @@ yyreduce:
 
   case 53:
 /* Line 1792 of yacc.c  */
-#line 837 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 861 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 		  }
@@ -2971,7 +2995,7 @@ yyreduce:
 
   case 54:
 /* Line 1792 of yacc.c  */
-#line 841 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 865 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).layoutType=NORMAL_LAYOUT_TYPE;
 				(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
@@ -2980,7 +3004,7 @@ yyreduce:
 
   case 55:
 /* Line 1792 of yacc.c  */
-#line 846 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 870 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -2988,7 +3012,7 @@ yyreduce:
 
   case 56:
 /* Line 1792 of yacc.c  */
-#line 850 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 874 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -2996,7 +3020,7 @@ yyreduce:
 
   case 57:
 /* Line 1792 of yacc.c  */
-#line 854 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 878 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 			}
@@ -3004,7 +3028,7 @@ yyreduce:
 
   case 58:
 /* Line 1792 of yacc.c  */
-#line 858 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 882 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 			}
@@ -3012,7 +3036,7 @@ yyreduce:
 
   case 59:
 /* Line 1792 of yacc.c  */
-#line 862 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 886 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				currentCsLayout.x=(yyvsp[(1) - (5)]).num;
 				currentCsLayout.y=(yyvsp[(3) - (5)]).num;
@@ -3024,7 +3048,7 @@ yyreduce:
 
   case 60:
 /* Line 1792 of yacc.c  */
-#line 870 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 894 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				(yyval).num=(yyvsp[(3) - (3)]).num;
@@ -3033,7 +3057,7 @@ yyreduce:
 
   case 61:
 /* Line 1792 of yacc.c  */
-#line 876 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 900 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		   }
@@ -3041,7 +3065,7 @@ yyreduce:
 
   case 62:
 /* Line 1792 of yacc.c  */
-#line 880 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 904 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		   }
@@ -3049,7 +3073,7 @@ yyreduce:
 
   case 63:
 /* Line 1792 of yacc.c  */
-#line 884 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 908 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Switch lex to fx scanning */
 	read_shader=false;
 	read_function=false;
@@ -3059,7 +3083,7 @@ yyreduce:
 
   case 64:
 /* Line 1792 of yacc.c  */
-#line 891 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 915 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	read_shader=true;
 	read_function=false;
@@ -3069,7 +3093,7 @@ yyreduce:
 
   case 65:
 /* Line 1792 of yacc.c  */
-#line 898 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 922 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	read_function=true;
 	read_shader=false;
@@ -3079,7 +3103,7 @@ yyreduce:
 
   case 66:
 /* Line 1792 of yacc.c  */
-#line 905 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 929 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Switch lex to passthrough mode */
     gLexPassthrough=true;
 }
@@ -3087,7 +3111,7 @@ yyreduce:
 
   case 67:
 /* Line 1792 of yacc.c  */
-#line 909 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 933 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Read next block */
     (yyval).strs[0]=(yyvsp[(2) - (3)]).strs[0];
 	// string 1 is the return value, if present.
@@ -3098,7 +3122,7 @@ yyreduce:
 
   case 68:
 /* Line 1792 of yacc.c  */
-#line 916 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 940 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* Read next block */
     (yyval).strs[0]= glfxreadblock('{', '}');
     (yyval).lineno= glfxget_lineno();
@@ -3107,7 +3131,7 @@ yyreduce:
 
   case 69:
 /* Line 1792 of yacc.c  */
-#line 922 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 946 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
  }
@@ -3115,7 +3139,7 @@ yyreduce:
 
   case 70:
 /* Line 1792 of yacc.c  */
-#line 926 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 950 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]="";
  }
@@ -3123,7 +3147,7 @@ yyreduce:
 
   case 71:
 /* Line 1792 of yacc.c  */
-#line 930 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 954 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]="{\n";
 	(yyval).strs[0]+=((yyvsp[(2) - (3)]).strs[0]+"\n}\n");
@@ -3132,7 +3156,7 @@ yyreduce:
 
   case 72:
 /* Line 1792 of yacc.c  */
-#line 935 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 959 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	string list			=(yyvsp[(1) - (2)]).strs[0];
 	string new_member	=(yyvsp[(2) - (2)]).strs[0];
@@ -3142,7 +3166,7 @@ yyreduce:
 
   case 73:
 /* Line 1792 of yacc.c  */
-#line 941 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 965 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	string member	=(yyvsp[(1) - (1)]).strs[0];
     (yyval).strs[0]=member;
@@ -3151,7 +3175,7 @@ yyreduce:
 
   case 74:
 /* Line 1792 of yacc.c  */
-#line 946 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 970 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).lineno		=(yyvsp[(4) - (6)]).lineno;
 	string unif		=(yyvsp[(1) - (6)]).strs[0];
@@ -3174,7 +3198,7 @@ yyreduce:
 
   case 75:
 /* Line 1792 of yacc.c  */
-#line 965 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 989 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]="uniform";
 }
@@ -3182,7 +3206,7 @@ yyreduce:
 
   case 76:
 /* Line 1792 of yacc.c  */
-#line 969 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 993 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     (yyval).strs[0]="";
 }
@@ -3190,7 +3214,7 @@ yyreduce:
 
   case 77:
 /* Line 1792 of yacc.c  */
-#line 973 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 997 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).vars		=(yyvsp[(1) - (3)]).vars;
 		(yyval).strs[0]	=((yyvsp[(1) - (3)]).strs[0]+",")+(yyvsp[(3) - (3)]).strs[0];
@@ -3208,7 +3232,7 @@ yyreduce:
 
   case 78:
 /* Line 1792 of yacc.c  */
-#line 987 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1011 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		YYSTYPE::variable var;
 		string s1	=(yyvsp[(1) - (1)]).strs[0];
@@ -3227,7 +3251,7 @@ yyreduce:
 
   case 79:
 /* Line 1792 of yacc.c  */
-#line 1002 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1026 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]	="";
 		(yyval).vars = new vector<YYSTYPE::variable>;
@@ -3236,7 +3260,7 @@ yyreduce:
 
   case 80:
 /* Line 1792 of yacc.c  */
-#line 1008 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1032 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
     ostringstream prepend;
 	string template_		=(yyvsp[(1) - (3)]).strs[0];
@@ -3270,7 +3294,7 @@ yyreduce:
 
   case 81:
 /* Line 1792 of yacc.c  */
-#line 1039 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1063 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(string("[")+(yyvsp[(2) - (3)]).strs[0])+"]";
 					(yyval).num=(yyvsp[(2) - (3)]).num;
@@ -3279,7 +3303,7 @@ yyreduce:
 
   case 82:
 /* Line 1792 of yacc.c  */
-#line 1044 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1068 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]="";
 					(yyval).num=0;
@@ -3288,7 +3312,7 @@ yyreduce:
 
   case 83:
 /* Line 1792 of yacc.c  */
-#line 1049 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1073 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 					(yyval).num=(yyvsp[(1) - (1)]).num;
@@ -3297,7 +3321,7 @@ yyreduce:
 
   case 84:
 /* Line 1792 of yacc.c  */
-#line 1054 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1078 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]="";
 					(yyval).num=0;
@@ -3306,7 +3330,7 @@ yyreduce:
 
   case 85:
 /* Line 1792 of yacc.c  */
-#line 1059 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1083 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		string storage	=(yyvsp[(1) - (4)]).strs[0];
 		string type		=(yyvsp[(2) - (4)]).strs[0];
@@ -3332,7 +3356,7 @@ yyreduce:
 
   case 86:
 /* Line 1792 of yacc.c  */
-#line 1081 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1105 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]		=(yyvsp[(1) - (1)]).strs[0];
 				(yyval).token		=(yyvsp[(1) - (1)]).token;
@@ -3341,7 +3365,7 @@ yyreduce:
 
   case 87:
 /* Line 1792 of yacc.c  */
-#line 1086 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1110 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]		=(yyvsp[(1) - (1)]).strs[0];
 				(yyval).token		=(yyvsp[(1) - (1)]).token;
@@ -3350,7 +3374,7 @@ yyreduce:
 
   case 88:
 /* Line 1792 of yacc.c  */
-#line 1091 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1115 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 	}
@@ -3358,7 +3382,7 @@ yyreduce:
 
   case 89:
 /* Line 1792 of yacc.c  */
-#line 1095 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1119 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]="";
 	}
@@ -3366,7 +3390,7 @@ yyreduce:
 
   case 90:
 /* Line 1792 of yacc.c  */
-#line 1099 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1123 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num=SV_DISPATCHTHREADID;
@@ -3375,7 +3399,7 @@ yyreduce:
 
   case 91:
 /* Line 1792 of yacc.c  */
-#line 1104 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1128 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num=SV_GROUPID;
@@ -3384,7 +3408,7 @@ yyreduce:
 
   case 92:
 /* Line 1792 of yacc.c  */
-#line 1109 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1133 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num=SV_GROUPTHREADID;
@@ -3393,7 +3417,7 @@ yyreduce:
 
   case 93:
 /* Line 1792 of yacc.c  */
-#line 1114 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1138 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).num=SV_VERTEXID;
@@ -3402,7 +3426,7 @@ yyreduce:
 
   case 94:
 /* Line 1792 of yacc.c  */
-#line 1119 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1143 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).num=(yyvsp[(2) - (2)]).num;
 		(yyval).rType=REGISTER_INT;
@@ -3411,7 +3435,7 @@ yyreduce:
 
   case 95:
 /* Line 1792 of yacc.c  */
-#line 1124 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1148 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
 		(yyval).rType=SEMANTIC;
@@ -3421,7 +3445,7 @@ yyreduce:
 
   case 96:
 /* Line 1792 of yacc.c  */
-#line 1130 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1154 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
 		(yyval).rType=REGISTER_NAME;
@@ -3430,7 +3454,7 @@ yyreduce:
 
   case 97:
 /* Line 1792 of yacc.c  */
-#line 1135 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1159 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).rType=REGISTER_NONE;
 	}
@@ -3438,7 +3462,7 @@ yyreduce:
 
   case 98:
 /* Line 1792 of yacc.c  */
-#line 1141 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1165 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	Technique *t = new Technique(*((yyvsp[(1) - (1)]).passes));
 	(yyval).tech = t;
@@ -3448,7 +3472,7 @@ yyreduce:
 
   case 99:
 /* Line 1792 of yacc.c  */
-#line 1148 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1172 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).passes				=((yyvsp[(1) - (2)]).passes);
 	map<string,Program> &passes=*(yyval).passes;
@@ -3464,7 +3488,7 @@ yyreduce:
 
   case 100:
 /* Line 1792 of yacc.c  */
-#line 1160 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1184 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	map<string,Program> *m=new map<string,Program>;
 	(yyval).passes = m;
@@ -3481,7 +3505,7 @@ yyreduce:
 
   case 101:
 /* Line 1792 of yacc.c  */
-#line 1174 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1198 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyvsp[(4) - (5)]).prog->m_separable	= (yyvsp[(1) - (5)]).boolean;
 	(yyval).prog					= (yyvsp[(4) - (5)]).prog;
@@ -3491,7 +3515,7 @@ yyreduce:
 
   case 102:
 /* Line 1792 of yacc.c  */
-#line 1181 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1205 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).prog = new Program(*((yyvsp[(1) - (1)]).shaders), buildPassState, gEffect->textureSamplersByShader, (yyvsp[(1) - (1)]).strs[2]);
     delete (yyvsp[(1) - (1)]).shaders;
@@ -3501,7 +3525,7 @@ yyreduce:
 
   case 103:
 /* Line 1792 of yacc.c  */
-#line 1188 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1212 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		map<ShaderType, Program::Shader>* map1=(yyvsp[(1) - (2)]).shaders;
 		ShaderType sType				=(yyvsp[(2) - (2)]).sType;
@@ -3522,7 +3546,7 @@ yyreduce:
 
   case 104:
 /* Line 1792 of yacc.c  */
-#line 1205 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1229 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
 		string preamble				=(yyvsp[(1) - (1)]).strs[0];
@@ -3547,7 +3571,7 @@ yyreduce:
 
   case 105:
 /* Line 1792 of yacc.c  */
-#line 1226 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1250 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		//.map<ShaderType, Program::Shader>* map1=$1.shaders;
 		(yyval).shaders=(yyvsp[(1) - (2)]).shaders;
@@ -3560,7 +3584,7 @@ yyreduce:
 
   case 106:
 /* Line 1792 of yacc.c  */
-#line 1235 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1259 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		map<ShaderType, Program::Shader>* map1=new map<ShaderType, Program::Shader>();
 		(yyval).shaders	=map1;
@@ -3573,7 +3597,7 @@ yyreduce:
 
   case 107:
 /* Line 1792 of yacc.c  */
-#line 1244 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1268 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		  (yyval).strs[0]=(yyvsp[(1) - (10)]).strs[0]+"(";
 		  (yyval).strs[0]+=(yyvsp[(3) - (10)]).strs[0]+",";
@@ -3585,7 +3609,7 @@ yyreduce:
 
   case 108:
 /* Line 1792 of yacc.c  */
-#line 1253 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1277 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				 string rast_name=(yyvsp[(3) - (5)]).strs[0];
 			 }
@@ -3593,7 +3617,7 @@ yyreduce:
 
   case 109:
 /* Line 1792 of yacc.c  */
-#line 1257 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1281 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				 string depth_name=(yyvsp[(3) - (7)]).strs[0];
 				 int index=(yyvsp[(5) - (7)]).num;
@@ -3603,7 +3627,7 @@ yyreduce:
 
   case 110:
 /* Line 1792 of yacc.c  */
-#line 1263 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1287 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				 string blend_name=(yyvsp[(3) - (9)]).strs[0];
 				 string vec4text=(yyvsp[(5) - (9)]).strs[0];
@@ -3614,7 +3638,7 @@ yyreduce:
 
   case 111:
 /* Line 1792 of yacc.c  */
-#line 1271 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1295 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0] = "";
 				(yyval).strs[1] = "";
@@ -3625,7 +3649,7 @@ yyreduce:
 
   case 112:
 /* Line 1792 of yacc.c  */
-#line 1279 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]	="";
 				(yyval).strs[1]	="";
@@ -3695,7 +3719,7 @@ yyreduce:
 
   case 113:
 /* Line 1792 of yacc.c  */
-#line 1345 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1369 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			string compiledShaderName	=(yyvsp[(1) - (1)]).strs[0];
 			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
@@ -3711,7 +3735,7 @@ yyreduce:
 
   case 114:
 /* Line 1792 of yacc.c  */
-#line 1357 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1381 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).lineno						=(yyvsp[(5) - (6)]).lineno;
 			(yyval).sType						=GEOMETRY_SHADER;
@@ -3780,7 +3804,7 @@ yyreduce:
 
   case 115:
 /* Line 1792 of yacc.c  */
-#line 1422 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1446 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).lineno								=(yyvsp[(5) - (8)]).lineno;
 			(yyval).sType								=(yyvsp[(3) - (8)]).sType;
@@ -3813,7 +3837,6 @@ yyreduce:
 
 				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-
 				CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
 
 				gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
@@ -3828,7 +3851,7 @@ yyreduce:
 
   case 116:
 /* Line 1792 of yacc.c  */
-#line 1466 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1489 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).num	=(yyvsp[(3) - (4)]).num;
 					(yyval).sType=(yyvsp[(1) - (4)]).sType;
@@ -3837,7 +3860,7 @@ yyreduce:
 
   case 117:
 /* Line 1792 of yacc.c  */
-#line 1477 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1500 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).lineno=(yyvsp[(1) - (4)]).lineno;
 					(yyval).strs[0]=(yyvsp[(1) - (4)]).strs[0];
@@ -3847,7 +3870,7 @@ yyreduce:
 
   case 118:
 /* Line 1792 of yacc.c  */
-#line 1483 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1506 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).num=0;
 				}
@@ -3855,7 +3878,7 @@ yyreduce:
 
   case 119:
 /* Line 1792 of yacc.c  */
-#line 1487 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1510 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(2) - (2)]).strs[0];
 				}
@@ -3863,7 +3886,7 @@ yyreduce:
 
   case 120:
 /* Line 1792 of yacc.c  */
-#line 1491 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1514 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]="";
 				}
@@ -3871,7 +3894,7 @@ yyreduce:
 
   case 121:
 /* Line 1792 of yacc.c  */
-#line 1496 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1519 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0];
 					(yyval).strs[0]+=(yyvsp[(3) - (3)]).strs[0];
@@ -3880,7 +3903,7 @@ yyreduce:
 
   case 122:
 /* Line 1792 of yacc.c  */
-#line 1501 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1524 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -3888,7 +3911,7 @@ yyreduce:
 
   case 123:
 /* Line 1792 of yacc.c  */
-#line 1505 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1528 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string statement_list=(yyvsp[(1) - (2)]).strs[0];
 					string statement=(yyvsp[(2) - (2)]).strs[0];
@@ -3900,7 +3923,7 @@ yyreduce:
 
   case 124:
 /* Line 1792 of yacc.c  */
-#line 1514 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1537 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string statement=(yyvsp[(1) - (1)]).strs[0];
 					(yyval).strs[0]	=statement;
@@ -3910,7 +3933,7 @@ yyreduce:
 
   case 125:
 /* Line 1792 of yacc.c  */
-#line 1520 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1543 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]	="";
 					(yyval).strs[1]	="";
@@ -3919,7 +3942,7 @@ yyreduce:
 
   case 126:
 /* Line 1792 of yacc.c  */
-#line 1525 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1548 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		last_linenumber		=(yyvsp[(2) - (3)]).num;
 		current_filenumber	=(yyvsp[(3) - (3)]).num;
@@ -3933,7 +3956,7 @@ yyreduce:
 
   case 127:
 /* Line 1792 of yacc.c  */
-#line 1538 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1561 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			string type_spec=(yyvsp[(1) - (2)]).strs[0];
 			(yyval).strs[0]=type_spec+" ";
@@ -3948,7 +3971,7 @@ yyreduce:
 
   case 128:
 /* Line 1792 of yacc.c  */
-#line 1549 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1572 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		}
@@ -3956,7 +3979,7 @@ yyreduce:
 
   case 129:
 /* Line 1792 of yacc.c  */
-#line 1553 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1576 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 		}
@@ -3964,7 +3987,7 @@ yyreduce:
 
   case 130:
 /* Line 1792 of yacc.c  */
-#line 1557 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1580 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		}
@@ -3972,7 +3995,7 @@ yyreduce:
 
   case 131:
 /* Line 1792 of yacc.c  */
-#line 1561 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1584 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			// An expression of the form vec2 c=....;
 			// Pass-through normally, but most GLSL compilers cannot handle array initializers.
@@ -4025,7 +4048,7 @@ yyreduce:
 
   case 132:
 /* Line 1792 of yacc.c  */
-#line 1610 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1633 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		}
@@ -4033,7 +4056,7 @@ yyreduce:
 
   case 133:
 /* Line 1792 of yacc.c  */
-#line 1614 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1637 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 		}
@@ -4041,7 +4064,7 @@ yyreduce:
 
   case 134:
 /* Line 1792 of yacc.c  */
-#line 1618 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1641 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).num=(yyvsp[(3) - (4)]).num;
 			(yyval).strs[0]=(yyvsp[(1) - (4)]).strs[0]+(yyvsp[(2) - (4)]).strs[0]+(yyvsp[(3) - (4)]).strs[0]+(yyvsp[(4) - (4)]).strs[0];
@@ -4050,7 +4073,7 @@ yyreduce:
 
   case 135:
 /* Line 1792 of yacc.c  */
-#line 1623 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1646 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 		}
@@ -4058,7 +4081,7 @@ yyreduce:
 
   case 136:
 /* Line 1792 of yacc.c  */
-#line 1627 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1650 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 		}
@@ -4066,7 +4089,7 @@ yyreduce:
 
   case 137:
 /* Line 1792 of yacc.c  */
-#line 1631 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1654 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+";\n";
 					(yyval).lineno=(yyvsp[(1) - (2)]).lineno;
@@ -4076,7 +4099,7 @@ yyreduce:
 
   case 138:
 /* Line 1792 of yacc.c  */
-#line 1637 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1660 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=";\n";
 					(yyval).strs[1]="";
@@ -4085,7 +4108,7 @@ yyreduce:
 
   case 139:
 /* Line 1792 of yacc.c  */
-#line 1642 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1665 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+";\n";
 					(yyval).strs[1]="";
@@ -4094,7 +4117,7 @@ yyreduce:
 
   case 140:
 /* Line 1792 of yacc.c  */
-#line 1647 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1670 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string compound_statement=(yyvsp[(1) - (1)]).strs[0];
 					(yyval).strs[0]=compound_statement;
@@ -4104,7 +4127,7 @@ yyreduce:
 
   case 141:
 /* Line 1792 of yacc.c  */
-#line 1653 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1676 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (5)]).strs[0]+(yyvsp[(2) - (5)]).strs[0]+(yyvsp[(3) - (5)]).strs[0]+(yyvsp[(4) - (5)]).strs[0]+(yyvsp[(5) - (5)]).strs[0];
 					(yyval).strs[1]="";
@@ -4113,7 +4136,7 @@ yyreduce:
 
   case 142:
 /* Line 1792 of yacc.c  */
-#line 1658 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1681 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string s1=(yyvsp[(1) - (7)]).strs[0];
 					string s2=(yyvsp[(2) - (7)]).strs[0];
@@ -4129,7 +4152,7 @@ yyreduce:
 
   case 143:
 /* Line 1792 of yacc.c  */
-#line 1670 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1693 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (5)]).strs[0]+(yyvsp[(2) - (5)]).strs[0]+(yyvsp[(3) - (5)]).strs[0]+(yyvsp[(4) - (5)]).strs[0]+(yyvsp[(5) - (5)]).strs[0];
 					(yyval).strs[1]="";
@@ -4138,7 +4161,7 @@ yyreduce:
 
   case 144:
 /* Line 1792 of yacc.c  */
-#line 1675 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1698 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (7)]).strs[0]+(yyvsp[(2) - (7)]).strs[0]+(yyvsp[(3) - (7)]).strs[0]+(yyvsp[(4) - (7)]).strs[0]+(yyvsp[(5) - (7)]).strs[0]+(yyvsp[(6) - (7)]).strs[0]+";\n";
 					(yyval).strs[1]="";
@@ -4147,7 +4170,7 @@ yyreduce:
 
   case 145:
 /* Line 1792 of yacc.c  */
-#line 1680 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1703 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string statement=(yyvsp[(9) - (9)]).strs[0];
 					(yyval).strs[0]=(yyvsp[(1) - (9)]).strs[0]+(yyvsp[(2) - (9)]).strs[0]+(yyvsp[(3) - (9)]).strs[0]+(yyvsp[(4) - (9)]).strs[0]+(yyvsp[(5) - (9)]).strs[0]+(yyvsp[(6) - (9)]).strs[0]+(yyvsp[(7) - (9)]).strs[0]+(yyvsp[(8) - (9)]).strs[0]+statement;
@@ -4157,7 +4180,7 @@ yyreduce:
 
   case 146:
 /* Line 1792 of yacc.c  */
-#line 1686 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1709 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+";\n";
 					(yyval).strs[1]="";
@@ -4166,7 +4189,7 @@ yyreduce:
 
   case 147:
 /* Line 1792 of yacc.c  */
-#line 1691 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1714 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+";\n";
 					(yyval).strs[1]="";
@@ -4175,7 +4198,7 @@ yyreduce:
 
   case 148:
 /* Line 1792 of yacc.c  */
-#line 1696 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1719 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+";\n";
 					(yyval).strs[1]="";
@@ -4184,7 +4207,7 @@ yyreduce:
 
   case 149:
 /* Line 1792 of yacc.c  */
-#line 1701 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1724 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				string optional_expression=(yyvsp[(2) - (3)]).strs[0];
 				if(read_shader&&optional_expression.length()>0)
@@ -4203,7 +4226,7 @@ yyreduce:
 
   case 150:
 /* Line 1792 of yacc.c  */
-#line 1716 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1739 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				(yyval).strs[1]="";
@@ -4213,7 +4236,7 @@ yyreduce:
 
   case 151:
 /* Line 1792 of yacc.c  */
-#line 1722 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1745 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 			}
@@ -4221,7 +4244,7 @@ yyreduce:
 
   case 152:
 /* Line 1792 of yacc.c  */
-#line 1726 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1749 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 			}
@@ -4229,13 +4252,13 @@ yyreduce:
 
   case 153:
 /* Line 1792 of yacc.c  */
-#line 1730 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1753 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {}
     break;
 
   case 154:
 /* Line 1792 of yacc.c  */
-#line 1733 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1756 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 			}
@@ -4243,7 +4266,7 @@ yyreduce:
 
   case 155:
 /* Line 1792 of yacc.c  */
-#line 1737 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1760 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 				(yyval).strs[0]="";
 			}
@@ -4251,7 +4274,7 @@ yyreduce:
 
   case 156:
 /* Line 1792 of yacc.c  */
-#line 1742 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1765 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string statement_list=(yyvsp[(2) - (3)]).strs[0];
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+statement_list+(yyvsp[(3) - (3)]).strs[0];
@@ -4260,7 +4283,7 @@ yyreduce:
 
   case 157:
 /* Line 1792 of yacc.c  */
-#line 1748 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1771 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -4268,7 +4291,7 @@ yyreduce:
 
   case 158:
 /* Line 1792 of yacc.c  */
-#line 1752 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1775 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -4276,7 +4299,7 @@ yyreduce:
 
   case 159:
 /* Line 1792 of yacc.c  */
-#line 1756 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1779 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		}
@@ -4284,7 +4307,7 @@ yyreduce:
 
   case 160:
 /* Line 1792 of yacc.c  */
-#line 1760 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1783 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			string unary_exp			=(yyvsp[(1) - (3)]).strs[0];
 			string assignment_operator	=(yyvsp[(2) - (3)]).strs[0];
@@ -4311,7 +4334,7 @@ yyreduce:
 
   case 161:
 /* Line 1792 of yacc.c  */
-#line 1783 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1806 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 					(yyval).token=(yyvsp[(1) - (1)]).token;
@@ -4320,7 +4343,7 @@ yyreduce:
 
   case 171:
 /* Line 1792 of yacc.c  */
-#line 1797 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1820 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		(yyval).token=(yyvsp[(1) - (1)]).token;
@@ -4329,7 +4352,7 @@ yyreduce:
 
   case 172:
 /* Line 1792 of yacc.c  */
-#line 1802 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1825 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 	}
@@ -4337,7 +4360,7 @@ yyreduce:
 
   case 173:
 /* Line 1792 of yacc.c  */
-#line 1806 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1829 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (5)]).strs[0]+(yyvsp[(2) - (5)]).strs[0]+(yyvsp[(3) - (5)]).strs[0]+(yyvsp[(4) - (5)]).strs[0]+(yyvsp[(5) - (5)]).strs[0];
 		}
@@ -4345,7 +4368,7 @@ yyreduce:
 
   case 174:
 /* Line 1792 of yacc.c  */
-#line 1811 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1834 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -4353,7 +4376,7 @@ yyreduce:
 
   case 175:
 /* Line 1792 of yacc.c  */
-#line 1815 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1838 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -4361,7 +4384,7 @@ yyreduce:
 
   case 176:
 /* Line 1792 of yacc.c  */
-#line 1819 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1842 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -4369,7 +4392,7 @@ yyreduce:
 
   case 177:
 /* Line 1792 of yacc.c  */
-#line 1823 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1846 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -4377,7 +4400,7 @@ yyreduce:
 
   case 178:
 /* Line 1792 of yacc.c  */
-#line 1827 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1850 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -4385,7 +4408,7 @@ yyreduce:
 
   case 179:
 /* Line 1792 of yacc.c  */
-#line 1831 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1854 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -4393,7 +4416,7 @@ yyreduce:
 
   case 180:
 /* Line 1792 of yacc.c  */
-#line 1835 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1858 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -4401,7 +4424,7 @@ yyreduce:
 
   case 181:
 /* Line 1792 of yacc.c  */
-#line 1839 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1862 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -4409,7 +4432,7 @@ yyreduce:
 
   case 182:
 /* Line 1792 of yacc.c  */
-#line 1843 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1866 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4417,7 +4440,7 @@ yyreduce:
 
   case 183:
 /* Line 1792 of yacc.c  */
-#line 1847 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1870 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4425,7 +4448,7 @@ yyreduce:
 
   case 184:
 /* Line 1792 of yacc.c  */
-#line 1852 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1875 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4433,7 +4456,7 @@ yyreduce:
 
   case 185:
 /* Line 1792 of yacc.c  */
-#line 1856 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1879 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4441,7 +4464,7 @@ yyreduce:
 
   case 186:
 /* Line 1792 of yacc.c  */
-#line 1860 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1883 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4449,7 +4472,7 @@ yyreduce:
 
   case 187:
 /* Line 1792 of yacc.c  */
-#line 1864 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1887 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4457,7 +4480,7 @@ yyreduce:
 
   case 188:
 /* Line 1792 of yacc.c  */
-#line 1868 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1891 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4465,7 +4488,7 @@ yyreduce:
 
   case 189:
 /* Line 1792 of yacc.c  */
-#line 1872 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1895 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4473,7 +4496,7 @@ yyreduce:
 
   case 190:
 /* Line 1792 of yacc.c  */
-#line 1876 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1899 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4481,7 +4504,7 @@ yyreduce:
 
   case 191:
 /* Line 1792 of yacc.c  */
-#line 1880 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1903 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4489,7 +4512,7 @@ yyreduce:
 
   case 192:
 /* Line 1792 of yacc.c  */
-#line 1884 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1907 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4497,7 +4520,7 @@ yyreduce:
 
   case 193:
 /* Line 1792 of yacc.c  */
-#line 1888 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1911 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4505,7 +4528,7 @@ yyreduce:
 
   case 194:
 /* Line 1792 of yacc.c  */
-#line 1892 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1915 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4513,7 +4536,7 @@ yyreduce:
 
   case 195:
 /* Line 1792 of yacc.c  */
-#line 1896 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1919 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4521,7 +4544,7 @@ yyreduce:
 
   case 196:
 /* Line 1792 of yacc.c  */
-#line 1900 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1923 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4529,7 +4552,7 @@ yyreduce:
 
   case 197:
 /* Line 1792 of yacc.c  */
-#line 1904 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1927 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4537,7 +4560,7 @@ yyreduce:
 
   case 198:
 /* Line 1792 of yacc.c  */
-#line 1908 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1931 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4545,7 +4568,7 @@ yyreduce:
 
   case 199:
 /* Line 1792 of yacc.c  */
-#line 1912 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1935 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4553,7 +4576,7 @@ yyreduce:
 
   case 200:
 /* Line 1792 of yacc.c  */
-#line 1916 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1939 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4561,7 +4584,7 @@ yyreduce:
 
   case 201:
 /* Line 1792 of yacc.c  */
-#line 1920 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1943 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 }
@@ -4569,7 +4592,7 @@ yyreduce:
 
   case 202:
 /* Line 1792 of yacc.c  */
-#line 1924 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1947 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4577,7 +4600,7 @@ yyreduce:
 
   case 203:
 /* Line 1792 of yacc.c  */
-#line 1928 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1951 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 	(yyval).strs[1]=(yyvsp[(1) - (1)]).strs[1];
@@ -4588,7 +4611,7 @@ yyreduce:
 
   case 204:
 /* Line 1792 of yacc.c  */
-#line 1935 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1958 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
 }
@@ -4596,7 +4619,7 @@ yyreduce:
 
   case 205:
 /* Line 1792 of yacc.c  */
-#line 1939 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1962 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
 }
@@ -4604,7 +4627,7 @@ yyreduce:
 
   case 206:
 /* Line 1792 of yacc.c  */
-#line 1943 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1966 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
 }
@@ -4612,7 +4635,7 @@ yyreduce:
 
   case 212:
 /* Line 1792 of yacc.c  */
-#line 1947 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1970 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 }
@@ -4620,7 +4643,7 @@ yyreduce:
 
   case 213:
 /* Line 1792 of yacc.c  */
-#line 1951 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1974 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]="texture";
 }
@@ -4628,7 +4651,7 @@ yyreduce:
 
   case 214:
 /* Line 1792 of yacc.c  */
-#line 1955 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1978 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]="textureLod";
 }
@@ -4636,7 +4659,7 @@ yyreduce:
 
   case 215:
 /* Line 1792 of yacc.c  */
-#line 1959 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1982 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 	(yyval).strs[0]="texelFetch";
 }
@@ -4644,7 +4667,7 @@ yyreduce:
 
   case 216:
 /* Line 1792 of yacc.c  */
-#line 1963 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1986 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string texture=(yyvsp[(1) - (3)]).strs[0];
 						string command=(yyvsp[(3) - (3)]).strs[0];
@@ -4658,7 +4681,7 @@ yyreduce:
 
   case 217:
 /* Line 1792 of yacc.c  */
-#line 1973 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 1996 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string texture=(yyvsp[(1) - (3)]).strs[0];
 						string command=(yyvsp[(3) - (3)]).strs[0];
@@ -4672,7 +4695,7 @@ yyreduce:
 
   case 218:
 /* Line 1792 of yacc.c  */
-#line 1983 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2006 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string texture=(yyvsp[(1) - (3)]).strs[0];
 						string command=(yyvsp[(3) - (3)]).strs[0];
@@ -4686,7 +4709,7 @@ yyreduce:
 
   case 219:
 /* Line 1792 of yacc.c  */
-#line 1993 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2016 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).token=(yyvsp[(1) - (1)]).token;
 						(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -4696,7 +4719,7 @@ yyreduce:
 
   case 220:
 /* Line 1792 of yacc.c  */
-#line 1999 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2022 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string varName=(yyvsp[(1) - (4)]).strs[0];
 						string index=(yyvsp[(3) - (4)]).strs[0];
@@ -4729,7 +4752,7 @@ yyreduce:
 
   case 221:
 /* Line 1792 of yacc.c  */
-#line 2028 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2051 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string textureName	=(yyvsp[(1) - (6)]).strs[1];
 						string x			=(yyvsp[(3) - (6)]).strs[0];
@@ -4741,7 +4764,7 @@ yyreduce:
 
   case 222:
 /* Line 1792 of yacc.c  */
-#line 2036 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2059 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string textureName	=(yyvsp[(1) - (8)]).strs[1];
 						string x			=(yyvsp[(3) - (8)]).strs[0];
@@ -4753,7 +4776,7 @@ yyreduce:
 
   case 223:
 /* Line 1792 of yacc.c  */
-#line 2044 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2067 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string textureName		=(yyvsp[(1) - (4)]).strs[1];
 						string command			=(yyvsp[(1) - (4)]).strs[2];
@@ -4805,14 +4828,22 @@ yyreduce:
 
   case 224:
 /* Line 1792 of yacc.c  */
-#line 2092 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2115 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string textureName		=(yyvsp[(1) - (6)]).strs[1];
 						string command			=(yyvsp[(1) - (6)]).strs[2];
 						string samplerStateName	=(yyvsp[(3) - (6)]).strs[0];
 						string otherParams		=(yyvsp[(5) - (6)]).strs[0];
 
-						//
+						// The actual texturing command depends on the type of the texture.
+						if(IsDeclared(textureName))
+						{
+							string type=GetDeclaredType(textureName);
+							if(type==string("samplerCube"))
+							{
+								command="texture";
+							}
+						}
 						if(!IsDeclared(samplerStateName))
 						{
 							errSem(string("Undeclared sampler state ")+samplerStateName);
@@ -4852,7 +4883,7 @@ yyreduce:
 
   case 225:
 /* Line 1792 of yacc.c  */
-#line 2135 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2166 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string expr1=(yyvsp[(1) - (4)]).strs[0];
 						string expr2=(yyvsp[(2) - (4)]).strs[0];
@@ -4921,7 +4952,7 @@ yyreduce:
 
   case 226:
 /* Line 1792 of yacc.c  */
-#line 2200 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2231 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						// ok this could be a function call.
 						string command=(yyvsp[(1) - (3)]).strs[2];
@@ -4931,7 +4962,7 @@ yyreduce:
 
   case 227:
 /* Line 1792 of yacc.c  */
-#line 2206 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2237 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string expr1=(yyvsp[(1) - (3)]).strs[0];
 						string expr3=(yyvsp[(3) - (3)]).strs[0];
@@ -4942,7 +4973,7 @@ yyreduce:
 
   case 228:
 /* Line 1792 of yacc.c  */
-#line 2213 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2244 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
 					}
@@ -4950,7 +4981,7 @@ yyreduce:
 
   case 229:
 /* Line 1792 of yacc.c  */
-#line 2217 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2248 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]=(yyvsp[(1) - (2)]).strs[0]+(yyvsp[(2) - (2)]).strs[0];
 					}
@@ -4958,7 +4989,7 @@ yyreduce:
 
   case 230:
 /* Line 1792 of yacc.c  */
-#line 2221 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2252 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 						(yyval).vars=(yyvsp[(1) - (3)]).vars;
@@ -4970,7 +5001,7 @@ yyreduce:
 
   case 231:
 /* Line 1792 of yacc.c  */
-#line 2229 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2260 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 						(yyval).vars = new vector<YYSTYPE::variable>;
@@ -4982,7 +5013,7 @@ yyreduce:
 
   case 232:
 /* Line 1792 of yacc.c  */
-#line 2237 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2268 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					string assignment_exp = (yyvsp[(1) - (1)]).strs[0];
 					(yyval).strs[0]=assignment_exp;
@@ -4991,7 +5022,7 @@ yyreduce:
 
   case 233:
 /* Line 1792 of yacc.c  */
-#line 2242 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2273 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					vector<glfxstype> &children = (yyval).children;
 					children = (yyvsp[(2) - (3)]).children;
@@ -5002,7 +5033,7 @@ yyreduce:
 
   case 234:
 /* Line 1792 of yacc.c  */
-#line 2249 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2280 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					vector<glfxstype> &children = (yyval).children;
 					children = (yyvsp[(2) - (4)]).children;
@@ -5013,7 +5044,7 @@ yyreduce:
 
   case 235:
 /* Line 1792 of yacc.c  */
-#line 2256 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2287 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					vector<glfxstype> &children = (yyval).children;
 					children.clear();
@@ -5024,7 +5055,7 @@ yyreduce:
 
   case 236:
 /* Line 1792 of yacc.c  */
-#line 2263 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2294 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					vector<glfxstype> &children = (yyval).children;
 					children = (yyvsp[(1) - (3)]).children;
@@ -5035,7 +5066,7 @@ yyreduce:
 
   case 237:
 /* Line 1792 of yacc.c  */
-#line 2270 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2301 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -5043,7 +5074,7 @@ yyreduce:
 
   case 238:
 /* Line 1792 of yacc.c  */
-#line 2274 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2305 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).token=(yyvsp[(1) - (1)]).token;
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -5052,7 +5083,7 @@ yyreduce:
 
   case 239:
 /* Line 1792 of yacc.c  */
-#line 2279 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2310 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -5060,7 +5091,7 @@ yyreduce:
 
   case 240:
 /* Line 1792 of yacc.c  */
-#line 2283 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2314 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (3)]).strs[0]+(yyvsp[(2) - (3)]).strs[0]+(yyvsp[(3) - (3)]).strs[0];
 				}
@@ -5068,7 +5099,7 @@ yyreduce:
 
   case 241:
 /* Line 1792 of yacc.c  */
-#line 2287 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2318 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -5076,7 +5107,7 @@ yyreduce:
 
   case 242:
 /* Line 1792 of yacc.c  */
-#line 2291 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2322 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 				}
@@ -5084,7 +5115,7 @@ yyreduce:
 
   case 243:
 /* Line 1792 of yacc.c  */
-#line 2295 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2326 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		ostringstream layoutDef;
 		//layoutDef<<"#line "<<$1.lineno<<endl;
@@ -5095,7 +5126,7 @@ yyreduce:
 
   case 244:
 /* Line 1792 of yacc.c  */
-#line 2303 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2334 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 		ostringstream layoutDef;
 		//layoutDef<<"#line "<<$1.lineno<<endl;
@@ -5106,7 +5137,7 @@ yyreduce:
 
   case 245:
 /* Line 1792 of yacc.c  */
-#line 2311 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2342 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     { /* read parenthesis */
 		(yyval).strs[0]=glfxreadblock('(', ')');
 	}
@@ -5114,7 +5145,7 @@ yyreduce:
 
   case 246:
 /* Line 1792 of yacc.c  */
-#line 2315 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2346 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						string id	=(yyvsp[(4) - (5)]).strs[0];
 						(yyval).strs[0]	=id;
@@ -5130,7 +5161,7 @@ yyreduce:
 
   case 247:
 /* Line 1792 of yacc.c  */
-#line 2327 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2358 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]	="";
 						(yyval).num		=-1;
@@ -5139,7 +5170,7 @@ yyreduce:
 
   case 248:
 /* Line 1792 of yacc.c  */
-#line 2332 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2363 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]		=(yyvsp[(2) - (2)]).strs[0];
 					}
@@ -5147,7 +5178,7 @@ yyreduce:
 
   case 249:
 /* Line 1792 of yacc.c  */
-#line 2336 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2367 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]		=(yyvsp[(2) - (2)]).strs[0];
 					}
@@ -5155,7 +5186,7 @@ yyreduce:
 
   case 250:
 /* Line 1792 of yacc.c  */
-#line 2340 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2371 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).strs[0]="";
 					}
@@ -5163,7 +5194,7 @@ yyreduce:
 
   case 251:
 /* Line 1792 of yacc.c  */
-#line 2344 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2375 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).lineno		=(yyvsp[(2) - (3)]).lineno;
 					}
@@ -5171,14 +5202,14 @@ yyreduce:
 
   case 252:
 /* Line 1792 of yacc.c  */
-#line 2347 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2378 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 					}
     break;
 
   case 253:
 /* Line 1792 of yacc.c  */
-#line 2351 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2382 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).lineno		=(yyvsp[(2) - (2)]).lineno;
 					}
@@ -5186,7 +5217,7 @@ yyreduce:
 
   case 254:
 /* Line 1792 of yacc.c  */
-#line 2356 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2387 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 						(yyval).lineno		=(yyvsp[(1) - (1)]).lineno;
 					}
@@ -5194,7 +5225,7 @@ yyreduce:
 
   case 255:
 /* Line 1792 of yacc.c  */
-#line 2360 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2391 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno		=(yyvsp[(3) - (4)]).lineno;
 							string name		=(yyvsp[(1) - (4)]).strs[0];
@@ -5306,7 +5337,7 @@ yyreduce:
 
   case 256:
 /* Line 1792 of yacc.c  */
-#line 2469 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2500 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno	=(yyvsp[(1) - (1)]).lineno;
 							(yyval).num		=-1;
@@ -5315,7 +5346,7 @@ yyreduce:
 
   case 257:
 /* Line 1792 of yacc.c  */
-#line 2474 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2505 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno	=(yyvsp[(1) - (2)]).lineno;
 							(yyval).strs[0]	=(yyvsp[(1) - (2)]).strs[0];
@@ -5325,7 +5356,7 @@ yyreduce:
 
   case 258:
 /* Line 1792 of yacc.c  */
-#line 2480 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2511 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							 (yyval).num=(yyvsp[(2) - (3)]).num;
 							 (yyval).fnum=(yyvsp[(2) - (3)]).fnum;
@@ -5334,7 +5365,7 @@ yyreduce:
 
   case 259:
 /* Line 1792 of yacc.c  */
-#line 2485 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2516 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							 (yyval).num=0;
 						}
@@ -5342,7 +5373,7 @@ yyreduce:
 
   case 260:
 /* Line 1792 of yacc.c  */
-#line 2489 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2520 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno=(yyvsp[(1) - (1)]).lineno;
 							(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
@@ -5351,7 +5382,7 @@ yyreduce:
 
   case 261:
 /* Line 1792 of yacc.c  */
-#line 2494 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2525 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno=(yyvsp[(1) - (1)]).lineno;
 							(yyval).num=(yyvsp[(1) - (1)]).num;
@@ -5360,7 +5391,7 @@ yyreduce:
 
   case 262:
 /* Line 1792 of yacc.c  */
-#line 2499 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2530 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 							(yyval).lineno=(yyvsp[(1) - (1)]).lineno;
 							(yyval).fnum=(yyvsp[(1) - (1)]).fnum;
@@ -5369,7 +5400,7 @@ yyreduce:
 
   case 263:
 /* Line 1792 of yacc.c  */
-#line 2504 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2535 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
     {
 			(yyval).strs[0]=(yyvsp[(1) - (1)]).strs[0];
 		}
@@ -5377,7 +5408,7 @@ yyreduce:
 
 
 /* Line 1792 of yacc.c  */
-#line 5381 "src/glfxLALRParser.cpp"
+#line 5412 "src/glfxLALRParser.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -5609,7 +5640,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 2507 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
+#line 2538 "C:\\Simul\\master\\Simul\\External\\glfx\\src\\glfx.ypp"
 
 
 	GLTextureType ToGLTextureType(int t)
@@ -5694,7 +5725,7 @@ void resetGlfxParse()
 	buildFunction.clear();
 	functions.clear();
 	buildStruct		=Struct();
-	gEffect->declaredTextures.clear();
+	gEffect->Clear();
 	read_shader		=false;
 	read_function	=false;
 }

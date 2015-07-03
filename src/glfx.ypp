@@ -162,12 +162,13 @@
 
 		string tsname		=ts->textureSamplerName();
 		string texture_name	=ts->textureName;
-		if (gEffect->declaredTextures.find(texture_name) != gEffect->declaredTextures.end())
+		if (gEffect->IsDeclared(texture_name))
 		{
-			string sampler_type = gEffect->declaredTextures[texture_name].type;
+			string sampler_type =(gEffect->GetDeclaredTextures()).find(texture_name)->second.type;
 			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
 			gEffect->additionalTextureDeclarations[tsname].type		=sampler_type;
-			gEffect->additionalTextureDeclarations[tsname].type_enum = gEffect->declaredTextures[texture_name].type_enum;
+			auto d=gEffect->GetDeclaredTextures();
+			gEffect->additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
 			// We know that this texture-sampler combo will be used in this shader.
 		}
 		else
@@ -222,8 +223,8 @@
 			if(textureName==i->identifier)
 				return (GLTextureType)i->type_enum;
 		}
-		auto j = gEffect->declaredTextures.find(textureName);
-		if (j != gEffect->declaredTextures.end())
+		auto j = gEffect->GetDeclaredTextures().find(textureName);
+		if (j != gEffect->GetDeclaredTextures().end())
 			return (GLTextureType)j->second.type_enum;
 		return unknwownTextureType;
 	}
@@ -305,6 +306,17 @@
 		}
 		return false;
 	}
+	string GetDeclaredType(string name)
+	{
+		if(gEffect->IsDeclared(name))
+			return gEffect->GetDeclaredType(name);
+		for(auto i=buildFunction.parameters.begin();i!=buildFunction.parameters.end();i++)
+		{
+			if(i->identifier==name)
+				return i->type;
+		}
+		return "unknown";
+	}
 %}
 
 %token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD LOAD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -354,14 +366,26 @@ prog : prog tok
 	gEffect->m_sharedCode<<"vec4 mul(mat4 m,vec4 v)"
 							"{"
 							"	return m*v;"
-							"}"
+							"}\n"
 							"vec3 mul(mat3 m,vec3 v)"
 							"{"
 							"	return m*v;"
-							"}"
+							"}\n"
 							"vec2 mul(mat2 m,vec2 v)"
 							"{"
 							"	return m*v;"
+							"}\n"
+							"vec4 mul(vec4 v,mat4 m)"
+							"{"
+							"	return v*m;"
+							"}\n"
+							"vec3 mul(vec3 v,mat3 m)"
+							"{"
+							"	return v*m;"
+							"}\n"
+							"vec2 mul(vec2 v,mat2 m)"
+							"{"
+							"	return v*m;"
 							"}\n";
 	    gLexPassthrough=true;
 	};
@@ -395,8 +419,8 @@ prog : prog tok
 			layout=GetLayoutForTemplateType(template_type)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
-		gEffect->declaredTextures[texture_name].type = type;
-		gEffect->declaredTextures[texture_name].type_enum = type_enum;
+		gEffect->m_declaredTextures[texture_name].type = type;
+		gEffect->m_declaredTextures[texture_name].type_enum = type_enum;
 		gEffect->m_sharedCode << decl.str(); 
 		if(compute_only)
 			gEffect->m_sharedCode<<"#endif\n";
@@ -647,7 +671,7 @@ prog : prog tok
 				{
 					// the type must become sampler2D, sampler3D etc. EITHER
 					// the type is declared for the texture in the vars list, OR it is
-					// in declaredTextures.
+					// in m_declaredTextures.
 					for(auto v=u->second.begin();v!=u->second.end();v++)
 					{
 						if(start)
@@ -657,7 +681,7 @@ prog : prog tok
 						TextureSampler *ts=*v;
 						string type=GetTypeOfParameter(f->parameters,ts->textureName);
 						if(type.length()==0)
-							type = gEffect->declaredTextures[ts->textureName].type;
+							type = gEffect->m_declaredTextures[ts->textureName].type;
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						//if(j->semantic.size())
 						//	params<<": "<<j->semantic;
@@ -1451,7 +1475,6 @@ shader_compile: IDENTIFIER
 
 				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-
 				CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
 
 				gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
@@ -2095,7 +2118,15 @@ postfix_exp		: primary_exp
 						string samplerStateName	=$3.strs[0];
 						string otherParams		=$5.strs[0];
 
-						//
+						// The actual texturing command depends on the type of the texture.
+						if(IsDeclared(textureName))
+						{
+							string type=GetDeclaredType(textureName);
+							if(type==string("samplerCube"))
+							{
+								command="texture";
+							}
+						}
 						if(!IsDeclared(samplerStateName))
 						{
 							errSem(string("Undeclared sampler state ")+samplerStateName);
@@ -2588,7 +2619,7 @@ void resetGlfxParse()
 	buildFunction.clear();
 	functions.clear();
 	buildStruct		=Struct();
-	gEffect->declaredTextures.clear();
+	gEffect->Clear();
 	read_shader		=false;
 	read_function	=false;
 }
