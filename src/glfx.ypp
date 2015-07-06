@@ -152,7 +152,6 @@
 	}
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
-	map<std::string,Function*> functions;
 	
 	void DeclareTextureSampler(const TextureSampler *ts)
 	{
@@ -317,6 +316,7 @@
 		}
 		return "unknown";
 	}
+	bool IsBufferType(int t);
 %}
 
 %token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD LOAD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
@@ -612,7 +612,7 @@ prog : prog tok
 		{
 	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
 		}
-		functions[functionName]	=f;
+		gEffect->functions[functionName].push_back(f);
 		f->returnType			=$1.strs[0];
 		f->content				=$7.strs[0];
 		
@@ -977,7 +977,7 @@ struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';
 	StructMember s;
 	s.type		=type;
 	s.semantic	=sem;
-	s.name		=name;
+	s.name		=name+sq;
 	buildStruct.m_structMembers.push_back(s);
 	$$.strs[0]=(unif.length()?(unif+" "):"");
     $$.strs[0]+=(type+" ")+name;
@@ -1070,23 +1070,29 @@ opt_sq: '[' opt_num ']'
 					$$.num=0;
 				};
 opt_num: NUM
-			{
+				{
 					$$.strs[0]=$1.strs[0];
 					$$.num=$1.num;
-			}
-			|
-			{
+				}
+				|
+				{
 					$$.strs[0]="";
 					$$.num=0;
-			}
+				}
+// NOTE: Need comprehensive arithemetic for declaration integers/
+				| NUM '*' NUM
+				{
+					$$.num=$1.num*$3.num;
+					$$.strs[0]=stringFormat("%d",$$.num);
+				}
 param : opt_storage type_name optional_templateval IDENTIFIER
 	{
 		string storage	=$1.strs[0];
 		string type		=$2.strs[0];
 		string template_=$3.strs[0];
 		// TODO: We discard template information in parameters. Should we insert a layout spec?
-		//if(template_.length())
-			//type+=string("<")+template_+string(">");
+	
+		
 		string id		=$4.strs[0];
 		if(template_.length()>=4&&(template_.substr(0,4)==string("uint")||template_.substr(0,4)==string("uvec")))
 			type=string("u")+type;
@@ -1094,7 +1100,11 @@ param : opt_storage type_name optional_templateval IDENTIFIER
 			type=string("i")+type;
 		else if(template_.length()>=3&&template_.substr(0,3)==string("int"))
 			type=string("i")+type;
-	//	string all		=((storage+" ")+type+" ")+id;
+		else if(IsBufferType($2.token))
+		{
+			if(template_.length()>0)
+				type=template_+"[]";
+		}
 		$$.strs[0]		=template_;
 		$$.strs[1]		=storage;
 		$$.strs[2]		=type;
@@ -1107,6 +1117,11 @@ type_name: IDENTIFIER
 				$$.token		=$1.token;
 			}
 			| texture_type
+			{
+				$$.strs[0]		=$1.strs[0];
+				$$.token		=$1.token;
+			}
+			| buffer_type
 			{
 				$$.strs[0]		=$1.strs[0];
 				$$.token		=$1.token;
@@ -1593,7 +1608,6 @@ init_declarator		: declarator
 			else
 			{
 				ostringstream declare_lines;
-				declare_lines<<$1.strs[0]<<";\n";
 				/* Here we convert an expression of the form 
 										vec2 poss[2]=
 										{
@@ -1613,6 +1627,7 @@ init_declarator		: declarator
 				if(sq_pos<name.length())
 				{
 					name=name.substr(0,sq_pos);
+					declare_lines<<$1.strs[1]<<"["<<$3.children.size()<<"];\n";
 					for(int i=0;i<$3.children.size();i++)
 					{
 						string c=$3.children[i].strs[0];
@@ -1623,6 +1638,7 @@ init_declarator		: declarator
 				}
 				else
 				{
+					declare_lines<<$1.strs[0]<<";\n";
 					// So we're probably initializing a struct instead.
 					errSem("Don't yet know how to handle initialization lists for non-arrays!");
 				}
@@ -1641,10 +1657,13 @@ declarator: IDENTIFIER
 		{
 			$$.num=$3.num;
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0];
+			$$.strs[1]=$1.strs[0];
+			$$.strs[2]=$3.strs[0];
 		}
 		| declarator '['		']'
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
+			$$.strs[1]=$1.strs[0];
 		}
 		| declarator '('		')'
 		{
@@ -2124,7 +2143,7 @@ postfix_exp		: primary_exp
 							string type=GetDeclaredType(textureName);
 							if(type==string("samplerCube"))
 							{
-								command="texture";
+							//.	command="texture";
 							}
 						}
 						if(!IsDeclared(samplerStateName))
@@ -2172,14 +2191,26 @@ postfix_exp		: primary_exp
 						string expr4=$4.strs[0];
 						// ok this could be a function call.
 						string command=$1.strs[2];
-						auto j=functions.find(command);
-						if(j==functions.end())
+						auto j=gEffect->functions.find(command);
+						if(j==gEffect->functions.end())
 						{
 							params=$3.strs[0];
 						}
 						else
 						{
-							const Function &f=*(j->second);
+							auto u=j->second.begin();
+							for(;u!=j->second.end();u++)
+							{
+								if((*u)->parameters.size()==vars.size())
+									break;
+							}
+							if(u==j->second.end())
+							{
+								errSem("No matching function definition found.");
+								break;
+							}
+							const Function &f=**u;
+							buildFunction.functionsCalled.insert(*u);
 							// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
 							// We figure out this mapping by looking at the vars list of the function we're calling.
 							//	this is the unmodified list, so it corresponds to the call we're making.
@@ -2580,6 +2611,18 @@ type_spec: IDENTIFIER
 		};
 		return "";
 	}
+	
+	bool IsBufferType(int t)
+	{
+		switch(t)
+		{
+		case STRUCTUREDBUFFER:
+		case RW_STRUCTUREDBUFFER:
+			return true;
+		default:
+			return false;
+		};
+	}
 void glfxWarning(const char* e)
 {
     ostringstream errMsg;
@@ -2617,7 +2660,6 @@ void errSem(const string& str, int lex_linenumber)
 void resetGlfxParse()
 {
 	buildFunction.clear();
-	functions.clear();
 	buildStruct		=Struct();
 	gEffect->Clear();
 	read_shader		=false;

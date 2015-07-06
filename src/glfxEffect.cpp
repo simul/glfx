@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cstdio>
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <windows.h>
 
@@ -63,6 +64,12 @@ Effect::~Effect()
 
 void Effect::Clear()
 {
+	for(auto i=functions.begin();i!=functions.end();i++)
+	{
+		for(auto j=i->second.begin();j!=i->second.end();j++)
+			delete *j;
+	}
+	functions.clear();
 	m_techniqueGroups.clear();
 	m_techniqueNames.clear();
 	m_techniqueGroupNames.clear();
@@ -370,11 +377,10 @@ void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 	m_filenames=filenamesUtf8;
 }
 
+extern int do_mkdir(const char *path_utf8);
+
 void Effect::PopulateProgramList()
 {
-   // m_programNames.clear();
-   // for(map<string,Program*>::const_iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-	//	m_programNames.push_back(it->first);
 	m_techniqueNames.clear();
 	map<string, TechniqueGroup*>::const_iterator ig=m_techniqueGroups.find("");
 	if(ig!=m_techniqueGroups.end())
@@ -394,6 +400,23 @@ void Effect::PopulateProgramList()
 		decl << "uniform " << i->second.type << " " << i->first << ";\n";
 	}
 	m_sharedCode.str(decl.str()+m_sharedCode.str());
+
+	// save shared code?
+	string bin_dir=glfxGetBinaryDirectory();
+	if(bin_dir.length())
+	{
+		do_mkdir(bin_dir.c_str());
+		string outputFilename=bin_dir+"/";
+		outputFilename+=this->Filename()+".glfxo";
+		std::ofstream ofstr(outputFilename.c_str());
+		const string &str=m_sharedCode.str();
+		ofstr.write(str.c_str(),str.length());
+		if(errno!=0)
+		{
+			GLFX_CERR<<"Error: Can't write cached file "<<outputFilename.c_str()<<"; does the directory exist?"<<std::endl;
+			DebugBreak();
+		}
+	}
 }
 
 void Effect::CreateDefinedSamplers()

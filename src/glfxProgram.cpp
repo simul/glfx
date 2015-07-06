@@ -164,9 +164,14 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	}
     if(m_separable)
         glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
-	
-    glLinkProgram(programId);
-    
+	try
+	{
+		glLinkProgram(programId);
+	}
+	catch(...)
+	{
+		throw std::runtime_error("Link error");
+	}
     if(res)
 	{
 		GLint lnk;
@@ -230,7 +235,7 @@ static std::wstring Utf8ToWString(const char *src_utf8)
 	return wstr;
 }
 
-static int do_mkdir(const char *path_utf8)
+int do_mkdir(const char *path_utf8)
 {
     int             status = 0;
 #ifdef _MSC_VER

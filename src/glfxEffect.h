@@ -31,6 +31,7 @@ namespace glfxParser
 		//!		Profile vs_4_0(410);
 		ProfileMap					m_profileToVersion;	
 		CompiledShaderMap			m_compiledShaders;
+		std::map<std::string,std::vector<Function*> > functions;
 		vector<string>				m_filenames;
 		ostringstream               m_sharedCode;
 		ostringstream               m_log;

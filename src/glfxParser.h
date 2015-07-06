@@ -247,6 +247,7 @@ struct Function
 		{
 			delete i->second;
 		}
+		functionsCalled.cbegin();
 		(*this)=Function();
 	}
 	void operator=(const Function &f)
@@ -265,14 +266,12 @@ struct Function
 		{
 			TextureSampler *ts=new TextureSampler;
 			*ts=*(i->second);
-		//	ts->samplerStateName=i->second->samplerStateName;
-		//	ts->textureName=i->second->textureName;
-		//	ts->global=i->second->global;
 			textureSamplers[i->first]=ts;
 			textureSamplersBySampler[ts->samplerStateName].insert(ts);
 			textureSamplersByTexture[ts->textureName].insert(ts);
 		}
 	}
+	std::set<Function*> functionsCalled;
 	std::string returnType;
 	std::string content;
 	int main_linenumber;
@@ -302,6 +301,7 @@ struct Function
 		textureSamplers.erase(i);
 	}
 };
+
 struct ComputeLayout
 {
 	int x,y,z;

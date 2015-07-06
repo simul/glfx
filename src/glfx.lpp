@@ -201,7 +201,7 @@ warning
 														stdReturn(TEXTURE3D);
 													}
 <INITIAL,IN_UNIFORM_DECL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
-													modReturn(TEXTURECUBE,"samplerCube");
+														modReturn(TEXTURECUBE,"samplerCube");
 													}
 <INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"	{
 														modReturn(TEXTURE2DMS,"sampler2DMS");
@@ -606,7 +606,7 @@ warning
 													glfxlval.fnum=(float)atof(yytext);
 													stdReturn(FLOAT);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_PRAGMA>{NUM_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_PRAGMA,IN_STRUCT>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
@@ -625,11 +625,11 @@ warning
 													glfxlval.strs[0]=yytext;
 													stdReturn(')');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"["[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>[ \t\n]*"["[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn('[');
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*"]"[ \t\n]*			{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>[ \t\n]*"]"[ \t\n]*			{
 													glfxlval.strs[0]=yytext;
 													stdReturn(']');
 												}
@@ -674,7 +674,7 @@ warning
 <IN_SHADER>"-"			{
 							stdReturn('-');
 						}   
-<IN_SHADER>"*"			{
+<IN_SHADER,IN_STRUCT>"*"			{
 							stdReturn('*');
 						}    
 <IN_SHADER>"%"			{
@@ -778,12 +778,12 @@ warning
 														stdReturn(IDENTIFIER);
 													}
 												}
-<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>"("			{
-													stdReturn('(');
-												}
-<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>")"			{
-													stdReturn(')');
-												}
+<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>"("	{
+														stdReturn('(');
+													}
+<INITIAL,IN_UNIFORM_DECL,IN_PRAGMA>")"	{
+														stdReturn(')');
+													}
 <INITIAL>"<"									{
 													stdReturn('<');
 												}
@@ -820,9 +820,9 @@ warning
 <INITIAL,IN_UNIFORM_DECL>"="				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL,IN_UNIFORM_DECL>";"				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
 <INITIAL,IN_UNIFORM_DECL>":"				{stdReturn(':');}
-<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"						{
-													stdReturn(':');
-												}
+<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"	{
+												stdReturn(':');
+											}
 <INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
