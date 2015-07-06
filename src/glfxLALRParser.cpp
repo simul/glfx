@@ -3357,7 +3357,7 @@ yyreduce:
 		else if(IsBufferType((yyvsp[(2) - (4)]).token))
 		{
 			if(template_.length()>0)
-				type=template_;
+				type=template_+"[]";
 		}
 		(yyval).strs[0]		=template_;
 		(yyval).strs[1]		=storage;
