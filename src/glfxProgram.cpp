@@ -263,6 +263,7 @@ int do_mkdir(const char *path_utf8)
 	errno=0;
     return(status);
 }
+
 int Program::CompileShader(unsigned shader, const string& name,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
 	ostringstream s;
