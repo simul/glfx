@@ -255,6 +255,7 @@
       <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glew/lib/VC11/Release/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <NoEntryPoint>false</NoEntryPoint>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <Lib>
       <AdditionalDependencies>../glew/x64/lib/glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
