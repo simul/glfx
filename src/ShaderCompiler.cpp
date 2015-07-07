@@ -75,7 +75,11 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					stringReplaceAll(output_type,"PointStream","points");
 					stringReplaceAll(output_type,"LineStream","line_strip");
 					stringReplaceAll(output_type,"TriangleStream","triangle_strip");
-					shaderCode<<"layout("<<output_type<<") out;\n";
+					shaderCode<<"layout("<<output_type<<",max_vertices="<<sh.maxGSVertexCount<<") out;\n";
+	//if(shaderType==GEOMETRY_SHADER)
+	
+		//shaderCode<<"layout(max_vertices="<<sh.maxGSVertexCount<<")\n";
+	
 				}
 				// In the actual shader code, convert HLSL-style member function calls to GLSL type
 				// stream commands:

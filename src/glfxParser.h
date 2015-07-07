@@ -316,6 +316,7 @@ struct CompilableShader
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
+	int maxGSVertexCount;
 };
 //! A shader to be compiled. 
 struct CompiledShader

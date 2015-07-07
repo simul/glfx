@@ -100,6 +100,10 @@
 		{
 			return "layout(rgba32f)";
 		}
+		if(s==string("char4"))
+		{
+			return "layout(rgba8)";
+		}
 		if(s==string("uchar4"))
 		{
 			return "layout(rgba8)";
@@ -418,6 +422,8 @@ prog : prog tok
 		if(compute_only)
 			layout=GetLayoutForTemplateType(template_type)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
+		WriteLineNumber(decl,current_filenumber,$1.lineno+last_linenumber-global_linenumber);
+
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
 		gEffect->m_declaredTextures[texture_name].type = type;
 		gEffect->m_declaredTextures[texture_name].type_enum = type_enum;
@@ -731,6 +737,7 @@ prog : prog tok
 	{
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
 		sh.shaderName			=$3.strs[0];
+		sh.maxGSVertexCount		=maxVertexCount;
 		sh.function.returnType	=$2.strs[0];
 		sh.function.content		=$8.strs[0];
 		sh.returnable			=$8.strs[1];
