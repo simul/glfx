@@ -96,7 +96,7 @@ int Effect::GetTextureNumber(const char *name)
 	}
 	else
 	{
-		textureNumberMap[n]						=current_texture_number;
+		textureNumberMap[n]				=current_texture_number;
 		if (m_declaredTextures.find(n) == m_declaredTextures.end())
 		{
 			GLFX_CERR << "Texture " << name << " is not declared." << std::endl;
@@ -600,15 +600,24 @@ void Effect::ApplyPassState(unsigned pass)
 	PassState &passState=i->second;
 	if(passState.depthStencilState.length()>0)
 	{
-		DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
-		if(depthStencilState.DepthEnable)
+		if(m_depthStencilStates.find(passState.depthStencilState)==m_depthStencilStates.end())
 		{
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(depthStencilState.DepthWriteMask);
-			glDepthFunc(depthStencilState.DepthFunc);
+			GLFX_CERR<<"Depth state not found: "<<passState.depthStencilState<<std::endl;
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(0);
 		}
 		else
-			glDisable(GL_DEPTH_TEST);
+		{
+			DepthStencilState &depthStencilState=*m_depthStencilStates[passState.depthStencilState];
+			if(depthStencilState.DepthEnable)
+			{
+				glEnable(GL_DEPTH_TEST);
+				glDepthMask(depthStencilState.DepthWriteMask);
+				glDepthFunc(depthStencilState.DepthFunc);
+			}
+			else
+				glDisable(GL_DEPTH_TEST);
+		}
 	}
 	if(passState.blendState.length()>0)
 	{

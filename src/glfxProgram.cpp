@@ -271,6 +271,10 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 		s << "#define IN_COMPUTE_SHADER 1" << endl;
 		s << computeLayout << "\n"; 
 	}
+	if (type ==FRAGMENT_SHADER)
+	{
+		s << "#define GL_FRAGMENT_SHADER 1" << endl;
+	}
 	string str = s.str();
 	string preamble = m_shaders[type].preamble;
 	const char* strSrc[] = { preamble.c_str(),str.c_str(),shared.c_str(),src.c_str() };
