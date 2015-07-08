@@ -416,8 +416,8 @@ void Effect::PopulateProgramList()
 			GLFX_CERR<<"Error: Can't write cached file "<<outputFilename.c_str()<<"; does the directory exist?"<<std::endl;
 			DebugBreak();
 		}
-		else
-			std::cerr<<outputFilename.c_str()<<": Warning B0000: shared source for "<<Filename()<<std::endl;
+		//else
+		//	std::cerr<<outputFilename.c_str()<<": Warning B0000: shared source for "<<Filename()<<std::endl;
 	}
 }
 
