@@ -715,7 +715,8 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const c
 		resetGlfxParse();
 	GLFX_ERRNO_CHECK
         glfxparse();
-	GLFX_ERRNO_CHECK
+	// Flex/Bison sets errno, even when it doesn't report an error. So we reset it:
+		errno=0;
     }
     catch(const char* err)
 	{

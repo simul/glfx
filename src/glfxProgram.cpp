@@ -286,7 +286,7 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	if(bin_dir.length())
 	{
 		do_mkdir(bin_dir.c_str());
-		 binaryFilename=bin_dir+"/";
+		binaryFilename=bin_dir+"/";
 		binaryFilename+=name+".glsl";
 		std::ofstream ofstr(binaryFilename);
 		ofstr.write(src.c_str(),strlen(src.c_str()));
