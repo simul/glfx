@@ -171,10 +171,16 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					string sem=(type+"_")+m.name;
 					if(m.semantic.length())
 						sem=(sem+"_")+m.semantic;
+					// If built-in, it's implicit: don't add it as a declaration.
 					if(m.semantic==string("gl_VertexID"))
+					{
 						sem=m.semantic;
-					//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
-					shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
+					}
+					else
+					{
+						//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
+						shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
+					}
 					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
 				}
 			}
@@ -248,7 +254,8 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				if(m.semantic==string("gl_Position")||m.semantic==string("SV_POSITION"))
 				{
 					string builtin_name="gl_Position";
-					shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
+					// It's implicit, don't declare:
+					//shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
 					// Flip y of output because we consider GL textures to be "upside-down".
 					finalCode<<returnVariable<<"."<<m.name<<".y*=rescaleVertexShaderY;"<<endl;
 					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;

@@ -343,7 +343,7 @@ prog : prog tok
 	    gEffect->m_sharedCode.str("");    // clear the stream
 		gEffect->m_sharedCode<<"#define GLSL\n";
 // Some GLSL compilers can't abide seeing a "discard" in the source of a shader that isn't a fragment shader, even if it's in unused, shared code.
-	gEffect->m_sharedCode<<"#if !defined(GL_FRAGMENT_SHADER)\n"
+	gEffect->m_sharedCode<<"#if !defined(GLFX_FRAGMENT_SHADER)\n"
 							"#define discard\n"
 						"#endif\n";
 		gEffect->m_sharedCode<<"float saturate(float x)"
@@ -1374,9 +1374,16 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 							string shaderName=compiledShader->m_functionName;
 							if(_stricmp(shaderName.c_str(),"NULL")!=0)
 							{
-								
 								if (shaderCommand == COMPUTE_SHADER)
+								{
 									preamble << gEffect->m_shaderLayouts[shaderName].text() << "\n";
+									preamble << "#define IN_COMPUTE_SHADER 1" << endl;
+								//	preamble << computeLayout << "\n"; 
+								}
+								if (shaderCommand ==FRAGMENT_SHADER)
+								{
+									preamble << "#define GLFX_FRAGMENT_SHADER 1" << endl;
+								}
 							}
 							$$.strs[0]	=preamble.str();
 							$$.strs[1]	=shaderName;
