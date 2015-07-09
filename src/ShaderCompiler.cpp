@@ -260,6 +260,11 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					finalCode<<returnVariable<<"."<<m.name<<".y*=rescaleVertexShaderY;"<<endl;
 					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
 				}
+				else if(m.semantic.substr(0,9)==string("SV_DEPTH"))
+				{
+					string builtin_name="gl_FragDepth";
+					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
 				else if(m.semantic.substr(0,9)==string("SV_TARGET"))
 				{
 					string numstr=m.semantic.substr(9,m.semantic.length()-9);
@@ -268,10 +273,6 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 					num=strtol(numstr.c_str(),&pEnd,10);
 					if(num>=0)
 						shaderCode<<"layout(location = "<<num<<") ";
-				}
-				else if(m.semantic.substr(0,9)==string("SV_DEPTH"))
-				{
-					sem="gl_FragDepth";
 				}
 				else
 				{
