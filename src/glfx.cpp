@@ -784,38 +784,50 @@ const char* GLFX_APIENTRY glfxGetEffectLog(int effect)
 
 int GLFX_APIENTRY glfxGetEffectTextureNumber(int e,const char *name)
 {
+	if(e<0||e>=gEffects.size())
+		return -1;
     return gEffects[e]->GetTextureNumber(name);
 }
 
 int GLFX_APIENTRY glfxGetEffectImageNumber(int e,const char *name)
 {
+	if(e<0||e>=gEffects.size())
+		return -1;
     return gEffects[e]->GetImageNumber(name);
 }
 
-void GLFX_APIENTRY glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
+void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
 {
-	gEffects[effect]->SetTexture( texture_number, tex, dims, depth,format, write);
+	if(e<0||e>=gEffects.size())
+		return ;
+	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write);
 }
 
-void GLFX_APIENTRY glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler)
+void GLFX_APIENTRY glfxSetEffectSamplerState(int e, const char *name, GLuint sampler)
 {
-	gEffects[effect]->SetSamplerState( name, sampler);
+	if(e<0||e>=gEffects.size())
+		return ;
+	gEffects[e]->SetSamplerState( name, sampler);
 }
 
-size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect)
+size_t GLFX_APIENTRY glfxGetTechniqueCount(int e)
 {
+	if(e<0||e>=gEffects.size())
+		return 0;
 	GLFX_ERROR_CHECK
-	if(gEffects[effect]->current_group==NULL)
-		gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByName("");
+	if(gEffects[e]->current_group==NULL)
+		gEffects[e]->current_group=gEffects[e]->GetTechniqueGroupByName("");
 	GLFX_ERROR_CHECK
-	return (int)gEffects[effect]->current_group->GetTechniqueList().size();
+	return (int)gEffects[e]->current_group->GetTechniqueList().size();
 }
 
-size_t GLFX_APIENTRY glfxGetTechniqueIndex(int effect, const char* name)
+size_t GLFX_APIENTRY glfxGetTechniqueIndex(int e, const char* name)
 {
-	if (gEffects[effect]->current_group == NULL)
-		gEffects[effect]->current_group = gEffects[effect]->GetTechniqueGroupByName("");
-	const vector<string>& tmpList = gEffects[effect]->current_group->GetTechniqueList();
+	if(e<0||e>=gEffects.size())
+		return 0;
+	if (gEffects[e]->current_group == NULL)
+		gEffects[e]->current_group = gEffects[e]->GetTechniqueGroupByName("");
+	const vector<string>& tmpList = gEffects[e]->current_group->GetTechniqueList();
 	for (int i = 0; i<(int)tmpList.size(); i++)
 	{
 		if (strcmp(tmpList[i].c_str(), name) == 0)
@@ -844,32 +856,42 @@ GLFXAPI void GLFX_APIENTRY glfxApply(int effect,GLuint pass)
 	gEffects[effect]->Apply(pass);
 }
 
-GLFXAPI void GLFX_APIENTRY glfxReapply(int effect,GLuint pass)
+GLFXAPI void GLFX_APIENTRY glfxReapply(int e,GLuint pass)
 {
-	gEffects[effect]->Reapply(pass);
+	if(e<0||e>=gEffects.size())
+		return ;
+	gEffects[e]->Reapply(pass);
 }
 
-GLFXAPI void GLFX_APIENTRY glfxUnapply(int effect)
+GLFXAPI void GLFX_APIENTRY glfxUnapply(int e)
 {
-	gEffects[effect]->Unapply();
+	if(e<0||e>=gEffects.size())
+		return ;
+	gEffects[e]->Unapply();
 }
 
-GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int effect,int g)
+GLFXAPI void GLFX_APIENTRY glfxUseTechniqueGroup(int e,int g)
 {
-	gEffects[effect]->current_group=gEffects[effect]->GetTechniqueGroupByIndex(g);
+	if(e<0||e>=gEffects.size())
+		return ;
+	gEffects[e]->current_group=gEffects[e]->GetTechniqueGroupByIndex(g);
 }
 
-const char* GLFX_APIENTRY glfxGetTechniqueGroupName(int effect, int g)
+const char* GLFX_APIENTRY glfxGetTechniqueGroupName(int e, int g)
 {
-	const vector<string>& tmpList = gEffects[effect]->GetTechniqueGroupList();
+	if(e<0||e>=gEffects.size())
+		return "";
+	const vector<string>& tmpList = gEffects[e]->GetTechniqueGroupList();
 	if (g > (int)tmpList.size())
 		return "";
 	return tmpList[g].c_str();
 }
 
-const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
+const char* GLFX_APIENTRY glfxGetTechniqueName(int e, int technum)
 {
-	TechniqueGroup *g = gEffects[effect]->current_group;
+	if(e<0||e>=gEffects.size())
+		return "";
+	TechniqueGroup *g = gEffects[e]->current_group;
 	GLFX_ERROR_CHECK
 	const vector<string>& tmpList = g->GetTechniqueList();
 	GLFX_ERROR_CHECK
@@ -879,10 +901,12 @@ const char* GLFX_APIENTRY glfxGetTechniqueName(int effect, int technum)
 	return tmpList[technum].c_str();
 }
 
-size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
+size_t GLFX_APIENTRY glfxGetPassCount(int e, const char* tech_name)
 {
+	if(e<0||e>=gEffects.size())
+		return 0;
 	GLFX_ERROR_CHECK
-	TechniqueGroup *g = gEffects[effect]->current_group;
+	TechniqueGroup *g = gEffects[e]->current_group;
 	GLFX_ERROR_CHECK
 	 Technique *tech=g->m_techniques[tech_name];
 	GLFX_ERROR_CHECK
@@ -892,10 +916,12 @@ size_t GLFX_APIENTRY glfxGetPassCount(int effect, const char* tech_name)
 	return tech->GetPasses().size();
 }
 
-const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int pass_num)
+const char* GLFX_APIENTRY glfxGetPassName(int e, const char *tech_name, int pass_num)
 {
+	if(e<0||e>=gEffects.size())
+		return "";
 	GLFX_ERROR_CHECK
-	TechniqueGroup *g = gEffects[effect]->current_group;
+	TechniqueGroup *g = gEffects[e]->current_group;
 	GLFX_ERROR_CHECK
 	 Technique *tech=g->m_techniques[tech_name];
 	GLFX_ERROR_CHECK
@@ -908,21 +934,25 @@ const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_name, int
 	return i->first.c_str();
 }
 
-GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name)
+GLuint GLFX_APIENTRY glfxCompilePass(int e, const char *tech_name, const char *pass_name)
 {
-	TechniqueGroup *g=gEffects[effect]->current_group;
+	if(e<0||e>=gEffects.size())
+		return 0;
+	TechniqueGroup *g=gEffects[e]->current_group;
 	Technique *tech=g->m_techniques[tech_name];
 	if (!tech)
 		return 0;
 	GLFX_ERROR_CHECK
 	const Program &p=tech->GetPasses()[string(pass_name)];
-	GLuint pr=glfxCompileProgram(effect, tech_name, pass_name);
+	GLuint pr=glfxCompileProgram(e, tech_name, pass_name);
 	return pr;
 }
-GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass)
+GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int e,GLuint pass)
 {
-	if(effect>=0&&effect<gEffects.size())
-		gEffects[effect]->ApplyPassState(pass);
+	if(e<0||e>=gEffects.size())
+		return ;
+	if(e>=0&&e<gEffects.size())
+		gEffects[e]->ApplyPassState(pass);
 }
 
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
