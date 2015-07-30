@@ -252,16 +252,20 @@ void ProcessConfigFile(TBuiltInResource &Resources)
     char** configStrings = 0;
     char* config = 0;
 
-    if (config == 0) {
+    if (config == 0)
+	{
         config = new char[strlen(DefaultConfig) + 1];
-        strcpy(config, DefaultConfig);
+        strcpy_s(config,strlen(DefaultConfig) + 1,DefaultConfig);
     }
 
-    const char* delims = " \t\n\r";
-    const char* token = strtok(config, delims);
-    while (token) {
-        const char* valueStr = strtok(0, delims);
-        if (valueStr == 0 || ! (valueStr[0] == '-' || (valueStr[0] >= '0' && valueStr[0] <= '9'))) {
+    const char *delims	=" \t\n\r";
+	char *context		=NULL;
+    const char *token	=strtok_s(config,delims,&context);
+    while (token)
+	{
+        const char* valueStr =strtok_s(0, delims,&context);
+        if (valueStr == 0 || ! (valueStr[0] == '-' || (valueStr[0] >= '0' && valueStr[0] <= '9')))
+		{
             printf("Error: '%s' bad .conf file.  Each name must be followed by one number.\n", valueStr ? valueStr : "");
             return;
         }
@@ -455,7 +459,7 @@ void ProcessConfigFile(TBuiltInResource &Resources)
         else
             printf("Warning: unrecognized limit (%s) in configuration file.\n", token);
 
-        token = strtok(0, delims);
+        token = strtok_s(0,delims,&context);
     }
   //  if (configStrings)
    //     FreeFileData(configStrings);
@@ -489,7 +493,7 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	        shader->setStrings(shaderStrings,s);
 			TBuiltInResource Resources;
 			ProcessConfigFile(Resources);
-			res&=shader->parse(&Resources, defaultVersion,EProfile::ECoreProfile,false,false,messages);
+			res&=(int)shader->parse(&Resources, defaultVersion,EProfile::ECoreProfile,false,false,messages);
             sLog<<shader->getInfoLog();
 
 			glsl_program->addShader(shader);
@@ -497,7 +501,7 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	}
 	if(res)
 	{
-		res&=glsl_program->link(messages);
+		res&=(int)(glsl_program->link(messages));
         sLog<<glsl_program->getInfoLog();
 	}
     delete glsl_program;

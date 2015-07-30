@@ -140,7 +140,7 @@ int Effect::GetImageNumber(const char *name)
 	return image_number;
 }
 
-void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
+void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
 	t.tex		=tex;
@@ -149,6 +149,7 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 	t.depth		=depth;
 	t.format	=format;
 	t.write		=write;
+	t.write_mip	=write_mip;
 }
 
 void Effect::SetSamplerState(const char *name, unsigned sam)
@@ -172,13 +173,13 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	//	return;
 	if(t.write)
 	{
-		glBindImageTexture(texture_number-1000,
- 			t.tex,
- 			0,
-			textureDimensions[texture_number] == 3,
- 			0,
- 			GL_READ_WRITE,
-			t.format);
+		glBindImageTexture(texture_number-1000
+ 			,t.tex
+ 			,t.write_mip
+			,textureDimensions[texture_number] == 3
+			,0
+			,GL_READ_WRITE
+			,t.format);
 		texture_number-=1000;
 /*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
 	GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
@@ -255,7 +256,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			GLFX_ERROR_CHECK
 			glObjectLabel(GL_PROGRAM,
 				programId,
-				tech.length(),
+				(GLsizei)tech.length(),
 				tech.c_str());
 			GLFX_ERROR_CHECK
 			passStates[programId] = jt->second.passState;

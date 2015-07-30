@@ -57,6 +57,7 @@ namespace glfxParser
 			int depth;
 			unsigned format;	//GLenum
 			bool write;
+			int write_mip;
 		};
 		std::map<std::string,int> textureNumberMap;
 		std::map<int, TextureAssignment> textureAssignmentMap;
@@ -116,7 +117,7 @@ namespace glfxParser
 		TechniqueGroup *current_group;
 		int GetTextureNumber(const char *name);
 		int GetImageNumber(const char *name);
-		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write);
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
 		void SetSamplerState(const char *name, unsigned sam);
 		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
 	};

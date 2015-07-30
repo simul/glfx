@@ -80,7 +80,8 @@ FILE* OpenFile(const char *filename_utf8,std::string &fullPathNameUtf8)
 	}
 	GLFX_ERRNO_BREAK
 	wstring filenamew=StringToWString(fullPathNameUtf8);
-	FILE *f=_wfopen(filenamew.c_str(),L"r");
+	FILE *f=NULL;//_wfopen(filenamew.c_str(),L"r");
+	_wfopen_s(&f,filenamew.c_str(),L"r");
 	GLFX_ERRNO_BREAK
 	string path=fullPathNameUtf8;
 	int last_slash=(int)path.find_last_of("/");
@@ -796,11 +797,11 @@ int GLFX_APIENTRY glfxGetEffectImageNumber(int e,const char *name)
     return gEffects[e]->GetImageNumber(name);
 }
 
-void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write)
+void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
 {
 	if(e<0||e>=gEffects.size())
 		return ;
-	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write);
+	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write,write_mip);
 }
 
 void GLFX_APIENTRY glfxSetEffectSamplerState(int e, const char *name, GLuint sampler)
