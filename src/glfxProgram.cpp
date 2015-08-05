@@ -505,7 +505,8 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
         sLog<<glsl_program->getInfoLog();
 	}
     delete glsl_program;
-    while (glslang_shaders.size() > 0) {
+    while (glslang_shaders.size() > 0)
+	{
         delete glslang_shaders.back();
         glslang_shaders.pop_back();
     }
