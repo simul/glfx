@@ -74,6 +74,14 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</DeploymentContent>
     </CustomBuild>
     <CustomBuild Include="src\glfx.ypp">
       <FileType>Document</FileType>
@@ -89,6 +97,14 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"win_bison.exe" "%(FullPath)"</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</DeploymentContent>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
