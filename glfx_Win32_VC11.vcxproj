@@ -76,16 +76,16 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
       </AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
