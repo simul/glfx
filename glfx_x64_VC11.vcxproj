@@ -143,9 +143,19 @@
   <ItemGroup>
     <ProjectReference Include="..\glew\build\vc11\glew_shared.vcxproj">
       <Project>{55ae3d72-7de6-f19f-aef2-9ae8ca26cf3d}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\glew\build\vc11\glew_static.vcxproj">
       <Project>{664e6f0d-6784-4760-9565-d54f8eb1edf4}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
