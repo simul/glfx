@@ -144,6 +144,14 @@
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\simple_technique.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\glew\build\vc11\glew_shared.vcxproj">
+      <Project>{55ae3d72-7de6-f19f-aef2-9ae8ca26cf3d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\glew\build\vc11\glew_static.vcxproj">
+      <Project>{664e6f0d-6784-4760-9565-d54f8eb1edf4}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3C16E3F9-BA50-45A0-A7FF-C985C7721BEB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
