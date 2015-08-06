@@ -59,6 +59,9 @@ extern "C" {
 **************************************************/
 GLFXAPI int GLFX_APIENTRY glfxGenEffect();
 
+//! Set a directory that should be used to cache compiled shader files.
+GLFXAPI void GLFX_APIENTRY glfxSetCacheDirectory(const char *dir);
+
 /**************************************************
 * glfxCreateEffectFromFile
 * Input:
@@ -90,8 +93,9 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 //GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
 
-GLFXAPI void GLFX_APIENTRY glfxSetBinaryDirectory(const char *dir);
-GLFXAPI const char * GLFX_APIENTRY glfxGetBinaryDirectory();
+GLFXAPI const char * GLFX_APIENTRY glfxGetCacheDirectory();
+GLFXAPI bool GLFX_APIENTRY glfxIsGlslangValidationEnabled();
+GLFXAPI void GLFX_APIENTRY glfxSetGlslangValidationEnabled(bool);
 GLFXAPI void glfxApply(int effect,GLuint pass);
 GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);

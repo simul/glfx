@@ -470,46 +470,49 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
     GLint res=1;
     ostringstream sLog;
 #ifdef GLFX_GLSLANG
-    glslang::InitializeProcess();
-    std::vector<glslang::TShader*> glslang_shaders;
-    
-    EShMessages messages = EShMsgDefault;
-	int defaultVersion=110;
-    glslang::TProgram *glsl_program = new glslang::TProgram;
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	if(glfxIsGlslangValidationEnabled())
 	{
-        if(res&&m_shaders[i].compiledShader)
+		glslang::InitializeProcess();
+		std::vector<glslang::TShader*> glslang_shaders;
+    
+		EShMessages messages = EShMsgDefault;
+		int defaultVersion=110;
+		glslang::TProgram *glsl_program = new glslang::TProgram;
+		for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 		{
-			EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
-			glslang::TShader* shader = new glslang::TShader(stage);
-			glslang_shaders.push_back(shader);
-			static int l=0;
-			string shr=shared_src;
-			if(l)
-				shr=shared_src.substr(0,l);
-			find_and_replace(shr,"#line","//line");
-			const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
-			static int s=3;
-	        shader->setStrings(shaderStrings,s);
-			TBuiltInResource Resources;
-			ProcessConfigFile(Resources);
-			res&=(int)shader->parse(&Resources, defaultVersion,EProfile::ECoreProfile,false,false,messages);
-            sLog<<shader->getInfoLog();
+			if(res&&m_shaders[i].compiledShader)
+			{
+				EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
+				glslang::TShader* shader = new glslang::TShader(stage);
+				glslang_shaders.push_back(shader);
+				static int l=0;
+				string shr=shared_src;
+				if(l)
+					shr=shared_src.substr(0,l);
+				find_and_replace(shr,"#line","//line");
+				const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
+				static int s=3;
+				shader->setStrings(shaderStrings,s);
+				TBuiltInResource Resources;
+				ProcessConfigFile(Resources);
+				res&=(int)shader->parse(&Resources, defaultVersion,EProfile::ECoreProfile,false,false,messages);
+				sLog<<shader->getInfoLog();
 
-			glsl_program->addShader(shader);
+				glsl_program->addShader(shader);
+			}
+		}
+		if(res)
+		{
+			res&=(int)(glsl_program->link(messages));
+			sLog<<glsl_program->getInfoLog();
+		}
+		delete glsl_program;
+		while (glslang_shaders.size() > 0)
+		{
+			delete glslang_shaders.back();
+			glslang_shaders.pop_back();
 		}
 	}
-	if(res)
-	{
-		res&=(int)(glsl_program->link(messages));
-        sLog<<glsl_program->getInfoLog();
-	}
-    delete glsl_program;
-    while (glslang_shaders.size() > 0)
-	{
-        delete glslang_shaders.back();
-        glslang_shaders.pop_back();
-    }
 #endif
     vector<GLuint> shaders;
 	if (programId)
@@ -660,7 +663,7 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	const char* strSrc[] = { preamble.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 3, strSrc, NULL);
 
-	string bin_dir=glfxGetBinaryDirectory();
+	string bin_dir=glfxGetCacheDirectory();
 	string binaryFilename;
 	if(bin_dir.length())
 	{

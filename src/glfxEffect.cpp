@@ -403,7 +403,7 @@ void Effect::PopulateProgramList()
 	m_sharedCode.str(decl.str()+m_sharedCode.str());
 
 	// save shared code?
-	string bin_dir=glfxGetBinaryDirectory();
+	string bin_dir=glfxGetCacheDirectory();
 	if(bin_dir.length())
 	{
 		do_mkdir(bin_dir.c_str());

@@ -57,6 +57,7 @@ typedef int errno_t;
 #include "FileLoader.h"
 #include "glfxErrorCheck.h"
 #include <direct.h>
+static std::string binaryDirectory;
 
 #pragma optimize("",off)
 
@@ -836,13 +837,23 @@ size_t GLFX_APIENTRY glfxGetTechniqueIndex(int e, const char* name)
 	}
 	return tmpList.size();
 }
-static std::string binaryDirectory;
-GLFXAPI void GLFX_APIENTRY glfxSetBinaryDirectory(const char *dir)
+
+GLFXAPI void GLFX_APIENTRY glfxSetCacheDirectory(const char *dir)
 {
 	binaryDirectory=dir;
 }
+static bool glslang_validation=true;
+GLFXAPI bool GLFX_APIENTRY glfxIsGlslangValidationEnabled()
+{
+	return glslang_validation;
+}
 
-GLFXAPI const char * GLFX_APIENTRY glfxGetBinaryDirectory()
+GLFXAPI void GLFX_APIENTRY glfxSetGlslangValidationEnabled(bool v)
+{
+	glslang_validation=v;
+}
+
+GLFXAPI const char * GLFX_APIENTRY glfxGetCacheDirectory()
 {
 	return binaryDirectory.c_str();
 }
