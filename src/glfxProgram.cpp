@@ -266,7 +266,7 @@ void ProcessConfigFile(TBuiltInResource &Resources)
         const char* valueStr =strtok_s(0, delims,&context);
         if (valueStr == 0 || ! (valueStr[0] == '-' || (valueStr[0] >= '0' && valueStr[0] <= '9')))
 		{
-            printf("Error: '%s' bad .conf file.  Each name must be followed by one number.\n", valueStr ? valueStr : "");
+            std::cerr<<"Error: '"<<(valueStr?valueStr:"")<<"' bad .conf file.  Each name must be followed by one number.\n";
             return;
         }
         int value = atoi(valueStr);
@@ -457,7 +457,7 @@ void ProcessConfigFile(TBuiltInResource &Resources)
         else if (strcmp(token, "generalConstantMatrixVectorIndexing") == 0)
             Resources.limits.generalConstantMatrixVectorIndexing = (value != 0);
         else
-            printf("Warning: unrecognized limit (%s) in configuration file.\n", token);
+            std::cerr<<"Warning: unrecognized limit ("<<token<<") in configuration file.\n";
 
         token = strtok_s(0,delims,&context);
     }
