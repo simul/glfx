@@ -142,6 +142,7 @@ struct glfxstype
     // Carrying these around is bad luck, or more like bad performance. But whatever...
     string strs[5];
 };
+extern std::string ShaderTypeToString(ShaderType s);
 
 namespace glfxParser
 {
@@ -149,6 +150,7 @@ namespace glfxParser
 	extern bool gLexPassthrough;
 	extern bool read_shader;
 	extern bool read_function;
+	extern std::ostringstream sharedCode;
 	
 	#ifdef LINUX
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);

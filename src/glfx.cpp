@@ -388,6 +388,7 @@ Effect *gEffect=NULL;
 bool gLexPassthrough=true;
 
 RenderState	 renderState;
+std::ostringstream sharedCode;
 bool read_shader=false;
 bool read_function=false;
 #pragma optimize("",off)
@@ -746,7 +747,10 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const c
     }
     glfxpop_buffer_state();
 	if(retVal)
+	{
+		gEffect->SetSharedCode(sharedCode.str());
 	    gEffect->PopulateProgramList();
+	}
 	string log=gEffect->Log().str();
 	PutFilenamesInLog(log,gEffects[effect]->GetFilenameList());
 	gEffect->Log().str(log);

@@ -42,10 +42,10 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 				//shaderCode<<"layout("<<output_type<<") out;\n";
 			}
 		}
-		map<string,Struct*>::const_iterator u=gEffect->m_structs.find(type);
-		map<string, Effect::InterfaceDcl>::const_iterator varType=gEffect->m_interfaces.find(type);
+		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(type);
+		map<string, InterfaceDcl>::const_iterator varType=gEffect->GetInterfaces().find(type);
 	
-		if(u!=gEffect->m_structs.end())
+		if(u!=gEffect->GetStructs().end())
 		{
 			const Struct *s=u->second;
 		// Geometry shader outputs have the "inout" storage specifier, and a template-looking type.
@@ -186,7 +186,7 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 			}
 			continue;
 		}
-		else if(varType!=gEffect->m_interfaces.end())
+		else if(varType!=gEffect->GetInterfaces().end())
 		{
 			type+=varType->second.id;
 		}
@@ -204,8 +204,8 @@ void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,Compil
 	// Add the return variable.
 	if(sh.function.returnType!=string("void"))
 	{
-		map<string,Struct*>::const_iterator u=gEffect->m_structs.find(sh.function.returnType);
-		if(u==gEffect->m_structs.end())
+		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(sh.function.returnType);
+		if(u==gEffect->GetStructs().end())
 		{
 			string returnVariable="returnVariable";
 			// if we're returning a simple type, we declare it as an output.

@@ -10,6 +10,14 @@ namespace glfxParser
 	typedef std::map<std::string,CompiledShader*> CompiledShaderMap;
 	typedef std::map<std::string,std::string> StringMap;
 	typedef std::map<std::string,int> ProfileMap;
+	struct InterfaceDcl
+	{
+		string id;
+		int atLine;
+
+		InterfaceDcl(string s, int l) : id(s), atLine(l) {}
+		InterfaceDcl() {}
+	};
 	class Effect
 	{
 		std::map<std::string,TechniqueGroup*>		m_techniqueGroups;
@@ -33,7 +41,7 @@ namespace glfxParser
 		CompiledShaderMap			m_compiledShaders;
 		std::map<std::string,std::vector<Function*> > functions;
 		vector<string>				m_filenames;
-		ostringstream               m_sharedCode;
+		string						m_sharedCode;
 		ostringstream               m_log;
 		int                         m_includes;
 		bool                        m_active;
@@ -62,6 +70,9 @@ namespace glfxParser
 		std::map<std::string,int> textureNumberMap;
 		std::map<int, TextureAssignment> textureAssignmentMap;
 		std::map<int, int> textureDimensions;
+		std::map<std::string, InterfaceDcl>		m_interfaces;
+		std::map<std::string, Struct*>			m_structs;
+		std::map<string, DeclaredTexture>		additionalTextureDeclarations;
 		/// We keep a map of texture 
 		std::map<std::string, unsigned> prepared_sampler_states;
 		unsigned current_pass;
@@ -69,57 +80,67 @@ namespace glfxParser
 		void CreateDefinedSamplers();
 		bool PassHasTransformFeedback(unsigned pass);
 	public:
-		struct InterfaceDcl
-		{
-			string id;
-			int atLine;
-
-			InterfaceDcl(string s, int l) : id(s), atLine(l) {}
-			InterfaceDcl() {}
-		};
-		std::map<std::string, InterfaceDcl>   m_interfaces;
-		std::map<std::string, Struct*>			m_structs;
-		std::map<string, DeclaredTexture> additionalTextureDeclarations;
+		~Effect();
+		Effect();
+		// GET INFO
 		const std::map<std::string,DeclaredTexture> &GetDeclaredTextures() const
 		{
 			return m_declaredTextures;
 		}
+		const std::map<std::string, InterfaceDcl>		&GetInterfaces() const
+		{
+			return m_interfaces;
+		}
+		const std::map<std::string, Struct*>		&GetStructs() const
+		{
+			return m_structs;
+		}
+		string GetDeclaredType(std::string str);
+		Technique *GetTechniqueByName(const char *name);
+		TechniqueGroup *GetTechniqueGroupByName(const char *name);
+		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
+		string& Dir();
+		string& Filename();
+		int GetTextureNumber(const char *name);
+		int GetImageNumber(const char *name);
+		// MODIFY
 		void Clear();
+		void SetSharedCode(const string &str);
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
-		//unsigned BuildProgram(const string& prog) const;
 		unsigned CreateSampler(const string& sampler) const;
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
+		void SetSamplerState(const char *name, unsigned sam);
+		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
+		bool SetVersionForProfile(int v,const std::string &prof);
+		
+		bool AddCompiledShader(ShaderType sType,const std::string &lvalCompiledShaderName,const std::string &rvalCompiledShaderName);
+		void DeclareRasterizerState(const std::string &name,const RasterizerState &buildRasterizerState);
+		void DeclareBlendState(const std::string &name,const BlendState &buildBlendState);
+		void DeclareDepthStencilState(const std::string &name,const DepthStencilState &buildDepthStencilState);
+		void DeclareSamplerState(const std::string &name,const SamplerState &buildSamplerState);
+		void DeclareFunction(const std::string &functionName,const Function &buildFunction);
+		void DeclareStruct(const string &name,const Struct &ts);
+		bool DeclareTexture(const string &name,const DeclaredTexture &ts);
+		bool DeclareTextureSampler(const TextureSampler *ts);
+		bool DeclareInterface(const string &name,const InterfaceDcl &ts);
 		// merge in the textureSamplers:
 		void MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName);
 		const vector<string>& GetTechniqueGroupList() const;
 		const vector<string>& GetTechniqueList() const;
 		const vector<string>& GetFilenameList() const;
 		bool IsDeclared(std::string str);
-		string GetDeclaredType(std::string str);
-		Technique *GetTechniqueByName(const char *name) ;
-		TechniqueGroup *GetTechniqueGroupByName(const char *name);
-		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
 		void SetFilenameList(const vector<string> &filenamesUtf8);
 		void PopulateProgramList();
+		// USAGE
 		void Apply(unsigned pass);
 		void Reapply(unsigned pass);
 		void Unapply();
 		void ApplyPassTextures(unsigned pass);
 		void ApplyPassState(unsigned pass);
 		bool& Active();
-		string& Dir();
-		string& Filename();
-		~Effect();
-		Effect();
-		friend void ::glfxWrite(const char *);
-		friend int ::glfxparse();
-		friend int ::glfxlex();
+		// STATE
 		TechniqueGroup *current_group;
-		int GetTextureNumber(const char *name);
-		int GetImageNumber(const char *name);
-		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
-		void SetSamplerState(const char *name, unsigned sam);
-		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
 	};
 	extern Effect *gEffect;
 }

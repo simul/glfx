@@ -85,6 +85,10 @@ void Effect::Clear()
 	samplerObjects.clear();
 }
 
+void Effect::SetSharedCode(const string &str)
+{
+	m_sharedCode=str;
+}
 
 int Effect::GetTextureNumber(const char *name)
 {
@@ -164,6 +168,172 @@ void Effect::SetSamplerState(const char *name, unsigned sam)
 	}
 }
 
+void Effect::DeclareFunction(const std::string &functionName,const Function &buildFunction)
+{
+	Function *f				=new Function;
+	*f						=buildFunction;
+	if(buildFunction.textureSamplers.size())
+	{
+	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
+	}
+	gEffect->functions[functionName].push_back(f);
+	delete $4.vars;
+	
+	ostringstream params;
+	bool start=true;
+	for(auto p=buildFunction.textureSamplersByTexture.begin();p!=buildFunction.textureSamplersByTexture.end();p++)
+		{
+			auto q=p->second.begin();
+			if(q!=p->second.end())
+			{
+				string t=string(" ")+(*q)->textureName+" ";
+				find_and_replace(f->content,t,(*q)->textureSamplerName());
+			}
+		}
+		set<string> usedSamplerStates;
+		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
+		{
+			string type=j->type;
+			// We SHOULD check the type but don't yet.
+			string name=j->identifier;
+			// Is this one of the textures in the textureSampler list?
+			auto u=buildFunction.textureSamplersByTexture.find(name);
+			if(u!=buildFunction.textureSamplersByTexture.end())
+			{
+				// the type remains the same.
+				for(auto v=u->second.begin();v!=u->second.end();v++)
+				{
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					TextureSampler *ts=*v;
+					usedSamplerStates.insert(ts->samplerStateName);
+					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
+				
+					
+					glfxstype::variable p;
+					p.storage		=j->storage;
+					p.type			=j->type;
+					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
+					p.template_		=j->template_;
+					f->expanded_parameters.push_back(p);
+					buildFunction.removeTextureSampler(ts->textureSamplerName());
+				}
+			}
+			else
+			{
+				auto a=usedSamplerStates.find(name);
+				if(a!=usedSamplerStates.end())
+					continue;
+				u=buildFunction.textureSamplersBySampler.find(name);
+				if(u!=buildFunction.textureSamplersBySampler.end())
+				{
+					// the type must become sampler2D, sampler3D etc. EITHER
+					// the type is declared for the texture in the vars list, OR it is
+					// in m_declaredTextures.
+					for(auto v=u->second.begin();v!=u->second.end();v++)
+					{
+						if(start)
+							start=false;
+						else
+							params<<", ";
+						TextureSampler *ts=*v;
+						string type=GetTypeOfParameter(f->parameters,ts->textureName);
+						if(type.length()==0)
+							type = gEffect->m_declaredTextures[ts->textureName].type;
+						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
+						//if(j->semantic.size())
+						//	params<<": "<<j->semantic;
+						glfxstype::variable p;
+						p.storage			=j->storage;
+						p.type				=type;
+						p.identifier		=ts->textureSamplerName();
+						p.template_			=j->template_;
+						f->expanded_parameters.push_back(p);
+						buildFunction.removeTextureSampler(ts->textureSamplerName());
+					}
+				}
+				else
+				{
+					f->expanded_parameters.push_back(*j);
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
+					//if(j->semantic.size())
+					//	params<<": "<<j->semantic;
+				}
+			}
+		}
+void Effect::DeclareRasterizerState(const std::string &name,const RasterizerState &buildRasterizerState)
+{
+	RasterizerState *rs=new RasterizerState;
+	*rs=buildRasterizerState;
+	m_rasterizerStates[name]=rs;
+
+}
+
+void Effect::DeclareBlendState(const std::string &name,const BlendState &buildBlendState)
+{
+	BlendState *bs=new BlendState;
+	*bs=buildBlendState;
+	m_blendStates[name]=bs;
+}
+
+void Effect::DeclareDepthStencilState(const std::string &name,const DepthStencilState &buildDepthStencilState)
+{
+	DepthStencilState *ds=new DepthStencilState;
+	*ds=buildDepthStencilState;
+	m_depthStencilStates[name]=ds;
+}
+
+void Effect::DeclareSamplerState(const std::string &name,const SamplerState &buildSamplerState)
+{
+	SamplerState *ss=new SamplerState;
+	*ss=buildSamplerState;
+	m_samplerStates[name]=ss;
+}
+
+void Effect::DeclareStruct(const string &name,const Struct &ts)
+{
+	Struct *rs					=new Struct;
+	*rs							=ts;
+	m_structs[name]	=rs;
+}
+
+bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
+{
+	m_declaredTextures[name]=ts;
+}
+
+bool Effect::DeclareTextureSampler(const TextureSampler *ts)
+{
+	auto i=additionalTextureDeclarations.find(ts->textureSamplerName());
+	if(i!=additionalTextureDeclarations.end())
+		return true;
+
+	string tsname		=ts->textureSamplerName();
+	string texture_name	=ts->textureName;
+	if (IsDeclared(texture_name))
+	{
+		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second.type;
+		//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
+		additionalTextureDeclarations[tsname].type		=sampler_type;
+		auto d=GetDeclaredTextures();
+		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
+		// We know that this texture-sampler combo will be used in this shader.
+	}
+	else
+		return false;
+}
+
+bool Effect::DeclareInterface(const string &name,const InterfaceDcl &ts)
+{
+		gEffect->m_interfaces[name]=ts;
+}
+
 void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
 {
 	// The effect knows the needed info: the format
@@ -213,6 +383,34 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	GLFX_ERROR_CHECK
 }
 
+bool Effect::SetVersionForProfile(int profileNum,const std::string &profileName)
+{
+	if(m_profileToVersion.find(profileName)!=m_profileToVersion.end())
+	{
+		return false;
+	}
+	m_profileToVersion[profileName]=profileNum;
+	return true;
+}
+
+bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledShaderName,const std::string &rvalCompiledShaderName)
+{
+		CompiledShader *compiledShader	=m_compiledShaders[rvalCompiledShaderName];
+		CompiledShaderMap::iterator i	=m_compiledShaders.find(lvalCompiledShaderName);
+		if(i!=gEffect->m_compiledShaders.end())
+		{
+			delete i->second;
+			// TODO: Warn here about double-compiling a shader.
+			std::cerr<<("double-compiling shader ")<<std::endl;
+		}
+		if(sType!=compiledShader->shaderType)
+		{
+			std::cerr<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
+
+			return false;
+		}
+		m_compiledShaders[lvalCompiledShaderName]=compiledShader;
+}
 bool& Effect::Active()
 {
     return m_active;
@@ -250,7 +448,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		if(jt==t->GetPasses().end())
 			return 0;
 
-		unsigned programId = jt->second.CompileAndLink(m_sharedCode.str(),log);
+		unsigned programId = jt->second.CompileAndLink(m_sharedCode,log);
 		if(programId)
 		{
 			GLFX_ERROR_CHECK
@@ -400,7 +598,7 @@ void Effect::PopulateProgramList()
 	{
 		decl << "uniform " << i->second.type << " " << i->first << ";\n";
 	}
-	m_sharedCode.str(decl.str()+m_sharedCode.str());
+	m_sharedCode=(decl.str()+m_sharedCode);
 
 	// save shared code?
 	string bin_dir=glfxGetCacheDirectory();
@@ -410,7 +608,7 @@ void Effect::PopulateProgramList()
 		string outputFilename=bin_dir+"/";
 		outputFilename+=this->Filename()+".glfxo";
 		std::ofstream ofstr(outputFilename.c_str());
-		const string &str=m_sharedCode.str();
+		const string &str=m_sharedCode;
 		ofstr.write(str.c_str(),str.length());
 		if(errno!=0)
 		{
