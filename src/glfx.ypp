@@ -174,7 +174,7 @@
 		buildFunction.textureSamplersBySampler[ts->samplerStateName].insert(ts);
 		return ts;
 	}
-	string ComputeLayout::text()
+	string ComputeLayout::text() const
 	{
 		string tt=stringFormat("layout(local_size_x=%d,local_size_y=%d,local_size_z=%d) in;",x,y,z);
 		return tt;
@@ -576,31 +576,11 @@ prog : prog tok
 		buildFunction.content				=$7.strs[0];
 	
 		buildFunction.parameters			=*$4.vars;
-		gEffect->DeclareFunction(funtionName,buildFunction);
-		Function *f				=new Function;
-		*f						=buildFunction;
-		if(buildFunction.textureSamplers.size())
-		{
-	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
-		}
-		gEffect->functions[functionName].push_back(f);
-		f->returnType			=$1.strs[0];
-		f->content				=$7.strs[0];
-		
-		f->parameters			=*$4.vars;
 		delete $4.vars;
+		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		
 		ostringstream params;
 		bool start=true;
-		for(auto p=buildFunction.textureSamplersByTexture.begin();p!=buildFunction.textureSamplersByTexture.end();p++)
-		{
-			auto q=p->second.begin();
-			if(q!=p->second.end())
-			{
-				string t=string(" ")+(*q)->textureName+" ";
-				find_and_replace(f->content,t,(*q)->textureSamplerName());
-			}
-		}
 		set<string> usedSamplerStates;
 		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
 		{
@@ -652,7 +632,9 @@ prog : prog tok
 						TextureSampler *ts=*v;
 						string type=GetTypeOfParameter(f->parameters,ts->textureName);
 						if(type.length()==0)
-							type = gEffect->m_declaredTextures[ts->textureName].type;
+						{
+							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second.type;
+						}
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						//if(j->semantic.size())
 						//	params<<": "<<j->semantic;
@@ -687,7 +669,7 @@ prog : prog tok
 			TextureSampler *ts=f->textureSamplers[i->first];
 			ts->global=true;
 			if(!gEffect->DeclareTextureSampler(i->second))
-				errSem(string("Can't find texture declaration for ")+texture_name);
+				errSem(string("Can't find texture declaration for ")+i->first);
 		}
 		
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
@@ -726,7 +708,7 @@ prog : prog tok
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
 			if(!gEffect->DeclareTextureSampler(i->second))
-				errSem(string("Can't find texture declaration for ")+texture_name);
+				errSem(string("Can't find texture declaration for ")+i->first);
 		}
 		//sharedCode<<str.str();
 
@@ -745,9 +727,7 @@ prog : prog tok
 	| GROUP lex_fx IDENTIFIER '{' technique_decls '}' lex_passthrough
 	{
 		string groupName=$3.strs[0];
-		if(gEffect->m_techniqueGroups.find(groupName)==gEffect->m_techniqueGroups.end())
-			gEffect->m_techniqueGroups[groupName]=new TechniqueGroup;
-		*(gEffect->m_techniqueGroups[groupName])=buildTechniqueGroup;
+		gEffect->AddTechniqueGroup(groupName,buildTechniqueGroup);
 		buildTechniqueGroup.m_techniques.clear();
 	};
 	line_statement: LINE lex_fx NUM NUM lex_passthrough
@@ -823,13 +803,8 @@ group_technique_decl: TECHNIQUE IDENTIFIER '{' tech_def '}'
 	};
 technique_decl: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
 	{
-		if(gEffect->m_techniqueGroups.find("")==gEffect->m_techniqueGroups.end())
-		{
-			gEffect->m_techniqueGroups[""]=new TechniqueGroup;
-		}
-		TechniqueGroup *g=gEffect->m_techniqueGroups[""];
 		string techname=$3.strs[0];
-		g->m_techniques[techname] = $5.tech;
+		gEffect->AddTechnique(techname,"",$5.tech);
 	};
 cs_layout_spec: '(' cs_layout ')'
 		  {
@@ -1192,7 +1167,7 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-	$$.prog = new Program(*($1.shaders), buildPassState, gEffect->textureSamplersByShader, $1.strs[2]);
+	$$.prog = new Program(*($1.shaders), buildPassState, gEffect->GetTextureSamplersByShader(), $1.strs[2]);
     delete $1.shaders;
 	buildPassState			=PassState();
 };
@@ -1205,8 +1180,8 @@ shaders_list : shaders_list shader_def
 		string name						=$2.strs[1];
 		string compiledShaderName		=$2.strs[3];
 		$$.strs[2]						=$1.strs[2]+$2.strs[2];// compute layout
-		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i==gEffect->m_compiledShaders.end())
+		CompiledShaderMap::const_iterator i	=gEffect->GetCompiledShaders().find(compiledShaderName);
+		if(i==gEffect->GetCompiledShaders().end())
 			(*map1)[sType].compiledShader	=NULL;
 		else
 			(*map1)[sType].compiledShader	=i->second;
@@ -1225,8 +1200,8 @@ shaders_list : shaders_list shader_def
 		$$.strs[1]					=$1.strs[1];
 		$$.strs[2]					=$1.strs[2];
 		$$.strs[3]					=compiledShaderName;
-		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i==gEffect->m_compiledShaders.end())
+		CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+		if(i==gEffect->GetCompiledShaders().end())
 			(*map1)[sType].compiledShader	=NULL;
 		else
 			(*map1)[sType].compiledShader	=i->second;
@@ -1297,10 +1272,10 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
 				// i.e. it's a combination of shadertype, profile, and function name.
-				// so these are stored in gEffect->m_compiledSHaders.
+				// so these are stored in gEffect->GetCompiledShaders().
 				string compiledShaderName=$3.strs[0];
-				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-				if(i==gEffect->m_compiledShaders.end())
+				CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+				if(i==gEffect->GetCompiledShaders().end())
 				{
 					if(_stricmp(compiledShaderName.c_str(),"NULL")==0)
 					{
@@ -1343,7 +1318,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 							{
 								if (shaderCommand == COMPUTE_SHADER)
 								{
-									preamble << gEffect->m_shaderLayouts[shaderName].text() << "\n";
+									preamble << gEffect->GetComputeLayouts().find(shaderName)->second.text() << "\n";
 									preamble << "#define IN_COMPUTE_SHADER 1" << endl;
 								//	preamble << computeLayout << "\n"; 
 								}
@@ -1364,8 +1339,8 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 shader_compile: IDENTIFIER
 		{
 			string compiledShaderName	=$1.strs[0];
-			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-			if(i!=gEffect->m_compiledShaders.end())
+			CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+			if(i!=gEffect->GetCompiledShaders().end())
 				$$.sType				=i->second->shaderType;
 			else
 				$$.sType				=NUM_OF_SHADER_TYPES;
@@ -1375,16 +1350,16 @@ shader_compile: IDENTIFIER
 		}
 		| CONSTRUCT_GS_WITH_SO '(' IDENTIFIER ',' QUOTED_STRING ')' 
 		{
-			$$.lineno						=$5.lineno;
-			$$.sType						=GEOMETRY_SHADER;
-			string gsName					=$3.strs[0];
-			string definition				=$5.strs[0];
-			CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(gsName);
-			string tempName					=gsName+"_GS_with_SO";
-			$$.strs[0]						=tempName;
-			CompiledShader *new_cs			=NULL;
-			gEffect->m_compiledShaders[tempName]=new_cs=new CompiledShader;
-			if(i==gEffect->m_compiledShaders.end())
+			$$.lineno								=$5.lineno;
+			$$.sType								=GEOMETRY_SHADER;
+			string gsName							=$3.strs[0];
+			string definition						=$5.strs[0];
+			CompiledShaderMap::const_iterator i		=gEffect->GetCompiledShaders().find(gsName);
+			string tempName							=gsName+"_GS_with_SO";
+			$$.strs[0]								=tempName;
+		
+			//gEffect->GetCompiledShaders()[tempName]	=new_cs=new CompiledShader;
+			if(i==gEffect->GetCompiledShaders().end())
 			{
 				ostringstream msg;
 				msg<<"Compiled shader "<<gsName<<" not found for streamout"<<endl;
@@ -1392,15 +1367,17 @@ shader_compile: IDENTIFIER
 			}
 			else
 			{
+				CompiledShader *new_cs	=gEffect->AddCompiledShader(tempName,gsName,GEOMETRY_SHADER,0);
 				CompiledShader *compiledShader	=i->second;
 				*new_cs=*compiledShader;
+				new_cs->shaderType=GEOMETRY_SHADER;
 				if(definition.size())
 				{
 					find_and_replace(definition,"\"","");
 					std::vector<std::string> elements=split(definition,';');
 					new_cs->feedbackOutput.clear();
-					auto u=gEffect->m_structs.find(new_cs->outputStruct);
-					if(u==gEffect->m_structs.end())
+					auto u=gEffect->GetStructs().find(new_cs->outputStruct);
+					if(u==gEffect->GetStructs().end())
 					{
 						errSem(string("can't find output struct ")+new_cs->outputStruct);
 					}
@@ -1444,9 +1421,9 @@ shader_compile: IDENTIFIER
 			$$.sType								=$3.sType;
 			string profileName						=$3.strs[0];
 			$$.token								=$3.token;
-			ProfileMap::iterator i					=gEffect->m_profileToVersion.find(profileName);
+			ProfileMap::const_iterator i			=gEffect->GetProfileToVersion().find(profileName);
 			int version_num							=0;
-			if(i==gEffect->m_profileToVersion.end())
+			if(i==gEffect->GetProfileToVersion().end())
 			{
 				ostringstream msg;
 				msg<<"Profile "<<profileName<<" not found."<<endl;
@@ -1467,18 +1444,14 @@ shader_compile: IDENTIFIER
 			else
 			{
 				CompilableShader &sh=*(u->second);
-				gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
+				gEffect->AddComputeLayout(shaderName,sh.csLayout);
 
 				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-				CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
-
-				gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
-				compiledShader->m_functionName					=$5.strs[0];
-				compiledShader->shaderType						=$1.sType;
-				compiledShader->version							= $$.num = version_num;
+				CompiledShader *cs=gEffect->AddCompiledShader(compiledShaderName,$5.strs[0],$1.sType,version_num);
+				$$.num=version_num;
 				// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
-				Compile($1.sType, sh, compiledShader);
+				Compile($1.sType, sh, cs);
 			}
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
@@ -2172,8 +2145,8 @@ postfix_exp		: primary_exp
 						string expr4=$4.strs[0];
 						// ok this could be a function call.
 						string command=$1.strs[2];
-						auto j=gEffect->functions.find(command);
-						if(j==gEffect->functions.end())
+						auto j=gEffect->GetFunctions().find(command);
+						if(j==gEffect->GetFunctions().end())
 						{
 							params=$3.strs[0];
 						}

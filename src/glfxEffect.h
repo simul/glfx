@@ -20,6 +20,7 @@ namespace glfxParser
 	};
 	class Effect
 	{
+	protected:
 		std::map<std::string,TechniqueGroup*>		m_techniqueGroups;
 		std::vector<std::string>					m_techniqueNames;
 		std::vector<std::string>					m_techniqueGroupNames;
@@ -37,7 +38,7 @@ namespace glfxParser
 		//! We will use the keyword Profile.
 		//! e.g.
 		//!		Profile vs_4_0(410);
-		ProfileMap					m_profileToVersion;	
+		ProfileMap					m_profileToVersion;
 		CompiledShaderMap			m_compiledShaders;
 		std::map<std::string,std::vector<Function*> > functions;
 		vector<string>				m_filenames;
@@ -83,6 +84,14 @@ namespace glfxParser
 		~Effect();
 		Effect();
 		// GET INFO
+		const CompiledShaderMap &GetCompiledShaders() const
+		{
+			return m_compiledShaders;
+		}
+		const ProfileMap &GetProfileToVersion() const
+		{
+			return m_profileToVersion;
+		}
 		const std::map<std::string,DeclaredTexture> &GetDeclaredTextures() const
 		{
 			return m_declaredTextures;
@@ -95,7 +104,19 @@ namespace glfxParser
 		{
 			return m_structs;
 		}
-		string GetDeclaredType(std::string str);
+		const std::map<std::string, ComputeLayout>		&GetComputeLayouts() const
+		{
+			return m_shaderLayouts;
+		}
+		const std::map<std::string,std::set<TextureSampler*> > GetTextureSamplersByShader() const
+		{
+			return textureSamplersByShader;
+		}
+		const std::map<std::string,std::vector<Function*> > GetFunctions() const
+		{
+			return functions;
+		}
+		string GetDeclaredType(std::string str) const;
 		Technique *GetTechniqueByName(const char *name);
 		TechniqueGroup *GetTechniqueGroupByName(const char *name);
 		TechniqueGroup *GetTechniqueGroupByIndex(int idx);
@@ -114,12 +135,16 @@ namespace glfxParser
 		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
 		bool SetVersionForProfile(int v,const std::string &prof);
 		
+		void AddComputeLayout(const std::string &name,const ComputeLayout &tg);
+		CompiledShader *AddCompiledShader(const std::string &compiledShaderName,const std::string &fnName,ShaderType sType,int version_num);
+		void AddTechnique(const std::string &techname,const std::string &group,Technique *t);
+		void AddTechniqueGroup(const std::string &groupName,const TechniqueGroup &tg);
 		bool AddCompiledShader(ShaderType sType,const std::string &lvalCompiledShaderName,const std::string &rvalCompiledShaderName);
 		void DeclareRasterizerState(const std::string &name,const RasterizerState &buildRasterizerState);
 		void DeclareBlendState(const std::string &name,const BlendState &buildBlendState);
 		void DeclareDepthStencilState(const std::string &name,const DepthStencilState &buildDepthStencilState);
 		void DeclareSamplerState(const std::string &name,const SamplerState &buildSamplerState);
-		void DeclareFunction(const std::string &functionName,const Function &buildFunction);
+		Function * DeclareFunction(const std::string &functionName,Function &buildFunction);
 		void DeclareStruct(const string &name,const Struct &ts);
 		bool DeclareTexture(const string &name,const DeclaredTexture &ts);
 		bool DeclareTextureSampler(const TextureSampler *ts);

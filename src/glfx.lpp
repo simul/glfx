@@ -56,7 +56,7 @@ the last is C code to be copied verbatim to the output.
 	#pragma optimize("",off)
 	void glfxWrite(const char *txt)
 	{
-		gEffect->m_sharedCode<<txt;
+		sharedCode<<txt;
 	}
 	int glfxprintf ( FILE * , const char * format_str, ... )
 	{

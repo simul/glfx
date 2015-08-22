@@ -64,8 +64,8 @@ TechniqueGroup::~TechniqueGroup()
 }
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
-	, const map<string, set<TextureSampler*> > &textureSamplersByShader, const string &compute_layout)
-	: programId(0), transformFeedback(false), computeLayout(compute_layout),transformFeedbackTopology(POINTS)
+	,const map<string, set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout)
+	:programId(0),transformFeedback(false),computeLayout(compute_layout),transformFeedbackTopology(POINTS)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -94,6 +94,11 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	{
 		if (!m_shaders[FRAGMENT_SHADER].name.length())
 			transformFeedback = true;
+	}
+	// tf needs only the vertex shader.
+	if(transformFeedback)
+	{
+		m_shaders[GEOMETRY_SHADER].compiledShader=NULL;
 	}
 }
 

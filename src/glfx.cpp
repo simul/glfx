@@ -963,6 +963,7 @@ GLuint GLFX_APIENTRY glfxCompilePass(int e, const char *tech_name, const char *p
 	GLuint pr=glfxCompileProgram(e, tech_name, pass_name);
 	return pr;
 }
+
 GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int e,GLuint pass)
 {
 	if(e<0||e>=(int)gEffects.size())

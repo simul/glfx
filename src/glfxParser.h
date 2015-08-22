@@ -307,7 +307,7 @@ struct Function
 struct ComputeLayout
 {
 	int x,y,z;
-	std::string text();
+	std::string text() const;
 };
 struct CompilableShader
 {

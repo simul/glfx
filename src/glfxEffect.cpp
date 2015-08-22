@@ -24,6 +24,7 @@ typedef int errno_t;
 #include "glfxClasses.h"
 #include "glfxParser.h"
 #include "glfxEffect.h"
+#include "StringFunctions.h"
 
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
@@ -168,7 +169,29 @@ void Effect::SetSamplerState(const char *name, unsigned sam)
 	}
 }
 
-void Effect::DeclareFunction(const std::string &functionName,const Function &buildFunction)
+void Effect::AddComputeLayout(const std::string &name,const ComputeLayout &tg)
+{
+	m_shaderLayouts[name]=tg;
+}
+
+void Effect::AddTechniqueGroup(const std::string &groupName,const TechniqueGroup &tg)
+{
+	if(m_techniqueGroups.find(groupName)==m_techniqueGroups.end())
+		m_techniqueGroups[groupName]=new TechniqueGroup;
+	*(m_techniqueGroups[groupName])=tg;
+}
+
+void Effect::AddTechnique(const std::string &techname,const std::string &tg,Technique *t)
+{
+	if(m_techniqueGroups.find(tg)==m_techniqueGroups.end())
+	{
+		m_techniqueGroups[tg]=new TechniqueGroup;
+	}
+	TechniqueGroup *g=m_techniqueGroups[tg];
+	g->m_techniques[techname] = t;
+}
+
+Function *Effect::DeclareFunction(const std::string &functionName, Function &buildFunction)
 {
 	Function *f				=new Function;
 	*f						=buildFunction;
@@ -177,96 +200,18 @@ void Effect::DeclareFunction(const std::string &functionName,const Function &bui
 	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
 	}
 	gEffect->functions[functionName].push_back(f);
-	delete $4.vars;
-	
-	ostringstream params;
-	bool start=true;
-	for(auto p=buildFunction.textureSamplersByTexture.begin();p!=buildFunction.textureSamplersByTexture.end();p++)
+	for(auto p=f->textureSamplersByTexture.begin();p!=f->textureSamplersByTexture.end();p++)
+	{
+		auto q=p->second.begin();
+		if(q!=p->second.end())
 		{
-			auto q=p->second.begin();
-			if(q!=p->second.end())
-			{
-				string t=string(" ")+(*q)->textureName+" ";
-				find_and_replace(f->content,t,(*q)->textureSamplerName());
-			}
+			string t=string(" ")+(*q)->textureName+" ";
+			find_and_replace(f->content,t,(*q)->textureSamplerName());
 		}
-		set<string> usedSamplerStates;
-		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
-		{
-			string type=j->type;
-			// We SHOULD check the type but don't yet.
-			string name=j->identifier;
-			// Is this one of the textures in the textureSampler list?
-			auto u=buildFunction.textureSamplersByTexture.find(name);
-			if(u!=buildFunction.textureSamplersByTexture.end())
-			{
-				// the type remains the same.
-				for(auto v=u->second.begin();v!=u->second.end();v++)
-				{
-					if(start)
-						start=false;
-					else
-						params<<", ";
-					TextureSampler *ts=*v;
-					usedSamplerStates.insert(ts->samplerStateName);
-					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
-				
-					
-					glfxstype::variable p;
-					p.storage		=j->storage;
-					p.type			=j->type;
-					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
-					p.template_		=j->template_;
-					f->expanded_parameters.push_back(p);
-					buildFunction.removeTextureSampler(ts->textureSamplerName());
-				}
-			}
-			else
-			{
-				auto a=usedSamplerStates.find(name);
-				if(a!=usedSamplerStates.end())
-					continue;
-				u=buildFunction.textureSamplersBySampler.find(name);
-				if(u!=buildFunction.textureSamplersBySampler.end())
-				{
-					// the type must become sampler2D, sampler3D etc. EITHER
-					// the type is declared for the texture in the vars list, OR it is
-					// in m_declaredTextures.
-					for(auto v=u->second.begin();v!=u->second.end();v++)
-					{
-						if(start)
-							start=false;
-						else
-							params<<", ";
-						TextureSampler *ts=*v;
-						string type=GetTypeOfParameter(f->parameters,ts->textureName);
-						if(type.length()==0)
-							type = gEffect->m_declaredTextures[ts->textureName].type;
-						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
-						//if(j->semantic.size())
-						//	params<<": "<<j->semantic;
-						glfxstype::variable p;
-						p.storage			=j->storage;
-						p.type				=type;
-						p.identifier		=ts->textureSamplerName();
-						p.template_			=j->template_;
-						f->expanded_parameters.push_back(p);
-						buildFunction.removeTextureSampler(ts->textureSamplerName());
-					}
-				}
-				else
-				{
-					f->expanded_parameters.push_back(*j);
-					if(start)
-						start=false;
-					else
-						params<<", ";
-					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
-					//if(j->semantic.size())
-					//	params<<": "<<j->semantic;
-				}
-			}
-		}
+	}
+	return f;
+}
+
 void Effect::DeclareRasterizerState(const std::string &name,const RasterizerState &buildRasterizerState)
 {
 	RasterizerState *rs=new RasterizerState;
@@ -306,6 +251,7 @@ void Effect::DeclareStruct(const string &name,const Struct &ts)
 bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
 	m_declaredTextures[name]=ts;
+	return true;
 }
 
 bool Effect::DeclareTextureSampler(const TextureSampler *ts)
@@ -324,14 +270,15 @@ bool Effect::DeclareTextureSampler(const TextureSampler *ts)
 		auto d=GetDeclaredTextures();
 		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
 		// We know that this texture-sampler combo will be used in this shader.
+		return true;
 	}
-	else
-		return false;
+	return false;
 }
 
 bool Effect::DeclareInterface(const string &name,const InterfaceDcl &ts)
 {
 		gEffect->m_interfaces[name]=ts;
+		return true;
 }
 
 void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
@@ -410,6 +357,7 @@ bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledS
 			return false;
 		}
 		m_compiledShaders[lvalCompiledShaderName]=compiledShader;
+		return true;
 }
 bool& Effect::Active()
 {
@@ -561,7 +509,17 @@ bool Effect::IsDeclared(string name)
 	return false;
 }
 
-string Effect::GetDeclaredType(std::string name)
+CompiledShader *Effect::AddCompiledShader(const std::string &compiledShaderName,const std::string &fnName,ShaderType sType,int version_num)
+{
+	CompiledShader *compiledShader	=new CompiledShader;
+	m_compiledShaders[compiledShaderName]=compiledShader;
+	compiledShader->m_functionName	=fnName;
+	compiledShader->shaderType		=sType;
+	compiledShader->version			=version_num;
+	return compiledShader;
+}
+
+string Effect::GetDeclaredType(std::string name) const
 {
 	if(m_samplerStates.find(name)!=m_samplerStates.end())
 		return "SamplerState";
