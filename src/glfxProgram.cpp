@@ -92,7 +92,7 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 		}
     }
 
-    m_separable=false;
+    m_separable=true;
 	if (m_shaders[VERTEX_SHADER].name.length() || m_shaders[GEOMETRY_SHADER].name.length())
 	{
 		if (!m_shaders[FRAGMENT_SHADER].name.length())
@@ -526,7 +526,6 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	if (programId)
 		glDeleteProgram(programId);
     programId=glCreateProgram();
-
 	// This MUST match up with ShaderType enum definition.
     GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
                                             GL_TESS_CONTROL_SHADER,
