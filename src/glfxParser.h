@@ -332,7 +332,6 @@ struct CompiledShader
 	std::string outputStruct;
 	std::string outputStructName;
 };
-extern void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,CompiledShader *com);
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
 extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);

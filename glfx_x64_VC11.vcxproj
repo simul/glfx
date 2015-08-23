@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
+    <ClInclude Include="src\BufferedStringStreamBuf.h" />
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
@@ -50,6 +51,7 @@
     <ClInclude Include="src\PreprocessParser.h" />
     <ClInclude Include="src\StringFunctions.h" />
     <ClInclude Include="src\StringToWString.h" />
+    <ClInclude Include="src\VisualStudioDebugOutput.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\glfx.lpp">

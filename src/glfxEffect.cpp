@@ -35,8 +35,7 @@ typedef int errno_t;
 #include <set>
 
 Effect::Effect()
-    : m_includes(0)
-    , m_active(true)
+    : m_active(true)
 	,current_group(NULL)
 	,current_texture_number(0)
 	,current_image_number(0)
@@ -46,10 +45,6 @@ Effect::Effect()
 
 Effect::~Effect()
 {
-  //  for(map<string,Program*>::iterator it=m_programs.begin(); it!=m_programs.end(); ++it)
-  //      delete it->second;
-    for(map<string,Sampler*>::iterator it=m_samplers.begin(); it!=m_samplers.end(); ++it)
-		delete it->second;
 	for (auto it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		delete it->second;
 	std::set<CompiledShader*> comp;
@@ -74,7 +69,6 @@ void Effect::Clear()
 	m_techniqueGroups.clear();
 	m_techniqueNames.clear();
 	m_techniqueGroupNames.clear();
-	m_samplers.clear();
 	m_blendStates.clear();
 	m_depthStencilStates.clear();
 	m_samplerStates.clear();
@@ -104,7 +98,7 @@ int Effect::GetTextureNumber(const char *name)
 		textureNumberMap[n]				=current_texture_number;
 		if (m_declaredTextures.find(n) == m_declaredTextures.end())
 		{
-			GLFX_CERR << "Texture " << name << " is not declared." << std::endl;
+			m_log << "Texture " << name << " is not declared." << std::endl;
 			current_texture_number++;
 			return texture_number;
 		}
@@ -195,10 +189,6 @@ Function *Effect::DeclareFunction(const std::string &functionName, Function &bui
 {
 	Function *f				=new Function;
 	*f						=buildFunction;
-	if(buildFunction.textureSamplers.size())
-	{
-	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
-	}
 	gEffect->functions[functionName].push_back(f);
 	for(auto p=f->textureSamplersByTexture.begin();p!=f->textureSamplersByTexture.end();p++)
 	{
@@ -217,7 +207,6 @@ void Effect::DeclareRasterizerState(const std::string &name,const RasterizerStat
 	RasterizerState *rs=new RasterizerState;
 	*rs=buildRasterizerState;
 	m_rasterizerStates[name]=rs;
-
 }
 
 void Effect::DeclareBlendState(const std::string &name,const BlendState &buildBlendState)
@@ -246,39 +235,6 @@ void Effect::DeclareStruct(const string &name,const Struct &ts)
 	Struct *rs					=new Struct;
 	*rs							=ts;
 	m_structs[name]	=rs;
-}
-
-bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
-{
-	m_declaredTextures[name]=ts;
-	return true;
-}
-
-bool Effect::DeclareTextureSampler(const TextureSampler *ts)
-{
-	auto i=additionalTextureDeclarations.find(ts->textureSamplerName());
-	if(i!=additionalTextureDeclarations.end())
-		return true;
-
-	string tsname		=ts->textureSamplerName();
-	string texture_name	=ts->textureName;
-	if (IsDeclared(texture_name))
-	{
-		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second.type;
-		//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-		additionalTextureDeclarations[tsname].type		=sampler_type;
-		auto d=GetDeclaredTextures();
-		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
-		// We know that this texture-sampler combo will be used in this shader.
-		return true;
-	}
-	return false;
-}
-
-bool Effect::DeclareInterface(const string &name,const InterfaceDcl &ts)
-{
-		gEffect->m_interfaces[name]=ts;
-		return true;
 }
 
 void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
@@ -348,11 +304,11 @@ bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledS
 		{
 			delete i->second;
 			// TODO: Warn here about double-compiling a shader.
-			std::cerr<<("double-compiling shader ")<<std::endl;
+			m_log<<("double-compiling shader ")<<std::endl;
 		}
 		if(sType!=compiledShader->shaderType)
 		{
-			std::cerr<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
+			m_log<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
 
 			return false;
 		}
@@ -415,12 +371,6 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 					if(gs->compiledShader)
 						jt->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
 				}
-			/*	else
-				{
-					Program::Shader *vs=jt->second.GetShader(VERTEX_SHADER);
-					if(vs->compiledShader)
-						jt->second.SetOutputTopology(vs->compiledShader->transformFeedbackTopology);
-				}*/
 			}
 		}
 		return programId;
@@ -432,12 +382,30 @@ ostringstream& Effect::Log()
     return m_log;
 }
 
-unsigned Effect::CreateSampler(const string& sampler) const
+bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
-    map<string,Sampler*>::const_iterator it=m_samplers.find(sampler);
-    if(it==m_samplers.end())
-        throw "Sampler not found";
-    return it->second->CreateSamplerObject();
+	m_declaredTextures[name]=ts;
+	return true;
+}
+
+bool Effect::DeclareTextureSampler(const TextureSampler *ts)
+{
+	auto i=additionalTextureDeclarations.find(ts->textureSamplerName());
+	if(i!=additionalTextureDeclarations.end())
+		return true;
+	string tsname		=ts->textureSamplerName();
+	string texture_name	=ts->textureName;
+	if (IsDeclared(texture_name))
+	{
+		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second.type;
+		//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
+		additionalTextureDeclarations[tsname].type		=sampler_type;
+		auto d=GetDeclaredTextures();
+		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
+		// We know that this texture-sampler combo will be used in this shader.
+		return true;
+	}
+	return false;
 }
 
 void Effect::MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName)
@@ -509,13 +477,319 @@ bool Effect::IsDeclared(string name)
 	return false;
 }
 
-CompiledShader *Effect::AddCompiledShader(const std::string &compiledShaderName,const std::string &fnName,ShaderType sType,int version_num)
+bool IsIntegerType(const string &type)
 {
-	CompiledShader *compiledShader	=new CompiledShader;
-	m_compiledShaders[compiledShaderName]=compiledShader;
-	compiledShader->m_functionName	=fnName;
-	compiledShader->shaderType		=sType;
-	compiledShader->version			=version_num;
+	if(type.substr(0,3)=="int"||type.substr(0,4)=="ivec"||type.substr(0,4)=="uvec"||type.substr(0,4)=="uint")
+	{
+		return true;
+	}
+	return false;
+}
+
+void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,const std::string &compiledsh)
+{
+	CompiledShader *compiledShader=m_compiledShaders[compiledsh];
+	compiledShader->transformFeedbackTopology = UNDEFINED_TOPOLOGY;
+	std::ostringstream shaderCode;
+	std::ostringstream extraDeclarations;
+	std::ostringstream finalCode;
+	string shaderContent=sh.function.content;
+	// Add shader parameters
+	for(vector<glfxstype::variable>::const_iterator it=sh.function.parameters.begin();it!=sh.function.parameters.end();++it)
+	{
+		bool as_interface=(shaderType!=VERTEX_SHADER);
+		string outBlockNamespace=it->identifier;
+		string type(it->type);
+		string storage(it->storage);
+		if(storage.length()==0)
+			storage="in";
+		if(storage==string("inout"))
+		{
+			size_t brack_pos=type.find("<");
+			if(it->template_.size())
+			{
+				string output_type=type;
+				type=it->template_;
+				stringReplaceAll(output_type,"PointStream","points");
+				stringReplaceAll(output_type,"LineStream","line_strip");
+				stringReplaceAll(output_type,"TriangleStream","triangle_strip");
+				//shaderCode<<"layout("<<output_type<<") out;\n";
+			}
+		}
+		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(type);
+	
+		if(u!=gEffect->GetStructs().end())
+		{
+			const Struct *s=u->second;
+		// Geometry shader outputs have the "inout" storage specifier, and a template-looking type.
+		// We must convert them to something like:
+		// layout(output_primitive,maxverts=vert_count) out;
+		// and an untemplated output type.
+		//	points
+		//	line_strip
+		//	triangle_strip
+			if(storage==string("inout"))
+			{
+				compiledShader->outputStruct=type;
+				string output_type=it->type;
+				{
+					if (output_type.find("PointStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = POINTS;
+					}
+					if (output_type.find("LineStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = LINES;
+					}
+					if (output_type.find("TriangleStream")<output_type.length())
+					{
+						compiledShader->transformFeedbackTopology = TRIANGLES;
+					}
+					stringReplaceAll(output_type,"PointStream","points");
+					stringReplaceAll(output_type,"LineStream","line_strip");
+					stringReplaceAll(output_type,"TriangleStream","triangle_strip");
+					shaderCode<<"layout("<<output_type<<",max_vertices="<<sh.maxGSVertexCount<<") out;\n";
+	//if(shaderType==GEOMETRY_SHADER)
+	
+		//shaderCode<<"layout(max_vertices="<<sh.maxGSVertexCount<<")\n";
+	
+				}
+				// In the actual shader code, convert HLSL-style member function calls to GLSL type
+				// stream commands:
+				string appendcall=outBlockNamespace+".Append";
+				size_t pos=shaderContent.find(appendcall);
+				while(pos<shaderContent.size())
+				{
+					// We must replace something of the form vSream.Append(OUT)
+					// with something like:
+					// vStream.pos	=OUT.pos;
+					// vStream.txc	=OUT.txc;
+					// EmitVertex();
+
+					// First extract the name of the appended struct:
+					size_t startpos=shaderContent.find("(",pos);
+					size_t endpos=shaderContent.find(")",startpos);
+					if(startpos>=shaderContent.length()||endpos>=shaderContent.length())
+						break;
+			
+					string localStructName=shaderContent.substr(startpos+1,endpos-startpos-1);
+					ostringstream vertexEmitCode;
+					for(int i=0;i<(int)s->m_structMembers.size();i++)
+					{
+						const StructMember &m=s->m_structMembers[i];
+						vertexEmitCode<<outBlockNamespace<<"."<<m.name<<"="<<localStructName<<"."<<m.name<<"; ";
+					}
+					vertexEmitCode<<"EmitVertex()";
+					shaderContent.replace(shaderContent.begin()+pos,shaderContent.begin()+endpos+1,vertexEmitCode.str());
+					pos=shaderContent.find(appendcall,endpos);
+			
+				}
+				stringReplaceAll(shaderContent,outBlockNamespace+".RestartStrip()","EndPrimitive();");
+				as_interface=true;
+				storage="out";
+			}
+			// Geometry shader storage (line,lineadj,point) needs special consideration.
+			// it gets moved to this kind of declaration:
+			// layout(triangles) in;
+			// layout (triangle_strip, max_vertices=6) out;
+			if(storage==string("line")||storage==string("point")||storage==string("triangle")||storage==string("lineadj")||storage==string("triangleadj"))
+			{
+				// primitive type			vertices per primitive
+				//	points					1
+				//	lines					2
+				//	lines_adjacency			4
+				//	triangles				3
+				//	triangles_adjacency		6
+				storage+="s";
+				stringReplaceAll(storage,"adjs","s_adjacency");
+				shaderCode<<"layout("<<storage<<") in;\n";
+				storage="in";
+				as_interface=true;
+			}
+			if(as_interface)
+			{
+				string interfaceName	=outBlockNamespace;
+				if(shaderType!=GEOMETRY_SHADER)
+				{
+					interfaceName+="IO";
+					extraDeclarations<<type<<" "<<outBlockNamespace<<";\n";
+				}
+				shaderCode<<storage<<" "<<type<<"IO\n";
+				shaderCode<<"{\n";
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					shaderCode<<'\t';
+					if(IsIntegerType(m.type))
+						shaderCode<<"flat ";
+					shaderCode<<m.type<<' '<<m.name<<";"<<endl;
+				}
+				shaderCode<<"} "<<interfaceName<<";\n";
+				// Now we have to copy... EVERY MEMBER from the "interface" to the struct instance. Thanks, OpenGL!
+				if(shaderType!=GEOMETRY_SHADER)
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<interfaceName<<"."<<m.name<<";\n";
+				}
+				if(shaderType==GEOMETRY_SHADER)
+					compiledShader->outputStructName=type+"IO";
+			}
+			else
+			{
+				extraDeclarations<<type<<" "<<outBlockNamespace<<";\n";
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					string sem=(type+"_")+m.name;
+					if(m.semantic.length())
+						sem=(sem+"_")+m.semantic;
+					// If built-in, it's implicit: don't add it as a declaration.
+					if(m.semantic==string("gl_VertexID"))
+					{
+						sem=m.semantic;
+					}
+					else
+					{
+						//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
+						shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
+					}
+					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
+				}
+			}
+			continue;
+		}
+		if(it->template_.length()>0)
+		{
+			extraDeclarations<<it->type<<" "<<outBlockNamespace<<"="<<it->template_<<";\n"<<endl;
+		}
+		else
+		{
+		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
+			shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
+			shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';\n'<<endl;
+		}
+	}
+	// Add the return variable.
+	if(sh.function.returnType!=string("void"))
+	{
+		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(sh.function.returnType);
+		if(u==gEffect->GetStructs().end())
+		{
+			string returnVariable="returnVariable";
+			// if we're returning a simple type, we declare it as an output.
+			shaderCode<<"out "<<sh.function.returnType<<" "<<returnVariable<<";\n";
+			finalCode<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+		}
+		else
+		{
+			bool as_interface=(shaderType!=FRAGMENT_SHADER);
+			const Struct *s=u->second;
+			string outBlockNamespace="outBlockNamespace";
+			if(as_interface)
+			{
+				string output_name=sh.function.returnType+"IO";
+				shaderCode<<"out "<<output_name<<"\n{\n";
+				for(int i=0;i<(int)s->m_structMembers.size();i++)
+				{
+					const StructMember &m=s->m_structMembers[i];
+					shaderCode<<"\t";
+					if(IsIntegerType(m.type))
+						shaderCode<<"flat ";
+					shaderCode<<m.type<<" "<<m.name<<";\n";
+					string output_member_name=(output_name+".")+m.name;
+					compiledShader->feedbackOutput.push_back(output_member_name);
+				}
+				shaderCode<<"} "<<outBlockNamespace<<";"<<endl;
+				if(shaderType==VERTEX_SHADER)
+				{
+					compiledShader->outputStruct=sh.function.returnType;
+					compiledShader->outputStructName=sh.function.returnType+"IO";
+				}
+			}
+			string returnVariable=sh.returnable;
+			if(returnVariable.find("(")<returnVariable.length())
+			{
+				returnVariable="returnVariable";
+				finalCode<<sh.function.returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+			}
+			for(int i=0;i<(int)s->m_structMembers.size();i++)
+			{
+				const StructMember &m=s->m_structMembers[i];
+				string sem=(sh.function.returnType+"_")+m.name;
+				if(m.semantic.length())
+					sem=(sem+"_")+m.semantic;
+				// Special outputs:
+				if(m.semantic==string("gl_Position")||m.semantic==string("SV_POSITION"))
+				{
+					string builtin_name="gl_Position";
+					// It's implicit, don't declare:
+					//shaderCode<<"out "<<m.type<<' '<<builtin_name<<";"<<endl;
+					// Flip y of output because we consider GL textures to be "upside-down".
+					finalCode<<returnVariable<<"."<<m.name<<".y*=rescaleVertexShaderY;"<<endl;
+					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+				else if(m.semantic.substr(0,9)==string("SV_DEPTH"))
+				{
+					string builtin_name="gl_FragDepth";
+					finalCode<<builtin_name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+				else if(m.semantic.substr(0,9)==string("SV_TARGET"))
+				{
+					string numstr=m.semantic.substr(9,m.semantic.length()-9);
+					int num=0;
+					 char * pEnd;
+					num=strtol(numstr.c_str(),&pEnd,10);
+					if(num>=0)
+						shaderCode<<"layout(location = "<<num<<") ";
+				}
+				else
+				{
+					if(shaderType==FRAGMENT_SHADER)
+						continue;
+				}
+				if(as_interface)
+				{
+					if(outBlockNamespace.length())
+						finalCode<<outBlockNamespace<<".";
+					finalCode<<m.name<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+				else
+				{
+					shaderCode<<"out "<<m.type<<' '<<sem<<";"<<endl;
+					finalCode<<sem<<"="<<returnVariable<<"."<<m.name<<";"<<endl;
+				}
+			}
+		}
+	}
+	// Add definition and code
+	shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
+	shaderCode<<"void main()\n{\n";
+	if(extraDeclarations.str().length())
+		shaderCode<<extraDeclarations.str()<<"\n";
+	shaderCode<<"#line "<<sh.content_linenumber<<" "<<sh.current_filenumber<<endl;
+	shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
+
+	compiledShader->source=shaderCode.str();
+
+	// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
+}
+
+const CompiledShader *Effect::AddCompiledShader(const std::string &compiledShaderName,const std::string &fnName,ShaderType sType,int version_num
+	,std::string outputStruct
+	,std::string outputStructName
+	,std::string source)
+{
+	CompiledShader *compiledShader			=new CompiledShader;
+	m_compiledShaders[compiledShaderName]	=compiledShader;
+	compiledShader->m_functionName			=fnName;
+	compiledShader->shaderType				=sType;
+	compiledShader->version					=version_num;
+
+	compiledShader->outputStruct			=outputStruct;
+	compiledShader->outputStructName		=outputStructName;
+	compiledShader->source					=source;
+
 	return compiledShader;
 }
 
@@ -759,7 +1033,7 @@ void Effect::ApplyPassState(unsigned pass)
 	{
 		if(m_depthStencilStates.find(passState.depthStencilState)==m_depthStencilStates.end())
 		{
-			GLFX_CERR<<"Depth state not found: "<<passState.depthStencilState<<std::endl;
+			m_log<<"Depth state not found: "<<passState.depthStencilState<<std::endl;
 			glDisable(GL_DEPTH_TEST);
 			glDepthMask(0);
 		}
@@ -811,7 +1085,6 @@ void Effect::ApplyPassState(unsigned pass)
 
 					glBlendEquationSeparatei((unsigned)i->first, blendState.BlendOp,blendState.BlendOpAlpha);
 			GLFX_ERROR_CHECK
-
 					glBlendFuncSeparatei((unsigned)i->first, blendState.SrcBlend, blendState.DestBlend,
 										   blendState.SrcBlendAlpha, blendState.DestBlendAlpha);
 			GLFX_ERROR_CHECK
@@ -820,9 +1093,6 @@ void Effect::ApplyPassState(unsigned pass)
 				{
 					glBlendEquationSeparatei((unsigned)i->first, GL_FUNC_ADD,GL_FUNC_ADD);
 			GLFX_ERROR_CHECK
-
-
-
 					glBlendFuncSeparatei((unsigned)i->first, GL_ONE, GL_ZERO,
 										   GL_ONE, GL_ZERO);
 			GLFX_ERROR_CHECK
@@ -834,4 +1104,49 @@ void Effect::ApplyPassState(unsigned pass)
 		}
 	}
 	// Now we will set the appropriate sampler states.
+}
+
+void Effect::SaveToCache(const std::string &filename)
+{
+	std::ofstream ofs(filename);
+//	string												m_dir;
+	ofs<<"source: "<<m_filename<<endl;
+	for(map<string,TechniqueGroup*>::const_iterator i=m_techniqueGroups.begin();i!=m_techniqueGroups.end();i++)
+	{
+		string groupname=i->first;
+		ofs<<"group "<<i->first<<"\n{\n";
+		TechniqueGroup *g=i->second;
+		for(map<string,Technique*>::const_iterator j=g->m_techniques.begin();j!=g->m_techniques.end();j++)
+		{
+			ofs<<"\ttechnique "<<j->first<<"\t\n{\n";
+			Technique *t=j->second;
+			for(map<string,Program>::const_iterator k=t->GetPasses().begin();k!=t->GetPasses().end();k++)
+			{
+				ofs<<"\ttechnique "<<j->first<<"\t\n{\n";
+				ofs<<"\t\n}\n";
+			}
+			ofs<<"\t\n}\n";
+		}
+		ofs<<"\n}\n";
+	}
+	std::map<std::string,TechniqueGroup*>				m_techniqueGroups;
+	std::map<std::string,BlendState*>					m_blendStates;
+	std::map<std::string,DepthStencilState*>			m_depthStencilStates;
+	std::map<std::string,SamplerState*>					m_samplerStates;
+	std::map<std::string,DeclaredTexture>				m_declaredTextures;
+	std::map<std::string,RasterizerState*>				m_rasterizerStates;
+	std::map<std::string,ComputeLayout>					m_shaderLayouts;
+	std::map<unsigned,PassState>						passStates;
+	std::map<unsigned,Program*>							passProgramMap;
+	std::map<std::string,unsigned>						samplerObjects;
+	ProfileMap											m_profileToVersion;
+	CompiledShaderMap									m_compiledShaders;
+	std::map<std::string,std::vector<Function*> >		functions;
+	vector<string>										m_filenames;
+	string												m_sharedCode;
+	std::map<std::string, TextureSampler*>				textureSamplers;
+}
+
+void Effect::LoadFromCache(const std::string &filename)
+{
 }

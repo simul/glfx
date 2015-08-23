@@ -65,7 +65,10 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	,const map<string, set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout)
-	:programId(0),transformFeedback(false),computeLayout(compute_layout),transformFeedbackTopology(POINTS)
+	:programId(0)
+	,transformFeedback(false)
+	,computeLayout(compute_layout)
+	,transformFeedbackTopology(POINTS)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;

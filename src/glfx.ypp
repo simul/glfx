@@ -373,11 +373,7 @@ prog : prog tok
 							"}\n";
 	    gLexPassthrough=true;
 	};
-	tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
-	{
-		gEffect->DeclareInterface($3.strs[0],InterfaceDcl($4.strs[0], $1.lineno));
-	}
-	| EOL
+	tok :  EOL
 	{
 	}
 	| line_statement
@@ -1367,15 +1363,16 @@ shader_compile: IDENTIFIER
 			}
 			else
 			{
-				CompiledShader *new_cs	=gEffect->AddCompiledShader(tempName,gsName,GEOMETRY_SHADER,0);
 				CompiledShader *compiledShader	=i->second;
-				*new_cs=*compiledShader;
-				new_cs->shaderType=GEOMETRY_SHADER;
+				const CompiledShader *new_cs	=gEffect->AddCompiledShader(tempName,gsName,GEOMETRY_SHADER,0,compiledShader->outputStruct
+																			,compiledShader->outputStructName
+																			,compiledShader->source);
+				std::vector<std::string> feedbackOutput;
 				if(definition.size())
 				{
 					find_and_replace(definition,"\"","");
 					std::vector<std::string> elements=split(definition,';');
-					new_cs->feedbackOutput.clear();
+					feedbackOutput.clear();
 					auto u=gEffect->GetStructs().find(new_cs->outputStruct);
 					if(u==gEffect->GetStructs().end())
 					{
@@ -1407,7 +1404,7 @@ shader_compile: IDENTIFIER
 								//	modified+=".";
 								//	modified+=swizzle;
 								}
-								new_cs->feedbackOutput.push_back(modified);
+								feedbackOutput.push_back(modified);
 								break;
 							}
 						}
@@ -1448,10 +1445,10 @@ shader_compile: IDENTIFIER
 
 				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-				CompiledShader *cs=gEffect->AddCompiledShader(compiledShaderName,$5.strs[0],$1.sType,version_num);
+				const CompiledShader *cs=gEffect->AddCompiledShader(compiledShaderName,$5.strs[0],$1.sType,version_num);
 				$$.num=version_num;
 				// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
-				Compile($1.sType, sh, cs);
+				gEffect->Compile($1.sType, sh, compiledShaderName);
 			}
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
@@ -2145,8 +2142,9 @@ postfix_exp		: primary_exp
 						string expr4=$4.strs[0];
 						// ok this could be a function call.
 						string command=$1.strs[2];
-						auto j=gEffect->GetFunctions().find(command);
-						if(j==gEffect->GetFunctions().end())
+						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
+						auto j=functions.find(command);
+						if(j==functions.end())
 						{
 							params=$3.strs[0];
 						}
@@ -2160,7 +2158,7 @@ postfix_exp		: primary_exp
 							}
 							if(u==j->second.end())
 							{
-								errSem("No matching function definition found.");
+								errSem(string("No matching function definition found for ")+command);
 								break;
 							}
 							const Function &f=**u;
