@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
+    <ClInclude Include="src\BufferedStringStreamBuf.h" />
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
@@ -50,6 +51,7 @@
     <ClInclude Include="src\PreprocessParser.h" />
     <ClInclude Include="src\StringFunctions.h" />
     <ClInclude Include="src\StringToWString.h" />
+    <ClInclude Include="src\VisualStudioDebugOutput.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\glfx.lpp">
@@ -196,23 +198,23 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulDebug.props" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="SimulDebug.props" />
+    <Import Project="SimulDLL_VC11.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulStaticDebug.props" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="SimulStaticDebug.props" />
+    <Import Project="SimulLib_VC11.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulRelease.props" />
-    <Import Project="..\..\SimulDLL_VC11.props" />
+    <Import Project="SimulRelease.props" />
+    <Import Project="SimulDLL_VC11.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\SimulStaticRelease.props" />
-    <Import Project="..\..\SimulLib_VC11.props" />
+    <Import Project="SimulStaticRelease.props" />
+    <Import Project="SimulLib_VC11.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
@@ -233,7 +235,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLFX_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -251,7 +253,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

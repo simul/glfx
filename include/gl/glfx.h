@@ -121,14 +121,6 @@ GLFXAPI const char* GLFX_APIENTRY glfxGetPassName(int effect, const char *tech_n
 GLFXAPI GLuint GLFX_APIENTRY glfxCompilePass(int effect, const char *tech_name, const char *pass_name);
 GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int effect,GLuint pass);
 
-/**************************************************
-* glfxGenerateSampler
-* Input:
-*   effect  -- GLFX effect id
-*   sampler -- Sampler name
-* Return value: GL sampler id if success, -1 otherwise
-**************************************************/
-GLFXAPI int GLFX_APIENTRY glfxGenerateSampler(int effect, const char* sampler);
 
 /**************************************************
 * glfxGetEffectLog

@@ -64,8 +64,11 @@ TechniqueGroup::~TechniqueGroup()
 }
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
-	, const map<string, set<TextureSampler*> > &textureSamplersByShader, const string &compute_layout)
-	: programId(0), transformFeedback(false), computeLayout(compute_layout),transformFeedbackTopology(POINTS)
+	,const map<string, set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout)
+	:programId(0)
+	,transformFeedback(false)
+	,computeLayout(compute_layout)
+	,transformFeedbackTopology(POINTS)
 {
 	passState=p;
     map<ShaderType,Shader>::const_iterator it;
@@ -89,11 +92,16 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 		}
     }
 
-    m_separable=false;
+    m_separable=true;
 	if (m_shaders[VERTEX_SHADER].name.length() || m_shaders[GEOMETRY_SHADER].name.length())
 	{
 		if (!m_shaders[FRAGMENT_SHADER].name.length())
 			transformFeedback = true;
+	}
+	// tf needs only the vertex shader.
+	if(transformFeedback)
+	{
+		m_shaders[GEOMETRY_SHADER].compiledShader=NULL;
 	}
 }
 
@@ -266,7 +274,7 @@ void ProcessConfigFile(TBuiltInResource &Resources)
         const char* valueStr =strtok_s(0, delims,&context);
         if (valueStr == 0 || ! (valueStr[0] == '-' || (valueStr[0] >= '0' && valueStr[0] <= '9')))
 		{
-            printf("Error: '%s' bad .conf file.  Each name must be followed by one number.\n", valueStr ? valueStr : "");
+            std::cerr<<"Error: '"<<(valueStr?valueStr:"")<<"' bad .conf file.  Each name must be followed by one number.\n";
             return;
         }
         int value = atoi(valueStr);
@@ -457,7 +465,7 @@ void ProcessConfigFile(TBuiltInResource &Resources)
         else if (strcmp(token, "generalConstantMatrixVectorIndexing") == 0)
             Resources.limits.generalConstantMatrixVectorIndexing = (value != 0);
         else
-            printf("Warning: unrecognized limit (%s) in configuration file.\n", token);
+            std::cerr<<"Warning: unrecognized limit ("<<token<<") in configuration file.\n";
 
         token = strtok_s(0,delims,&context);
     }
@@ -518,7 +526,6 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	if (programId)
 		glDeleteProgram(programId);
     programId=glCreateProgram();
-
 	// This MUST match up with ShaderType enum definition.
     GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
                                             GL_TESS_CONTROL_SHADER,

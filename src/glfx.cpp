@@ -36,6 +36,7 @@ typedef int errno_t;
 #endif
 
 #include "GL/glew.h"
+#include "VisualStudioDebugOutput.h"
 
 // workaround for Linux distributions that haven't yet upgraded to GLEW 1.9
 #ifndef GL_COMPUTE_SHADER
@@ -57,6 +58,8 @@ typedef int errno_t;
 #include "FileLoader.h"
 #include "glfxErrorCheck.h"
 #include <direct.h>
+VisualStudioDebugOutput d(true);
+
 static std::string binaryDirectory;
 
 #pragma optimize("",off)
@@ -388,6 +391,7 @@ Effect *gEffect=NULL;
 bool gLexPassthrough=true;
 
 RenderState	 renderState;
+std::ostringstream sharedCode;
 bool read_shader=false;
 bool read_function=false;
 #pragma optimize("",off)
@@ -661,8 +665,11 @@ int GLFX_APIENTRY glfxGenEffect()
     return (int)gEffects.size()-1;
 }
 
+#include <chrono>
 bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const char **file_paths_utf8, const char **macros, const char **defs) 
 {
+	cout << chrono::high_resolution_clock::period::den << endl;
+	auto start_time = chrono::high_resolution_clock::now();
     bool retVal=true;
     shaderPathsUtf8.clear();
 	const char **path=file_paths_utf8;
@@ -673,6 +680,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	}
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(string(file)));
 	string src;
+	int pptime=0,buildtime=0;
 	try
 	{
 		prepro_open=&OpenFile;
@@ -687,6 +695,9 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 		}
 		defines["GLFX"] = "1";
 		retVal&=preprocess(file, defines);
+		auto time = chrono::high_resolution_clock::now();
+		pptime=chrono::duration_cast<chrono::milliseconds>(time - start_time).count() ;
+		start_time=time;
 	GLFX_ERRNO_CHECK
 		src=preproOutput.str();
 		gEffects[effect]->SetFilenameList(GetPreprocessorFilenamesUtf8());
@@ -697,6 +708,10 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	{
 	}
 	retVal&=glfxParseEffectFromMemory(effect,src.c_str(),file);
+	auto time = chrono::high_resolution_clock::now();
+	buildtime=chrono::duration_cast<chrono::milliseconds>(time - start_time).count() ;
+	GLFX_CERR <<"file: preprocess "<<pptime<<"ms, parse from memory "<<buildtime<<"ms"<<endl;
+	start_time=time;
 	GLFX_ERRNO_CHECK
     return retVal;
 }
@@ -746,7 +761,10 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const c
     }
     glfxpop_buffer_state();
 	if(retVal)
+	{
+		gEffect->SetSharedCode(sharedCode.str());
 	    gEffect->PopulateProgramList();
+	}
 	string log=gEffect->Log().str();
 	PutFilenamesInLog(log,gEffects[effect]->GetFilenameList());
 	gEffect->Log().str(log);
@@ -959,6 +977,7 @@ GLuint GLFX_APIENTRY glfxCompilePass(int e, const char *tech_name, const char *p
 	GLuint pr=glfxCompileProgram(e, tech_name, pass_name);
 	return pr;
 }
+
 GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int e,GLuint pass)
 {
 	if(e<0||e>=(int)gEffects.size())
@@ -1006,23 +1025,4 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
     gEffects[effect]->Log()<<slog;
 
     return progid;
-}
-
-int GLFX_APIENTRY glfxGenerateSampler(int effect, const char* sampler)
-{
-    if((size_t)effect>=gEffects.size() || gEffects[effect]==NULL || sampler==NULL || !gEffects[effect]->Active())
-        return -1;
-    string slog;
-    unsigned sampId;
-    try
-	{
-        sampId=gEffects[effect]->CreateSampler(sampler);
-    }
-    catch(const char* err)
-	{
-        slog+=err;
-        sampId=-1;
-    }
-    gEffects[effect]->Log()<<slog;
-    return sampId;
 }

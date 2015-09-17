@@ -157,26 +157,6 @@
 	string getGLInputSemantic(int s);
 	map<std::string,CompilableShader*> compilableShaders;
 	
-	void DeclareTextureSampler(const TextureSampler *ts)
-	{
-		auto i=gEffect->additionalTextureDeclarations.find(ts->textureSamplerName());
-		if(i!=gEffect->additionalTextureDeclarations.end())
-			return;
-
-		string tsname		=ts->textureSamplerName();
-		string texture_name	=ts->textureName;
-		if (gEffect->IsDeclared(texture_name))
-		{
-			string sampler_type =(gEffect->GetDeclaredTextures()).find(texture_name)->second.type;
-			//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-			gEffect->additionalTextureDeclarations[tsname].type		=sampler_type;
-			auto d=gEffect->GetDeclaredTextures();
-			gEffect->additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
-			// We know that this texture-sampler combo will be used in this shader.
-		}
-		else
-			errSem(string("Can't find texture declaration for ")+texture_name);
-	}
 	Function buildFunction;
 	TextureSampler *AddTextureSampler(string textureName,string samplerStateName)
 	{
@@ -194,7 +174,7 @@
 		buildFunction.textureSamplersBySampler[ts->samplerStateName].insert(ts);
 		return ts;
 	}
-	string ComputeLayout::text()
+	string ComputeLayout::text() const
 	{
 		string tt=stringFormat("layout(local_size_x=%d,local_size_y=%d,local_size_z=%d) in;",x,y,z);
 		return tt;
@@ -340,13 +320,13 @@
 
 prog : prog tok
     | { // Initialization code
-	    gEffect->m_sharedCode.str("");    // clear the stream
-		gEffect->m_sharedCode<<"#define GLSL\n";
+	    sharedCode.str("");    // clear the stream
+		sharedCode<<"#define GLSL\n";
 // Some GLSL compilers can't abide seeing a "discard" in the source of a shader that isn't a fragment shader, even if it's in unused, shared code.
-	gEffect->m_sharedCode<<"#if !defined(GLFX_FRAGMENT_SHADER)\n"
+	sharedCode<<"#if !defined(GLFX_FRAGMENT_SHADER)\n"
 							"#define discard\n"
 						"#endif\n";
-		gEffect->m_sharedCode<<"float saturate(float x)"
+		sharedCode<<"float saturate(float x)"
 						"{"
 						"	return clamp(x,0.0,1.0);"
 						"}"
@@ -367,7 +347,7 @@ prog : prog tok
 						"}\n";
 		
 
-	gEffect->m_sharedCode<<"vec4 mul(mat4 m,vec4 v)"
+	sharedCode<<"vec4 mul(mat4 m,vec4 v)"
 							"{"
 							"	return m*v;"
 							"}\n"
@@ -393,11 +373,7 @@ prog : prog tok
 							"}\n";
 	    gLexPassthrough=true;
 	};
-	tok : INTERFACE lex_fx IDENTIFIER read_block ';' lex_passthrough
-	{
-		gEffect->m_interfaces[$3.strs[0]]=Effect::InterfaceDcl($4.strs[0], $1.lineno);
-	}
-	| EOL
+	tok :  EOL
 	{
 	}
 	| line_statement
@@ -415,7 +391,7 @@ prog : prog tok
 		stringReplaceAll(texture_type,"RWTexture","image");
 		ostringstream decl;
 		if(compute_only)
-			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
+			sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
 		string template_type=$3.strs[0];
 		string texture_name=$4.strs[0];
 		string layout;
@@ -425,11 +401,13 @@ prog : prog tok
 		WriteLineNumber(decl,current_filenumber,$1.lineno+last_linenumber-global_linenumber);
 
 		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
-		gEffect->m_declaredTextures[texture_name].type = type;
-		gEffect->m_declaredTextures[texture_name].type_enum = type_enum;
-		gEffect->m_sharedCode << decl.str(); 
+		DeclaredTexture dec;
+		dec.type=type;
+		dec.type_enum=type_enum;
+		gEffect->DeclareTexture(texture_name,dec);
+		sharedCode << decl.str(); 
 		if(compute_only)
-			gEffect->m_sharedCode<<"#endif\n";
+			sharedCode<<"#endif\n";
 	}
 	/*
 	Here we will transform from a HLSL-style templated uniform buffer:
@@ -447,21 +425,21 @@ prog : prog tok
 		bool compute_only=true;
 		ostringstream decl;
 		if(compute_only)
-			gEffect->m_sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
+			sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
 		string template_type=$3.strs[0];
 		string buffer_name=$4.strs[0];
 		decl<<"layout(std430) buffer "<<buffer_name<<"_\n{\n\t";
 		decl<<template_type<<" "<<buffer_name<<"[];\n";
 		decl<<"};\n";
-		gEffect->m_sharedCode<<decl.str();
+		sharedCode<<decl.str();
 		if(compute_only)
-			gEffect->m_sharedCode<<"#endif\n";
+			sharedCode<<"#endif\n";
 	}
 	| UNIFORM IDENTIFIER IDENTIFIER ';'
 	{
 		ostringstream decl;
 		decl<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<$3.strs[0]<<";";
-		gEffect->m_sharedCode<<decl.str();
+		sharedCode<<decl.str();
 	}
 	| '[' SA_MAXVERTEXCOUNT '(' NUM ')' ']'
 	{
@@ -506,18 +484,16 @@ prog : prog tok
 	}
 	| STRUCT IDENTIFIER struct_definition ';'
 	{
-		Struct *rs					=new Struct;
-		*rs							=buildStruct;
 		string name					=$2.strs[0];
-		gEffect->m_structs[name]	=rs;
-		gEffect->m_sharedCode<<"struct "<<$2.strs[0]<<"\n{\n";
-		for(int i=0;i<(int)rs->m_structMembers.size();i++)
+		gEffect->DeclareStruct(name,buildStruct);
+		sharedCode<<"struct "<<$2.strs[0]<<"\n{\n";
+		for(int i=0;i<(int)buildStruct.m_structMembers.size();i++)
 		{
-			const StructMember &m=rs->m_structMembers[i];
-			gEffect->m_sharedCode<<m.type<<" "<<m.name<<";\n";
+			const StructMember &m=buildStruct.m_structMembers[i];
+			sharedCode<<m.type<<" "<<m.name<<";\n";
 		}
-		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,$4.lineno+last_linenumber-global_linenumber);
-		gEffect->m_sharedCode<<"};";
+		WriteLineNumber(sharedCode,current_filenumber,$4.lineno+last_linenumber-global_linenumber);
+		sharedCode<<"};";
 		// Set to default:
 		buildStruct					=Struct();
 	}
@@ -528,33 +504,25 @@ prog : prog tok
 		string name=$2.strs[0];
 		if(t==RASTERIZER_STATE)
 		{
-			RasterizerState *rs=new RasterizerState;
-			*rs=buildRasterizerState;
-			gEffect->m_rasterizerStates[name]=rs;
+			gEffect->DeclareRasterizerState(name,buildRasterizerState);
 			// Set to default:
 			buildRasterizerState=RasterizerState();
 		}
 		if(t==BLEND_STATE)
 		{
-			BlendState *bs=new BlendState;
-			*bs= buildBlendState;
-			gEffect->m_blendStates[name]=bs;
+			gEffect->DeclareBlendState(name,buildBlendState);
 			// Set to default:
 			buildBlendState=BlendState();
 		}
 		if(t==DEPTHSTENCIL_STATE)
 		{
-			DepthStencilState *ds=new DepthStencilState;
-			*ds=buildDepthStencilState;
-			gEffect->m_depthStencilStates[name]=ds;
+			gEffect->DeclareDepthStencilState(name,buildDepthStencilState);
 			// Set to default:
 			buildDepthStencilState=DepthStencilState();
 		}
 		if(t==SAMPLER_STATE)
 		{
-			SamplerState *ss=new SamplerState;
-			*ss=buildSamplerState;
-			gEffect->m_samplerStates[name]=ss;
+			gEffect->DeclareSamplerState(name,buildSamplerState);
 			// Set to default:
 			buildSamplerState=SamplerState();
 		}
@@ -565,29 +533,17 @@ prog : prog tok
 	{
 		string profileName		=$2.strs[0];
 		int profileNum			=$4.num;
-		if(gEffect->m_profileToVersion.find(profileName)!=gEffect->m_profileToVersion.end())
-		{
+		if(!gEffect->SetVersionForProfile(profileNum,profileName))
 			glfxWarning("redefining profile ");
-		}
-		gEffect->m_profileToVersion[profileName]=profileNum;
 	}
 	| DECL_SHADER IDENTIFIER '=' shader_compile ';'
 	{
 		// We here declare that a named shader should be compiled with the specified profile (e.g. GLSL 4.30)
 		// and assign a variable name to the shader/profile combination. Later on, in pass definitions,
 		// we can assign the shader to one or more passes.
-		string compiledShaderName		=$2.strs[0];
-		CompiledShader *compiledShader	=gEffect->m_compiledShaders[$4.strs[0]];
-		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i!=gEffect->m_compiledShaders.end())
-		{
-			delete i->second;
-			// TODO: Warn here about double-compiling a shader.
-			glfxWarning("double-compiling shader ");
-		}
-		if($1.sType!=$4.sType)
-			errSem((((string("Shader type mismatch for ")+compiledShaderName+" - can't assign ")+ShaderTypeToString($4.sType)+" shader to ")+ShaderTypeToString($1.sType)+" shader").c_str());
-		gEffect->m_compiledShaders[compiledShaderName]=compiledShader;
+		string lvalCompiledShaderName		=$2.strs[0];
+		string rvalCompiledShaderName		=$4.strs[0];
+		gEffect->AddCompiledShader($2.sType,lvalCompiledShaderName,rvalCompiledShaderName);
 	}
 	| LAYOUT lex_fx layout_params lex_passthrough
 	{
@@ -612,30 +568,15 @@ prog : prog tok
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' function_fx function_content lex_passthrough
 	{
 		string functionName		=$2.strs[0];
-		Function *f				=new Function;
-		*f						=buildFunction;
-		if(buildFunction.textureSamplers.size())
-		{
-	//		std::cout<<"ts: "<<functionName.c_str()<<std::endl;
-		}
-		gEffect->functions[functionName].push_back(f);
-		f->returnType			=$1.strs[0];
-		f->content				=$7.strs[0];
-		
-		f->parameters			=*$4.vars;
+		buildFunction.returnType			=$1.strs[0];
+		buildFunction.content				=$7.strs[0];
+	
+		buildFunction.parameters			=*$4.vars;
 		delete $4.vars;
+		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		
 		ostringstream params;
 		bool start=true;
-		for(auto p=buildFunction.textureSamplersByTexture.begin();p!=buildFunction.textureSamplersByTexture.end();p++)
-		{
-			auto q=p->second.begin();
-			if(q!=p->second.end())
-			{
-				string t=string(" ")+(*q)->textureName+" ";
-				find_and_replace(f->content,t,(*q)->textureSamplerName());
-			}
-		}
 		set<string> usedSamplerStates;
 		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
 		{
@@ -687,7 +628,9 @@ prog : prog tok
 						TextureSampler *ts=*v;
 						string type=GetTypeOfParameter(f->parameters,ts->textureName);
 						if(type.length()==0)
-							type = gEffect->m_declaredTextures[ts->textureName].type;
+						{
+							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second.type;
+						}
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						//if(j->semantic.size())
 						//	params<<": "<<j->semantic;
@@ -721,7 +664,8 @@ prog : prog tok
 			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
 			TextureSampler *ts=f->textureSamplers[i->first];
 			ts->global=true;
-			DeclareTextureSampler(i->second);
+			if(!gEffect->DeclareTextureSampler(i->second))
+				errSem(string("Can't find texture declaration for ")+i->first);
 		}
 		
 		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
@@ -759,14 +703,15 @@ prog : prog tok
 
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
-			DeclareTextureSampler(i->second);
+			if(!gEffect->DeclareTextureSampler(i->second))
+				errSem(string("Can't find texture declaration for ")+i->first);
 		}
-		//gEffect->m_sharedCode<<str.str();
+		//sharedCode<<str.str();
 
 		buildFunction.clear();
 		delete $5.vars;
 		
-		gEffect->m_sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
+		sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
 	}
     | PROGRAM lex_fx IDENTIFIER '{' prog_def '}' lex_passthrough
 	{
@@ -778,9 +723,7 @@ prog : prog tok
 	| GROUP lex_fx IDENTIFIER '{' technique_decls '}' lex_passthrough
 	{
 		string groupName=$3.strs[0];
-		if(gEffect->m_techniqueGroups.find(groupName)==gEffect->m_techniqueGroups.end())
-			gEffect->m_techniqueGroups[groupName]=new TechniqueGroup;
-		*(gEffect->m_techniqueGroups[groupName])=buildTechniqueGroup;
+		gEffect->AddTechniqueGroup(groupName,buildTechniqueGroup);
 		buildTechniqueGroup.m_techniques.clear();
 	};
 	line_statement: LINE lex_fx NUM NUM lex_passthrough
@@ -788,7 +731,7 @@ prog : prog tok
 		last_linenumber		=$3.num;
 		current_filenumber	=$4.num;
 		global_linenumber	=$1.lineno+1;// the line AFTER the #line directve.
-		WriteLineNumber(gEffect->m_sharedCode,current_filenumber,last_linenumber);
+		WriteLineNumber(sharedCode,current_filenumber,last_linenumber);
 	}
 	ignore_line_statement: LINE NUM NUM
 	{
@@ -856,13 +799,8 @@ group_technique_decl: TECHNIQUE IDENTIFIER '{' tech_def '}'
 	};
 technique_decl: TECHNIQUE lex_fx IDENTIFIER '{' tech_def '}' lex_passthrough
 	{
-		if(gEffect->m_techniqueGroups.find("")==gEffect->m_techniqueGroups.end())
-		{
-			gEffect->m_techniqueGroups[""]=new TechniqueGroup;
-		}
-		TechniqueGroup *g=gEffect->m_techniqueGroups[""];
 		string techname=$3.strs[0];
-		g->m_techniques[techname] = $5.tech;
+		gEffect->AddTechnique(techname,"",$5.tech);
 	};
 cs_layout_spec: '(' cs_layout ')'
 		  {
@@ -1225,7 +1163,7 @@ pass_def: PASS IDENTIFIER '{' prog_def '}'
 
 prog_def : shaders_list
 {
-	$$.prog = new Program(*($1.shaders), buildPassState, gEffect->textureSamplersByShader, $1.strs[2]);
+	$$.prog = new Program(*($1.shaders), buildPassState, gEffect->GetTextureSamplersByShader(), $1.strs[2]);
     delete $1.shaders;
 	buildPassState			=PassState();
 };
@@ -1238,8 +1176,8 @@ shaders_list : shaders_list shader_def
 		string name						=$2.strs[1];
 		string compiledShaderName		=$2.strs[3];
 		$$.strs[2]						=$1.strs[2]+$2.strs[2];// compute layout
-		CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i==gEffect->m_compiledShaders.end())
+		CompiledShaderMap::const_iterator i	=gEffect->GetCompiledShaders().find(compiledShaderName);
+		if(i==gEffect->GetCompiledShaders().end())
 			(*map1)[sType].compiledShader	=NULL;
 		else
 			(*map1)[sType].compiledShader	=i->second;
@@ -1258,8 +1196,8 @@ shaders_list : shaders_list shader_def
 		$$.strs[1]					=$1.strs[1];
 		$$.strs[2]					=$1.strs[2];
 		$$.strs[3]					=compiledShaderName;
-		CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-		if(i==gEffect->m_compiledShaders.end())
+		CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+		if(i==gEffect->GetCompiledShaders().end())
 			(*map1)[sType].compiledShader	=NULL;
 		else
 			(*map1)[sType].compiledShader	=i->second;
@@ -1330,10 +1268,10 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 				// the shader_variable is something like vs_main, for which we have a compile command like:
 				//												VertexShader vs_layers=CompileShader(430,VS_Layers());
 				// i.e. it's a combination of shadertype, profile, and function name.
-				// so these are stored in gEffect->m_compiledSHaders.
+				// so these are stored in gEffect->GetCompiledShaders().
 				string compiledShaderName=$3.strs[0];
-				CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-				if(i==gEffect->m_compiledShaders.end())
+				CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+				if(i==gEffect->GetCompiledShaders().end())
 				{
 					if(_stricmp(compiledShaderName.c_str(),"NULL")==0)
 					{
@@ -1376,7 +1314,7 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 							{
 								if (shaderCommand == COMPUTE_SHADER)
 								{
-									preamble << gEffect->m_shaderLayouts[shaderName].text() << "\n";
+									preamble << gEffect->GetComputeLayouts().find(shaderName)->second.text() << "\n";
 									preamble << "#define IN_COMPUTE_SHADER 1" << endl;
 								//	preamble << computeLayout << "\n"; 
 								}
@@ -1397,8 +1335,8 @@ shader_def : shader_lvalue '=' shader_rvalue ';'	// Something like vs(430) = vs_
 shader_compile: IDENTIFIER
 		{
 			string compiledShaderName	=$1.strs[0];
-			CompiledShaderMap::iterator i=gEffect->m_compiledShaders.find(compiledShaderName);
-			if(i!=gEffect->m_compiledShaders.end())
+			CompiledShaderMap::const_iterator i=gEffect->GetCompiledShaders().find(compiledShaderName);
+			if(i!=gEffect->GetCompiledShaders().end())
 				$$.sType				=i->second->shaderType;
 			else
 				$$.sType				=NUM_OF_SHADER_TYPES;
@@ -1408,16 +1346,16 @@ shader_compile: IDENTIFIER
 		}
 		| CONSTRUCT_GS_WITH_SO '(' IDENTIFIER ',' QUOTED_STRING ')' 
 		{
-			$$.lineno						=$5.lineno;
-			$$.sType						=GEOMETRY_SHADER;
-			string gsName					=$3.strs[0];
-			string definition				=$5.strs[0];
-			CompiledShaderMap::iterator i	=gEffect->m_compiledShaders.find(gsName);
-			string tempName					=gsName+"_GS_with_SO";
-			$$.strs[0]						=tempName;
-			CompiledShader *new_cs			=NULL;
-			gEffect->m_compiledShaders[tempName]=new_cs=new CompiledShader;
-			if(i==gEffect->m_compiledShaders.end())
+			$$.lineno								=$5.lineno;
+			$$.sType								=GEOMETRY_SHADER;
+			string gsName							=$3.strs[0];
+			string definition						=$5.strs[0];
+			CompiledShaderMap::const_iterator i		=gEffect->GetCompiledShaders().find(gsName);
+			string tempName							=gsName+"_GS_with_SO";
+			$$.strs[0]								=tempName;
+		
+			//gEffect->GetCompiledShaders()[tempName]	=new_cs=new CompiledShader;
+			if(i==gEffect->GetCompiledShaders().end())
 			{
 				ostringstream msg;
 				msg<<"Compiled shader "<<gsName<<" not found for streamout"<<endl;
@@ -1426,14 +1364,17 @@ shader_compile: IDENTIFIER
 			else
 			{
 				CompiledShader *compiledShader	=i->second;
-				*new_cs=*compiledShader;
+				const CompiledShader *new_cs	=gEffect->AddCompiledShader(tempName,gsName,GEOMETRY_SHADER,0,compiledShader->outputStruct
+																			,compiledShader->outputStructName
+																			,compiledShader->source);
+				std::vector<std::string> feedbackOutput;
 				if(definition.size())
 				{
 					find_and_replace(definition,"\"","");
 					std::vector<std::string> elements=split(definition,';');
-					new_cs->feedbackOutput.clear();
-					auto u=gEffect->m_structs.find(new_cs->outputStruct);
-					if(u==gEffect->m_structs.end())
+					feedbackOutput.clear();
+					auto u=gEffect->GetStructs().find(new_cs->outputStruct);
+					if(u==gEffect->GetStructs().end())
 					{
 						errSem(string("can't find output struct ")+new_cs->outputStruct);
 					}
@@ -1463,7 +1404,7 @@ shader_compile: IDENTIFIER
 								//	modified+=".";
 								//	modified+=swizzle;
 								}
-								new_cs->feedbackOutput.push_back(modified);
+								feedbackOutput.push_back(modified);
 								break;
 							}
 						}
@@ -1477,9 +1418,9 @@ shader_compile: IDENTIFIER
 			$$.sType								=$3.sType;
 			string profileName						=$3.strs[0];
 			$$.token								=$3.token;
-			ProfileMap::iterator i					=gEffect->m_profileToVersion.find(profileName);
+			ProfileMap::const_iterator i			=gEffect->GetProfileToVersion().find(profileName);
 			int version_num							=0;
-			if(i==gEffect->m_profileToVersion.end())
+			if(i==gEffect->GetProfileToVersion().end())
 			{
 				ostringstream msg;
 				msg<<"Profile "<<profileName<<" not found."<<endl;
@@ -1500,18 +1441,14 @@ shader_compile: IDENTIFIER
 			else
 			{
 				CompilableShader &sh=*(u->second);
-				gEffect->m_shaderLayouts[shaderName]	=sh.csLayout;
+				gEffect->AddComputeLayout(shaderName,sh.csLayout);
 
 				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
 
-				CompiledShader *compiledShader					=gEffect->m_compiledShaders[compiledShaderName];
-
-				gEffect->m_compiledShaders[compiledShaderName]	=compiledShader=new CompiledShader;
-				compiledShader->m_functionName					=$5.strs[0];
-				compiledShader->shaderType						=$1.sType;
-				compiledShader->version							= $$.num = version_num;
+				const CompiledShader *cs=gEffect->AddCompiledShader(compiledShaderName,$5.strs[0],$1.sType,version_num);
+				$$.num=version_num;
 				// "Compile" the shader - in the sense of "concatenate the strings and prepare it as GLSL source":
-				Compile($1.sType, sh, compiledShader);
+				gEffect->Compile($1.sType, sh, compiledShaderName);
 			}
 		};
 shader_lvalue : SHADER_TYPE '(' NUM ')'
@@ -2205,8 +2142,9 @@ postfix_exp		: primary_exp
 						string expr4=$4.strs[0];
 						// ok this could be a function call.
 						string command=$1.strs[2];
-						auto j=gEffect->functions.find(command);
-						if(j==gEffect->functions.end())
+						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
+						auto j=functions.find(command);
+						if(j==functions.end())
 						{
 							params=$3.strs[0];
 						}
@@ -2220,7 +2158,7 @@ postfix_exp		: primary_exp
 							}
 							if(u==j->second.end())
 							{
-								errSem("No matching function definition found.");
+								errSem(string("No matching function definition found for ")+command);
 								break;
 							}
 							const Function &f=**u;

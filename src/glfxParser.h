@@ -142,6 +142,7 @@ struct glfxstype
     // Carrying these around is bad luck, or more like bad performance. But whatever...
     string strs[5];
 };
+extern std::string ShaderTypeToString(ShaderType s);
 
 namespace glfxParser
 {
@@ -149,6 +150,7 @@ namespace glfxParser
 	extern bool gLexPassthrough;
 	extern bool read_shader;
 	extern bool read_function;
+	extern std::ostringstream sharedCode;
 	
 	#ifdef LINUX
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
@@ -305,7 +307,7 @@ struct Function
 struct ComputeLayout
 {
 	int x,y,z;
-	std::string text();
+	std::string text() const;
 };
 struct CompilableShader
 {
@@ -330,7 +332,6 @@ struct CompiledShader
 	std::string outputStruct;
 	std::string outputStructName;
 };
-extern void Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,CompiledShader *com);
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
 extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
