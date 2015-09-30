@@ -39,6 +39,8 @@ the last is C code to be copied verbatim to the output.
     #include <string>
     #include <sstream>
 	#include <stdarg.h>
+	
+	#include <stdint.h>
 
     #include "glfxParser.h"
     #include "glfxClasses.h"
