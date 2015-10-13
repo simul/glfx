@@ -139,7 +139,7 @@ int Effect::GetImageNumber(const char *name)
 	return image_number;
 }
 
-void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
+void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip)
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
 	t.tex		=tex;
@@ -148,7 +148,7 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 	t.depth		=depth;
 	t.format	=format;
 	t.write		=write;
-	t.write_mip	=write_mip;
+	t.mip			=mip;
 }
 
 void Effect::SetSamplerState(const char *name, unsigned sam)
@@ -248,7 +248,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 	{
 		glBindImageTexture(texture_number-1000
  			,t.tex
- 			,t.write_mip
+ 			,t.mip>=0?t.mip:0
 			,textureDimensions[texture_number] == 3
 			,0
 			,GL_READ_WRITE

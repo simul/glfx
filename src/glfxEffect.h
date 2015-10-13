@@ -16,7 +16,7 @@ namespace glfxParser
 		int depth;
 		unsigned format;	//GLenum
 		bool write;
-		int write_mip;
+		int mip;
 	};
 	//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 	//! We will use the keyword Profile.
@@ -152,7 +152,7 @@ namespace glfxParser
 		void Unapply();
 		void ApplyPassTextures(unsigned pass);
 		void ApplyPassState(unsigned pass);
-		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int mip);
 		void SetSamplerState(const char *name, unsigned sam);
 		bool& Active();
 		// STATE

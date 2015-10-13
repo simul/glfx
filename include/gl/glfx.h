@@ -101,7 +101,9 @@ GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);
 GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
 GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
-GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip);
+/// If mip is specified as 0 or above, the specific mipmap will be bound, otherwise (for textures to read) the whole mipmapped texture is bound.
+/// For texture writes, the mip will default to zero if not specified.
+GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip=-1);
 GLFXAPI void glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler);
 
 
