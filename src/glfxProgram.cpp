@@ -497,13 +497,13 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 				string shr=shared_src;
 				if(l)
 					shr=shared_src.substr(0,l);
-				find_and_replace(shr,"#line","//line");
+		
 				const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
 				static int s=3;
 				shader->setStrings(shaderStrings,s);
 				TBuiltInResource Resources;
 				ProcessConfigFile(Resources);
-				res&=(int)shader->parse(&Resources, defaultVersion,EProfile::ECoreProfile,false,false,messages);
+				res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
 				sLog<<shader->getInfoLog();
 
 				glsl_program->addShader(shader);
@@ -535,7 +535,7 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
                                             GL_COMPUTE_SHADER};
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-        if(m_shaders[i].compiledShader)
+        if(m_shaders[i].compiledShader&&res)
 		{
             shaders.push_back(glCreateShader(shaderTypes[i]));
 			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);

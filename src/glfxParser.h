@@ -249,13 +249,15 @@ struct Function
 		{
 			delete i->second;
 		}
-		functionsCalled.cbegin();
+		functionsCalled.clear();
 		(*this)=Function();
 	}
 	void operator=(const Function &f)
 	{
+		functionsCalled		=f.functionsCalled;
 		returnType			=f.returnType;
 		content				=f.content;
+		source				=f.source;
 		main_linenumber		=f.main_linenumber;
 		content_linenumber	=f.content_linenumber;
 		current_filenumber	=f.current_filenumber;
@@ -275,7 +277,10 @@ struct Function
 	}
 	std::set<Function*> functionsCalled;
 	std::string returnType;
+	// The content inside the braces.
 	std::string content;
+	// Not very efficient, but here's the whole function, including declarations
+	std::string source;
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
