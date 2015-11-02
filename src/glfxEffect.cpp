@@ -95,6 +95,10 @@ int Effect::GetTextureNumber(const char *name)
 	}
 	else
 	{
+		if(stricmp(name,"cloudDensity")==0)
+		{
+			std::cerr<<"cloudDensity";
+		}
 		textureNumberMap[n]				=current_texture_number;
 		if (m_declaredTextures.find(n) == m_declaredTextures.end())
 		{
@@ -132,6 +136,16 @@ int Effect::GetImageNumber(const char *name)
 	}
 	else
 	{
+		// Is it declared??
+		auto u=m_declaredTextures.find(n);
+		if(u==m_declaredTextures.end())
+			return 0;
+		if(!IsTextureWriteable(u->second.type_enum))
+			return 0;
+		if(stricmp(name,"cloudDensity")==0)
+		{
+			std::cerr<<"cloudDensity";
+		}
 		textureNumberMap[n] = current_image_number + 1000;
 		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
 		current_image_number++;
@@ -351,7 +365,6 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 			pp=t->GetPasses().find(pass);
 		if(pp==t->GetPasses().end())
 			return 0;
-		// Now add the functions used.
 		unsigned programId = pp->second.CompileAndLink(m_sharedCode,log);
 		if(programId)
 		{
@@ -915,6 +928,7 @@ void Effect::Apply(unsigned pass)
 	GLFX_ERROR_CHECK
 	current_pass=pass;
 	ApplyPassTextures(pass);
+	GLFX_ERROR_CHECK
 	if (PassHasTransformFeedback(pass))
 	{
 		glEnable(GL_RASTERIZER_DISCARD);
@@ -931,6 +945,7 @@ void Effect::Apply(unsigned pass)
 	//		GL_LINES	line_strip
 //			GL_TRIANGLES	triangle_strip
 		
+	GLFX_ERROR_CHECK
 		auto i=passProgramMap.find(pass);
 		if(i!=passProgramMap.end())
 		{
@@ -950,19 +965,24 @@ That mode is determined as follows:
 				{
 					case TRIANGLES:
 						glBeginTransformFeedback(GL_TRIANGLES);
+	GLFX_ERROR_CHECK
 					break;
 					case LINES:
 						glBeginTransformFeedback(GL_LINES);
+	GLFX_ERROR_CHECK
 					break;
 					case POINTS:
 						glBeginTransformFeedback(GL_POINTS);
+	GLFX_ERROR_CHECK
 					break;
 				default:
+	GLFX_ERROR_CHECK
 					break;
 				};
 			}
 		}
 	}
+	GLFX_ERROR_CHECK
 }
 
 void Effect::Reapply(unsigned pass)

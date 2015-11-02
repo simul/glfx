@@ -578,6 +578,7 @@ int newfile(const char *fn)
 	if(!bs)
 	{
 		prepro_error("malloc");
+		GLFX_ERRNO_BREAK
 		exit(1);
 	}
 	GLFX_ERRNO_BREAK
@@ -607,11 +608,13 @@ int newfile(const char *fn)
 
 int popfile()
 {
+	GLFX_ERRNO_BREAK
 	BufferStack *bs		=currentBuffer;
 	BufferStack *prevbs;
 	if(!bs)
 	{
 		std::cout<<"no buf";
+		GLFX_ERRNO_BREAK
 		return 0;
 	}
 	/* get rid of current entry*/
@@ -623,6 +626,7 @@ int popfile()
 	{
 		delete bs;
 		ClearMacros();
+		GLFX_ERRNO_BREAK
 		return 0;
 	}
 	yy_switch_to_buffer(prevbs->bs);
@@ -632,6 +636,7 @@ int popfile()
 	
 	Skip();
 	delete bs;
+	GLFX_ERRNO_BREAK
 	return 1;
 }
 

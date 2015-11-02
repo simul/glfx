@@ -577,6 +577,7 @@ prog : prog tok
 		ostringstream params;
 		bool start=true;
 		set<string> usedSamplerStates;
+		std::map<std::string,TextureSampler*> nonParameterTextureSamplers=buildFunction.textureSamplers;
 		for(vector<glfxstype::variable>::iterator j=buildFunction.parameters.begin();j!=buildFunction.parameters.end();j++)
 		{
 			string type=j->type;
@@ -604,7 +605,7 @@ prog : prog tok
 					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
 					p.template_		=j->template_;
 					buildFunction.expanded_parameters.push_back(p);
-				//	buildFunction.removeTextureSampler(ts->textureSamplerName());
+					nonParameterTextureSamplers.erase(ts->textureSamplerName());
 				}
 			}
 			else
@@ -640,6 +641,7 @@ prog : prog tok
 						p.template_			=j->template_;
 						buildFunction.expanded_parameters.push_back(p);
 						//buildFunction.removeTextureSampler(ts->textureSamplerName());
+						nonParameterTextureSamplers.erase(ts->textureSamplerName());
 					}
 				}
 				else
@@ -658,10 +660,10 @@ prog : prog tok
 		ostringstream str;
 		// Any textureSamplers not passed up the line are added to the effect's list of global textureSamplers.
 		// Note: This is only temporary until we stop including unused functions in the shared code.
-		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		for(std::map<std::string,TextureSampler*>::const_iterator i=nonParameterTextureSamplers.begin();i!=nonParameterTextureSamplers.end();i++)
 		{
 			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
-			TextureSampler *ts=buildFunction.textureSamplers[i->first];
+			TextureSampler *ts=nonParameterTextureSamplers[i->first];
 			ts->global=true;
 			if(!gEffect->DeclareTextureSampler(i->second))
 				errSem(string("Can't find texture declaration for ")+i->first);
@@ -1910,7 +1912,7 @@ mult_exp		: cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
-			| mult_exp '%' cast_exp
+| mult_exp '%' cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }

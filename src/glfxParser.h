@@ -208,6 +208,28 @@ enum GLTextureType
 	, gimage2DMS				//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 	, gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
+
+inline bool IsTextureWriteable(GLTextureType glTextureType)
+{
+	switch(glTextureType)
+	{
+	case gimage1D			:
+	case gimage2D			:
+	case gimage3D			:
+	case gimageCube			:
+	case gimage2DRect		:
+	case gimage1DArray		:
+	case gimage2DArray		:
+	case gimageCubeArray	:
+	case gimageBuffer		:
+	case gimage2DMS			:
+	case gimage2DMSArray:
+		return true;
+	default:
+		return false;
+	};
+}
+
 inline int GetTextureDimension(GLTextureType glTextureType,bool array_as_2d=false)
 {
 	switch(glTextureType)

@@ -37,4 +37,4 @@ extern void BreakIfDebugging();
 		}
 #endif
 
-#define GLFX_ERROR_CHECK // CheckGLError();GLFX_ERRNO_CHECK
+#define GLFX_ERROR_CHECK  CheckGLError();//GLFX_ERRNO_CHECK
