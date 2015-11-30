@@ -167,19 +167,9 @@ GLenum toBlendGLEnum(const std::string &str)
 		return 0;
 	}
 	else if(is_equal(str,"BLEND_FACTOR"))
-	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
-		return 0;
-	}
+		return GL_CONSTANT_COLOR;
 	else if(is_equal(str,"INV_BLEND_FACTOR"))
-	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
-		return 0;
-	}
+		return GL_ONE_MINUS_CONSTANT_COLOR;
 	else if(is_equal(str,"SRC1_COLOR"))
 		return GL_SRC1_COLOR;
 	else if(is_equal(str,"INV_SRC1_COLOR"))
@@ -680,7 +670,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	}
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(string(file)));
 	string src;
-	int pptime=0,buildtime=0;
+	int64_t pptime=0,buildtime=0;
 	try
 	{
 		prepro_open=&OpenFile;
