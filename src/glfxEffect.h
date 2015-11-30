@@ -155,6 +155,7 @@ namespace glfxParser
 		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int mip);
 		void SetSamplerState(const char *name, unsigned sam);
 		bool& Active();
+		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
 		// STATE
 		TechniqueGroup *current_group;
 	};

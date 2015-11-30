@@ -95,6 +95,10 @@ int Effect::GetTextureNumber(const char *name)
 	}
 	else
 	{
+		if(stricmp(name,"cloudDensity")==0)
+		{
+			std::cerr<<"cloudDensity";
+		}
 		textureNumberMap[n]				=current_texture_number;
 		if (m_declaredTextures.find(n) == m_declaredTextures.end())
 		{
@@ -132,6 +136,16 @@ int Effect::GetImageNumber(const char *name)
 	}
 	else
 	{
+		// Is it declared??
+		auto u=m_declaredTextures.find(n);
+		if(u==m_declaredTextures.end())
+			return 0;
+		if(!IsTextureWriteable(u->second.type_enum))
+			return 0;
+		if(stricmp(name,"cloudDensity")==0)
+		{
+			std::cerr<<"cloudDensity";
+		}
 		textureNumberMap[n] = current_image_number + 1000;
 		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
 		current_image_number++;
@@ -346,13 +360,12 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		if (it == group->m_techniques.end())
 			return 0;
 		Technique *t	=it->second;
-		map<string, Program>::iterator jt=t->GetPasses().begin();
+		map<string, Program>::iterator pp=t->GetPasses().begin();
 		if(pass.length())
-			jt=t->GetPasses().find(pass);
-		if(jt==t->GetPasses().end())
+			pp=t->GetPasses().find(pass);
+		if(pp==t->GetPasses().end())
 			return 0;
-
-		unsigned programId = jt->second.CompileAndLink(m_sharedCode,log);
+		unsigned programId = pp->second.CompileAndLink(m_sharedCode,log);
 		if(programId)
 		{
 			GLFX_ERROR_CHECK
@@ -361,15 +374,15 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 				(GLsizei)tech.length(),
 				tech.c_str());
 			GLFX_ERROR_CHECK
-			passStates[programId] = jt->second.passState;
-			passProgramMap[programId]=&jt->second;
-			if(jt->second.IsTransformFeedbackShader())
+			passStates[programId] = pp->second.passState;
+			passProgramMap[programId]=&pp->second;
+			if(pp->second.IsTransformFeedbackShader())
 			{
-				Program::Shader *gs=jt->second.GetShader(GEOMETRY_SHADER);
+				Program::Shader *gs=pp->second.GetShader(GEOMETRY_SHADER);
 				if(gs)
 				{
 					if(gs->compiledShader)
-						jt->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
+						pp->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
 				}
 			}
 		}
@@ -458,8 +471,8 @@ TechniqueGroup *Effect::GetTechniqueGroupByIndex(int idx)
 
 TechniqueGroup *Effect::GetTechniqueGroupByName(const char *name)
 {
-	map<string, TechniqueGroup*>::const_iterator jt=m_techniqueGroups.find(name);
-	TechniqueGroup *group=jt->second;
+	map<string, TechniqueGroup*>::const_iterator pp=m_techniqueGroups.find(name);
+	TechniqueGroup *group=pp->second;
 	return group;
 }
 
@@ -493,7 +506,20 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
-	string shaderContent=sh.function.content;
+	// Put together the source.
+	string shaderContent					="";
+	std::set<const Function *> fns;
+	AccumulateFunctionsUsed(&sh.function,fns);
+	std::map<int,const Function *> ordered_fns;
+	for(auto u=fns.begin();u!=fns.end();u++)
+	{
+		ordered_fns[(*u)->main_linenumber]=*u;
+	}
+	for(auto u=ordered_fns.begin();u!=ordered_fns.end();u++)
+	{
+		shaderCode<<(u->second)->source;
+	}
+	shaderContent+=sh.function.content;
 	// Add shader parameters
 	for(vector<glfxstype::variable>::const_iterator it=sh.function.parameters.begin();it!=sh.function.parameters.end();++it)
 	{
@@ -776,9 +802,9 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 }
 
 const CompiledShader *Effect::AddCompiledShader(const std::string &compiledShaderName,const std::string &fnName,ShaderType sType,int version_num
-	,std::string outputStruct
-	,std::string outputStructName
-	,std::string source)
+																					,std::string outputStruct
+																					,std::string outputStructName
+																					,std::string source)
 {
 	CompiledShader *compiledShader			=new CompiledShader;
 	m_compiledShaders[compiledShaderName]	=compiledShader;
@@ -806,6 +832,15 @@ string Effect::GetDeclaredType(std::string name) const
 void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 {
 	m_filenames=filenamesUtf8;
+}
+
+void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const
+{	
+	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
+	{
+		s.insert(*u);
+		AccumulateFunctionsUsed(*u,s);
+	}
 }
 
 extern int do_mkdir(const char *path_utf8);
@@ -893,6 +928,7 @@ void Effect::Apply(unsigned pass)
 	GLFX_ERROR_CHECK
 	current_pass=pass;
 	ApplyPassTextures(pass);
+	GLFX_ERROR_CHECK
 	if (PassHasTransformFeedback(pass))
 	{
 		glEnable(GL_RASTERIZER_DISCARD);
@@ -909,6 +945,7 @@ void Effect::Apply(unsigned pass)
 	//		GL_LINES	line_strip
 //			GL_TRIANGLES	triangle_strip
 		
+	GLFX_ERROR_CHECK
 		auto i=passProgramMap.find(pass);
 		if(i!=passProgramMap.end())
 		{
@@ -928,19 +965,24 @@ That mode is determined as follows:
 				{
 					case TRIANGLES:
 						glBeginTransformFeedback(GL_TRIANGLES);
+	GLFX_ERROR_CHECK
 					break;
 					case LINES:
 						glBeginTransformFeedback(GL_LINES);
+	GLFX_ERROR_CHECK
 					break;
 					case POINTS:
 						glBeginTransformFeedback(GL_POINTS);
+	GLFX_ERROR_CHECK
 					break;
 				default:
+	GLFX_ERROR_CHECK
 					break;
 				};
 			}
 		}
 	}
+	GLFX_ERROR_CHECK
 }
 
 void Effect::Reapply(unsigned pass)

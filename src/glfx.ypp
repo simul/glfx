@@ -567,18 +567,18 @@ prog : prog tok
 	// function definition
     | IDENTIFIER IDENTIFIER '(' param_declaration_list ')' function_fx function_content lex_passthrough
 	{
-		string functionName		=$2.strs[0];
+		string functionName					=$2.strs[0];
 		buildFunction.returnType			=$1.strs[0];
 		buildFunction.content				=$7.strs[0];
 	
 		buildFunction.parameters			=*$4.vars;
 		delete $4.vars;
-		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		
 		ostringstream params;
 		bool start=true;
 		set<string> usedSamplerStates;
-		for(vector<glfxstype::variable>::iterator j=f->parameters.begin();j!=f->parameters.end();j++)
+		std::map<std::string,TextureSampler*> nonParameterTextureSamplers=buildFunction.textureSamplers;
+		for(vector<glfxstype::variable>::iterator j=buildFunction.parameters.begin();j!=buildFunction.parameters.end();j++)
 		{
 			string type=j->type;
 			// We SHOULD check the type but don't yet.
@@ -604,8 +604,8 @@ prog : prog tok
 					p.type			=j->type;
 					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
 					p.template_		=j->template_;
-					f->expanded_parameters.push_back(p);
-					buildFunction.removeTextureSampler(ts->textureSamplerName());
+					buildFunction.expanded_parameters.push_back(p);
+					nonParameterTextureSamplers.erase(ts->textureSamplerName());
 				}
 			}
 			else
@@ -626,7 +626,7 @@ prog : prog tok
 						else
 							params<<", ";
 						TextureSampler *ts=*v;
-						string type=GetTypeOfParameter(f->parameters,ts->textureName);
+						string type=GetTypeOfParameter(buildFunction.parameters,ts->textureName);
 						if(type.length()==0)
 						{
 							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second.type;
@@ -639,13 +639,14 @@ prog : prog tok
 						p.type				=type;
 						p.identifier		=ts->textureSamplerName();
 						p.template_			=j->template_;
-						f->expanded_parameters.push_back(p);
-						buildFunction.removeTextureSampler(ts->textureSamplerName());
+						buildFunction.expanded_parameters.push_back(p);
+						//buildFunction.removeTextureSampler(ts->textureSamplerName());
+						nonParameterTextureSamplers.erase(ts->textureSamplerName());
 					}
 				}
 				else
 				{
-					f->expanded_parameters.push_back(*j);
+					buildFunction.expanded_parameters.push_back(*j);
 					if(start)
 						start=false;
 					else
@@ -659,21 +660,23 @@ prog : prog tok
 		ostringstream str;
 		// Any textureSamplers not passed up the line are added to the effect's list of global textureSamplers.
 		// Note: This is only temporary until we stop including unused functions in the shared code.
-		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		for(std::map<std::string,TextureSampler*>::const_iterator i=nonParameterTextureSamplers.begin();i!=nonParameterTextureSamplers.end();i++)
 		{
 			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
-			TextureSampler *ts=f->textureSamplers[i->first];
+			TextureSampler *ts=nonParameterTextureSamplers[i->first];
 			ts->global=true;
 			if(!gEffect->DeclareTextureSampler(i->second))
 				errSem(string("Can't find texture declaration for ")+i->first);
 		}
 		
-		WriteLineNumber(str,current_filenumber,$1.lineno+(last_linenumber-global_linenumber));
-		str<< f->returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<f->content<<"\n}\n";
+		buildFunction.content_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		WriteLineNumber(str,current_filenumber,buildFunction.content_linenumber);
+		str<< buildFunction.returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<buildFunction.content<<"\n}\n";
 		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
-
-		glfxWrite(str.str().c_str());
-
+		buildFunction.main_linenumber=$1.lineno;
+		//glfxWrite(str.str().c_str());
+		buildFunction.source				=str.str();
+		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		buildFunction.clear();
 	}
 	// GL-style, e.g. shader VSMain(in type parameter,out type parameter) function_content
@@ -698,6 +701,7 @@ prog : prog tok
 		sh.function.textureSamplers					=buildFunction.textureSamplers;
 		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
 		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
+		sh.function.functionsCalled					=buildFunction.functionsCalled;
 		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
 
 
@@ -706,7 +710,6 @@ prog : prog tok
 			if(!gEffect->DeclareTextureSampler(i->second))
 				errSem(string("Can't find texture declaration for ")+i->first);
 		}
-		//sharedCode<<str.str();
 
 		buildFunction.clear();
 		delete $5.vars;
@@ -730,7 +733,7 @@ prog : prog tok
 	{
 		last_linenumber		=$3.num;
 		current_filenumber	=$4.num;
-		global_linenumber	=$1.lineno+1;// the line AFTER the #line directve.
+		global_linenumber	=$1.lineno+1;	// the line AFTER the #line directve.
 		WriteLineNumber(sharedCode,current_filenumber,last_linenumber);
 	}
 	ignore_line_statement: LINE NUM NUM
@@ -1909,7 +1912,7 @@ mult_exp		: cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
-			| mult_exp '%' cast_exp
+| mult_exp '%' cast_exp
 {
 	$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 }
@@ -2137,11 +2140,11 @@ postfix_exp		: primary_exp
 						string expr1=$1.strs[0];
 						string expr2=$2.strs[0];
 						string params;
-						auto vars=*($3.vars);
+						auto vars			=*($3.vars);
 						delete $3.vars;
-						string expr4=$4.strs[0];
-						// ok this could be a function call.
-						string command=$1.strs[2];
+						string expr4		=$4.strs[0];
+						// ok this could be a function call.(((std::basic_string<char,std::char_traits<char>,std::allocator<char> >*)(&(command)))->_Bx._Buf)[0]=='d'
+						string command		=$1.strs[2];
 						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
 						auto j=functions.find(command);
 						if(j==functions.end())
@@ -2150,37 +2153,27 @@ postfix_exp		: primary_exp
 						}
 						else
 						{
-							auto u=j->second.begin();
-							for(;u!=j->second.end();u++)
+							int num=0;
+							for(auto u=j->second.begin();u!=j->second.end();u++)
 							{
-								if((*u)->parameters.size()==vars.size())
-									break;
+								if((*u)->parameters.size()!=vars.size())
+									continue;
+								buildFunction.functionsCalled.insert(*u);
+								num++;
 							}
-							if(u==j->second.end())
+							for(auto u=j->second.begin();u!=j->second.end();u++)
 							{
-								errSem(string("No matching function definition found for ")+command);
-								break;
-							}
-							const Function &f=**u;
-							buildFunction.functionsCalled.insert(*u);
-							// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
-							// We figure out this mapping by looking at the vars list of the function we're calling.
-							//	this is the unmodified list, so it corresponds to the call we're making.
-							for(vector<glfxstype::variable>::const_iterator i=f.expanded_parameters.begin();i!=f.expanded_parameters.end();i++)
-							{
-								string declared_name=i->identifier;
-								// That's how the parameter was declared. Is it in the original list?
-								int index=GetIndexOfParameter(f.parameters,declared_name);
-								// If so we pass the corresponding parameter from the call.
-								if(index>=0)
+								if((*u)->parameters.size()!=vars.size())
+									continue;
+								const Function &f=**u;
+								// If it's a known function, there may need to be a mapping from the texture and sampler parameters.
+								// We figure out this mapping by looking at the vars list of the function we're calling.
+								//	this is the unmodified list, so it corresponds to the call we're making.
+								for(vector<glfxstype::variable>::const_iterator i=f.expanded_parameters.begin();i!=f.expanded_parameters.end();i++)
 								{
-									const glfxstype::variable &p=vars[index];
-									if(params.size())
-										params+=",";
-									params+=p.identifier;
-								}
-								else // could be a textureSampler...
-								{
+									string declared_name=i->identifier;
+									// That's how the parameter was declared. Is it in the original list?
+									int index=GetIndexOfParameter(f.parameters,declared_name);
 									auto u=f.textureSamplers.find(declared_name);
 									if(u!=f.textureSamplers.end())
 									{
@@ -2197,15 +2190,35 @@ postfix_exp		: primary_exp
 										if(params.size())
 											params+=",";
 										params+=ts_new->textureSamplerName();
-										
+									
+									}
+									// If so we pass the corresponding parameter from the call.
+									else if(index>=0)
+									{
+										const glfxstype::variable &p=vars[index];
+										if(params.size())
+											params+=",";
+										params+=p.identifier;
+									}
+									else // could be a textureSampler...
+									{
+										if(params.size())
+											params+=",";
+										params+=declared_name;
 									}
 								}
+								for(auto j=f.textureSamplers.begin();j!=f.textureSamplers.end();j++)
+								{
+									TextureSampler *ts		=j->second;
+									if(ts->global)
+										AddTextureSampler(ts->textureName,ts->samplerStateName)->global=true;
+								}
+								break;
 							}
-							for(auto j=f.textureSamplers.begin();j!=f.textureSamplers.end();j++)
+							if(num==0)
 							{
-								TextureSampler *ts		=j->second;
-								if(ts->global)
-									AddTextureSampler(ts->textureName,ts->samplerStateName)->global=true;
+								errSem(string("No matching function definition found for ")+command);
+								break;
 							}
 						}
 						$$.strs[0]=expr1+expr2+params+expr4;

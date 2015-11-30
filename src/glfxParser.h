@@ -208,6 +208,28 @@ enum GLTextureType
 	, gimage2DMS				//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 	, gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
+
+inline bool IsTextureWriteable(GLTextureType glTextureType)
+{
+	switch(glTextureType)
+	{
+	case gimage1D			:
+	case gimage2D			:
+	case gimage3D			:
+	case gimageCube			:
+	case gimage2DRect		:
+	case gimage1DArray		:
+	case gimage2DArray		:
+	case gimageCubeArray	:
+	case gimageBuffer		:
+	case gimage2DMS			:
+	case gimage2DMSArray:
+		return true;
+	default:
+		return false;
+	};
+}
+
 inline int GetTextureDimension(GLTextureType glTextureType,bool array_as_2d=false)
 {
 	switch(glTextureType)
@@ -249,13 +271,15 @@ struct Function
 		{
 			delete i->second;
 		}
-		functionsCalled.cbegin();
+		functionsCalled.clear();
 		(*this)=Function();
 	}
 	void operator=(const Function &f)
 	{
+		functionsCalled		=f.functionsCalled;
 		returnType			=f.returnType;
 		content				=f.content;
+		source				=f.source;
 		main_linenumber		=f.main_linenumber;
 		content_linenumber	=f.content_linenumber;
 		current_filenumber	=f.current_filenumber;
@@ -275,7 +299,10 @@ struct Function
 	}
 	std::set<Function*> functionsCalled;
 	std::string returnType;
+	// The content inside the braces.
 	std::string content;
+	// Not very efficient, but here's the whole function, including declarations
+	std::string source;
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
