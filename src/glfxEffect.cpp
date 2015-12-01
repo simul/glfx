@@ -356,42 +356,55 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		assert(tech.length());
 		return 0;
 	}
-	else
+	
+	TechniqueGroup *group	=current_group;
+	map<string, Technique*>::iterator it = group->m_techniques.find(tech);
+	if (it == group->m_techniques.end())
+		return 0;
+	Technique *t			=it->second;
+	map<string, Program>::iterator pp=t->GetPasses().begin();
+	if(pass.length())
+		pp=t->GetPasses().find(pass);
+	if(pp==t->GetPasses().end())
+		return 0;
+	unsigned programId		= pp->second.CompileAndLink(m_sharedCode,log);
+	if(programId)
 	{
-		TechniqueGroup *group=current_group;
-		map<string, Technique*>::iterator it = group->m_techniques.find(tech);
-		if (it == group->m_techniques.end())
-			return 0;
-		Technique *t	=it->second;
-		map<string, Program>::iterator pp=t->GetPasses().begin();
-		if(pass.length())
-			pp=t->GetPasses().find(pass);
-		if(pp==t->GetPasses().end())
-			return 0;
-		unsigned programId = pp->second.CompileAndLink(m_sharedCode,log);
-		if(programId)
+		GLFX_ERROR_CHECK
+		glObjectLabel(GL_PROGRAM,
+			programId,
+			(GLsizei)tech.length(),
+			tech.c_str());
+		GLFX_ERROR_CHECK
+		passStates[programId] = pp->second.passState;
+		passProgramMap[programId]=&pp->second;
+		if(pp->second.IsTransformFeedbackShader())
 		{
-			GLFX_ERROR_CHECK
-			glObjectLabel(GL_PROGRAM,
-				programId,
-				(GLsizei)tech.length(),
-				tech.c_str());
-			GLFX_ERROR_CHECK
-			passStates[programId] = pp->second.passState;
-			passProgramMap[programId]=&pp->second;
-			if(pp->second.IsTransformFeedbackShader())
+			Program::Shader *gs=pp->second.GetShader(GEOMETRY_SHADER);
+			if(gs)
 			{
-				Program::Shader *gs=pp->second.GetShader(GEOMETRY_SHADER);
-				if(gs)
-				{
-					if(gs->compiledShader)
-						pp->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
-				}
+				if(gs->compiledShader)
+					pp->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
 			}
 		}
-		return programId;
 	}
+	return programId;
+}/*
+
+unsigned Effect::GetProgramVariant(unsigned main_program)
+{
+	TechniqueGroup *group	=current_group;
+	for(auto i=group->m_techniques.begin();i!=group->m_techniques.end();i++)
+	{
+		for(auto j=i->second->GetPasses().begin();j!=i->second->GetPasses().end();j++)
+		{
+			if(main_program==j->second.programId)
+				return j->second.GetApplicableVariant();
+		}
+	}
+	return 0;
 }
+*/
 
 ostringstream& Effect::Log()
 {
@@ -954,7 +967,8 @@ void Effect::Apply(unsigned pass)
 	glUseProgram(pass);
 	GLFX_ERROR_CHECK
 	current_pass=pass;
-	ApplyPassTextures(pass);
+	current_pass=ApplyPassTextures(pass);
+	glUseProgram(current_pass);
 	GLFX_ERROR_CHECK
 	if (PassHasTransformFeedback(pass))
 	{
@@ -1028,11 +1042,36 @@ void Effect::Unapply()
 	current_pass=0;
 }
 
-void Effect::ApplyPassTextures(unsigned pass)
+unsigned Effect::ApplyPassTextures(unsigned pass)
 {
 	if(!pass)
-		return;
+		return 0;
 	GLFX_ERROR_CHECK
+	unsigned variantNumber=0;
+	auto p=passProgramMap.find(pass);
+	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
+	{
+		int main_texture_number		=i->second;
+		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
+		if(!ta.write)
+			continue;
+		GLenum f=ta.format;
+		if(f==GL_RGBA16F)
+		{
+			auto u=p->second->GetVariantVariables();
+			int variantIndex=0;
+			for(auto v=u.begin();v!=u.end();v++,variantIndex++)
+			{
+				if((*v)==i->first)
+				{
+					variantNumber|=(1<<variantIndex);
+				}
+			}
+		}
+	}
+	 current_pass=pass;
+	if(variantNumber)
+		current_pass=p->second->GetVariantPass(variantNumber);
 	std::map<unsigned,PassState>::iterator j=passStates.find(pass);
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
@@ -1090,6 +1129,7 @@ void Effect::ApplyPassTextures(unsigned pass)
 			}
 		}
 	}
+	return current_pass;
 }
 
 void Effect::ApplyPassState(unsigned pass)

@@ -30,7 +30,18 @@ namespace glfxParser
 		~Program();
 		const Program &operator=(const Program &);
 		unsigned CompileAndLink(const std::string &shared_src,std::string& log) ;
-		unsigned programId;
+		struct Variant
+		{
+			unsigned programId;
+		};
+		unsigned GetVariantPass(unsigned v) const
+		{
+			return variants[v].programId;
+		}
+		const std::vector<std::string> GetVariantVariables() const
+		{
+			return variantVariables;
+		}
 		bool IsTransformFeedbackShader() const
 		{
 			return transformFeedback;
@@ -50,6 +61,9 @@ namespace glfxParser
 	private:
 		int CompileShader(unsigned shader, const std::string& name,const std::string &shared, const std::string &src, ShaderType type,ostringstream& sLog) const;
 		std::string	computeLayout;
+		// The names of the RW textures that have variants.
+		std::vector<std::string> variantVariables;
+		std::map<unsigned,Variant> variants;
 		Shader		m_shaders[NUM_OF_SHADER_TYPES];
 		bool		m_separable;
 		bool		transformFeedback;

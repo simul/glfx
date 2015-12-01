@@ -126,6 +126,7 @@ const Program& Program::operator=(const Program& prog)
 	{
 		m_shaders[i] = prog.m_shaders[i];
 	}
+	variants=prog.variants;
 	passState = prog.passState;
 	programId = prog.programId;
 	m_separable = prog.m_separable;
@@ -134,6 +135,12 @@ const Program& Program::operator=(const Program& prog)
 	computeLayout = prog.computeLayout;
 	return *this;
 }
+
+unsigned Program::GetApplicableVariant()
+{
+	return programId;
+}
+
 #ifdef GLFX_GLSLANG
 // Convert our shadertype list to Glslang's. Numerically, they are probably the same,
 // but we can't rely on that.
@@ -522,26 +529,39 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 		}
 	}
 #endif
-    vector<GLuint> shaders;
-	if (programId)
-		glDeleteProgram(programId);
-    programId=glCreateProgram();
-	// This MUST match up with ShaderType enum definition.
-    GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
-                                            GL_TESS_CONTROL_SHADER,
-                                            GL_TESS_EVALUATION_SHADER,
-                                            GL_GEOMETRY_SHADER,
-                                            GL_FRAGMENT_SHADER,
-                                            GL_COMPUTE_SHADER};
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-        if(m_shaders[i].compiledShader&&res)
+        if(m_shaders[i].compiledShader->variantDeclarations.size())
 		{
-            shaders.push_back(glCreateShader(shaderTypes[i]));
-			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
-            glAttachShader(programId, shaders.back());
-        }
-    }
+			for(auto j=m_shaders[i].compiledShader->variantDeclarations.begin();j!=m_shaders[i].compiledShader->variantDeclarations.end();j++)
+			this->variantVariables.push_back((*j));
+		}
+	}
+	// The number of variants is 2^ the number of variant variables.
+	int numVariants=1<<(variantVariables.size());
+	for(int i=0;i<numVariants;i++)
+	{
+		vector<GLuint> shaders;
+		if (programId)
+			glDeleteProgram(programId);
+		programId=glCreateProgram();
+		// This MUST match up with ShaderType enum definition.
+		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
+												GL_TESS_CONTROL_SHADER,
+												GL_TESS_EVALUATION_SHADER,
+												GL_GEOMETRY_SHADER,
+												GL_FRAGMENT_SHADER,
+												GL_COMPUTE_SHADER};
+		for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+		{
+			if(m_shaders[i].compiledShader&&res)
+			{
+				shaders.push_back(glCreateShader(shaderTypes[i]));
+				res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
+				glAttachShader(programId, shaders.back());
+			}
+		}
+	}
    // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
 	// values from the shader.
 	if(IsTransformFeedbackShader())

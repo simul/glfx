@@ -91,6 +91,11 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 * Return value: GL program id if success, 0 otherwise
 **************************************************/
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
+/*! This function gets a variant of the specified program, depending on the currently assigned writeable textures.
+This is required because GLSL needs an image (writeable texture) to be explicitly specified as 16-bit or 32-bit, so
+to avoid requiring developers to create 16- and 32-bit versions of shaders, we just create variants automatically.
+*/
+//GLFXAPI GLuint GLFX_APIENTRY glfxGetProgramVariant(int effect,GLuint main_program);
 
 GLFXAPI const char * GLFX_APIENTRY glfxGetCacheDirectory();
 GLFXAPI bool GLFX_APIENTRY glfxIsGlslangValidationEnabled();

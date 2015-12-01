@@ -119,6 +119,7 @@ namespace glfxParser
 		void SetSharedCode(const string &str);
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
+		//unsigned GetProgramVariant(unsigned main_program);
 		unsigned CreateSampler(const string& sampler) const;
 		bool SetVersionForProfile(int v,const std::string &prof);
 		void AddComputeLayout(const std::string &name,const ComputeLayout &tg);
@@ -152,7 +153,8 @@ namespace glfxParser
 		void Apply(unsigned pass);
 		void Reapply(unsigned pass);
 		void Unapply();
-		void ApplyPassTextures(unsigned pass);
+		// Returns the variant pass if needed.
+		unsigned ApplyPassTextures(unsigned pass);
 		void ApplyPassState(unsigned pass);
 		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
 		void SetSamplerState(const char *name, unsigned sam);

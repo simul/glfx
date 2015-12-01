@@ -1015,4 +1015,9 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
     gEffects[effect]->Log()<<slog;
 
     return progid;
-}
+}/*
+
+GLuint GLFX_APIENTRY glfxGetProgramVariant(int effect,GLuint main_program)
+{
+	return gEffects[effect]->GetProgramVariant(main_program);
+}*/
