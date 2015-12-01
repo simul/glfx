@@ -314,23 +314,24 @@ bool Effect::SetVersionForProfile(int profileNum,const std::string &profileName)
 
 bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledShaderName,const std::string &rvalCompiledShaderName)
 {
-		CompiledShader *compiledShader	=m_compiledShaders[rvalCompiledShaderName];
-		CompiledShaderMap::iterator i	=m_compiledShaders.find(lvalCompiledShaderName);
-		if(i!=gEffect->m_compiledShaders.end())
-		{
-			delete i->second;
-			// TODO: Warn here about double-compiling a shader.
-			m_log<<("double-compiling shader ")<<std::endl;
-		}
-		if(sType!=compiledShader->shaderType)
-		{
-			m_log<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
+	CompiledShader *compiledShader	=m_compiledShaders[rvalCompiledShaderName];
+	CompiledShaderMap::iterator i	=m_compiledShaders.find(lvalCompiledShaderName);
+	if(i!=gEffect->m_compiledShaders.end())
+	{
+		delete i->second;
+		// TODO: Warn here about double-compiling a shader.
+		m_log<<("double-compiling shader ")<<std::endl;
+	}
+	if(sType!=compiledShader->shaderType)
+	{
+		m_log<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
 
-			return false;
-		}
-		m_compiledShaders[lvalCompiledShaderName]=compiledShader;
-		return true;
+		return false;
+	}
+	m_compiledShaders[lvalCompiledShaderName]=compiledShader;
+	return true;
 }
+
 bool& Effect::Active()
 {
     return m_active;
@@ -504,31 +505,33 @@ bool IsIntegerType(const string &type)
 	return false;
 }
 
-void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,const std::string &compiledsh)
+void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,const std::string &compiledName)
 {
-	CompiledShader *compiledShader=m_compiledShaders[compiledsh];
+	CompiledShader *compiledShader=m_compiledShaders[compiledName];
 	compiledShader->transformFeedbackTopology = UNDEFINED_TOPOLOGY;
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
 	// Put together the source.
-	string shaderContent					="";
+	string shaderContent;
+	shaderCode<<"#define rgba16_or_32f rgba16f\n";
 	std::set<const Function *> fns;
 	AccumulateFunctionsUsed(&sh.function,fns);
-
 	// Insert the textures declared that the functions use.
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
-		for(auto v=(*u)->textureSamplers.begin();v!=(*u)->textureSamplers.end();v++)
+		for(auto v=(*u)->declarations.begin();v!=(*u)->declarations.end();v++)
 		{
-			string ts_name=v->second->textureName;
-			const DeclaredTexture *dec=m_declaredTextures[ts_name];
+			string dec_name=*v;
+			const DeclaredTexture *dec=m_declaredTextures[dec_name];
 			WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
 			if(IsTextureWriteable(dec->type_enum))
 				shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
-			shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<v->first<<";\n";
+			shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<dec_name<<";\n";
 			if(IsTextureWriteable(dec->type_enum))
 				shaderCode<<"#endif\n";
+			if(dec->variant)
+				compiledShader->variantDeclarations.insert(dec_name);
 		}
 	}
 
@@ -536,7 +539,9 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	std::map<int,const Function *> ordered_fns;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
-		ordered_fns[(*u)->main_linenumber]=*u;
+		// Add only the called functions, not the main one. That goes at the end.
+		if(*u!=&sh.function)
+			ordered_fns[(*u)->main_linenumber]=*u;
 	}
 	for(auto u=ordered_fns.begin();u!=ordered_fns.end();u++)
 	{
@@ -820,7 +825,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
 
 	compiledShader->source=shaderCode.str();
-
 	// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 }
 
@@ -859,9 +863,9 @@ void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 
 void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const
 {	
+	s.insert(f);
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
-		s.insert(*u);
 		AccumulateFunctionsUsed(*u,s);
 	}
 }

@@ -90,7 +90,6 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 *   program -- Program name
 * Return value: GL program id if success, 0 otherwise
 **************************************************/
-//GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
 
 GLFXAPI const char * GLFX_APIENTRY glfxGetCacheDirectory();

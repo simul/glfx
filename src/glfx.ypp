@@ -98,7 +98,9 @@
 	{
 		if(s==string("vec4"))
 		{
-			return "layout(rgba32f)";
+			// We want to be able to write both, so we will add in a #define rgba16_or_32f rgba32f or rgba16f
+			// at the appropriate time.
+			return "layout(rgba16_or_32f)";
 		}
 		if(s==string("char4"))
 		{
@@ -397,6 +399,7 @@ prog : prog tok
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 
 		DeclaredTexture dec;
+		dec.variant		=(template_type==string("vec4"));
 		dec.file_number	=current_filenumber;
 		dec.line_number	=$1.lineno+last_linenumber-global_linenumber;
 		dec.type		=type;
@@ -588,6 +591,12 @@ prog : prog tok
 			string type=j->type;
 			// We SHOULD check the type but don't yet.
 			string name=j->identifier;
+			// Is the paramater in our declarations list?
+			auto a=buildFunction.declarations.find(name);
+			if(a!=buildFunction.declarations.end())
+			{
+				buildFunction.declarations.erase(a);
+			}
 			// Is this one of the textures in the textureSampler list?
 			auto u=buildFunction.textureSamplersByTexture.find(name);
 			if(u!=buildFunction.textureSamplersByTexture.end())
@@ -690,6 +699,7 @@ prog : prog tok
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
 		sh.shaderName			=$3.strs[0];
 		sh.maxGSVertexCount		=maxVertexCount;
+
 		sh.function.returnType	=$2.strs[0];
 		sh.function.content		=$8.strs[0];
 		sh.returnable			=$8.strs[1];
@@ -702,13 +712,12 @@ prog : prog tok
 		ostringstream finalCode;
 		sh.function.parameters	=*$5.vars;
 
-		
+		sh.function.declarations					=buildFunction.declarations;
 		sh.function.textureSamplers					=buildFunction.textureSamplers;
 		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
 		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
 		sh.function.functionsCalled					=buildFunction.functionsCalled;
 		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
-
 
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
@@ -1362,7 +1371,6 @@ shader_compile: IDENTIFIER
 			string tempName							=gsName+"_GS_with_SO";
 			$$.strs[0]								=tempName;
 		
-			//gEffect->GetCompiledShaders()[tempName]	=new_cs=new CompiledShader;
 			if(i==gEffect->GetCompiledShaders().end())
 			{
 				ostringstream msg;
@@ -2004,7 +2012,6 @@ postfix_exp		: primary_exp
 						$$.strs[3]=index;
 						$$.strs[2]=$1.strs[2];			//Command
 
-						
 						// Is it actually a texture we're indexing?
 						GLTextureType glTextureType			=GetTextureType(buildFunction,varName);
 						if(glTextureType==0)
@@ -2013,6 +2020,7 @@ postfix_exp		: primary_exp
 						}
 						else
 						{
+							buildFunction.declarations.insert(varName);
 							ostringstream str;
 							if(IsRWTexture(glTextureType))
 							{
@@ -2030,8 +2038,9 @@ postfix_exp		: primary_exp
 						string textureName	=$1.strs[1];
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
-
+						
 						$$.strs[0]=GetSizeFunction( textureName, x, y,"");
+						buildFunction.declarations.insert(textureName);
 					}
 					| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
 					{
@@ -2040,6 +2049,7 @@ postfix_exp		: primary_exp
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
 						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
+						buildFunction.declarations.insert(textureName);
 					}
 					| tex_load_exp '(' argument_exp_list ')'
 					{
@@ -2088,6 +2098,7 @@ postfix_exp		: primary_exp
 							full_expr<<",int("<<msaa_index<<")";
 						full_expr<<")";
 						$$.strs[0]				=full_expr.str();
+						buildFunction.declarations.insert(textureName);
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{
@@ -2095,7 +2106,8 @@ postfix_exp		: primary_exp
 						string command			=$1.strs[2];
 						string samplerStateName	=$3.strs[0];
 						string otherParams		=$5.strs[0];
-
+						
+						buildFunction.declarations.insert(textureName);
 						// The actual texturing command depends on the type of the texture.
 						if(IsDeclared(textureName))
 						{

@@ -267,6 +267,7 @@ struct Declaration
 
 struct DeclaredTexture:public Declaration
 {
+	bool variant;			// if true, we must define 16-bit and 32-bit texture output versions.
 	std::string type;
 	std::string layout;
 	GLTextureType type_enum;
@@ -285,6 +286,7 @@ struct Function
 	}
 	void operator=(const Function &f)
 	{
+		declarations		=f.declarations;
 		functionsCalled		=f.functionsCalled;
 		returnType			=f.returnType;
 		content				=f.content;
@@ -315,6 +317,9 @@ struct Function
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
+	/// While building the function this includes anything that's references. Afterwards we remove the parameters from this list, so it's a
+	/// just anything global that this function uses.
+	std::set<std::string> declarations;
 	std::vector<glfxstype::variable> parameters;					// the original parameters as defined in the source code.
 	std::vector<glfxstype::variable> expanded_parameters;			// the expanded parameter list including textureSamplers.
 	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
@@ -369,6 +374,8 @@ struct CompiledShader
 	std::string source;
 	std::string outputStruct;
 	std::string outputStructName;
+	/// What RW textures, if any, need to have both 32-bit and 16-bit variants?
+	std::set<std::string> variantDeclarations;
 };
 
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
