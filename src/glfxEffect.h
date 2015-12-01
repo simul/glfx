@@ -24,14 +24,18 @@ namespace glfxParser
 	//!		Profile vs_4_0(410);
 	class Effect
 	{
+	public:
+		~Effect();
+		Effect();
 	protected:
 		string												m_dir;
 		string												m_filename;
+		std::vector<Declaration *>							declarations;
 		std::map<std::string,TechniqueGroup*>				m_techniqueGroups;
 		std::map<std::string,BlendState*>					m_blendStates;
 		std::map<std::string,DepthStencilState*>			m_depthStencilStates;
 		std::map<std::string,SamplerState*>					m_samplerStates;
-		std::map<std::string,DeclaredTexture>				m_declaredTextures;
+		std::map<std::string,DeclaredTexture*>				m_declaredTextures;
 		std::map<std::string,RasterizerState*>				m_rasterizerStates;
 		std::map<std::string,ComputeLayout>					m_shaderLayouts;
 		std::map<unsigned,PassState>						passStates;
@@ -54,7 +58,7 @@ namespace glfxParser
 		std::vector<std::string>							m_techniqueNames;
 		std::vector<std::string>							m_techniqueGroupNames;
 // TEMPORARIES USED IN CONSTRUCTION
-		std::map<string, DeclaredTexture>					additionalTextureDeclarations;
+		std::map<string, DeclaredTexture *>					additionalTextureDeclarations;
 // STATE
 		ostringstream										m_log;
 		std::map<int, int>									textureDimensions;
@@ -71,8 +75,6 @@ namespace glfxParser
 // POST-INIT
 		void CreateDefinedSamplers();
 	public:
-		~Effect();
-		Effect();
 		void SaveToCache(const std::string &filename);
 		void LoadFromCache(const std::string &filename);
 // GET INFO
@@ -84,7 +86,7 @@ namespace glfxParser
 		{
 			return m_profileToVersion;
 		}
-		const std::map<std::string,DeclaredTexture> &GetDeclaredTextures() const
+		const std::map<std::string,DeclaredTexture*> &GetDeclaredTextures() const
 		{
 			return m_declaredTextures;
 		}

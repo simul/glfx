@@ -56,6 +56,8 @@ Effect::~Effect()
 		delete i->second;
 	for (auto i = glSamplerStates.begin(); i != glSamplerStates.end(); i++)
 		glDeleteSamplers(1,&(i->second));
+	for (auto i = m_declaredTextures.begin(); i != m_declaredTextures.end(); i++)
+		delete i->second;
 }
 
 void Effect::Clear()
@@ -108,7 +110,7 @@ int Effect::GetTextureNumber(const char *name)
 		}
 		else
 		{
-			textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+			textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 		}
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
@@ -118,7 +120,7 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+				textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 				current_texture_number++;
 			}
 		}
@@ -140,14 +142,14 @@ int Effect::GetImageNumber(const char *name)
 		auto u=m_declaredTextures.find(n);
 		if(u==m_declaredTextures.end())
 			return 0;
-		if(!IsTextureWriteable(u->second.type_enum))
+		if(!IsTextureWriteable(u->second->type_enum))
 			return 0;
 		if(stricmp(name,"cloudDensity")==0)
 		{
 			std::cerr<<"cloudDensity";
 		}
 		textureNumberMap[n] = current_image_number + 1000;
-		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 		current_image_number++;
 	}
 	return image_number;
@@ -397,7 +399,9 @@ ostringstream& Effect::Log()
 
 bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
-	m_declaredTextures[name]=ts;
+	DeclaredTexture *t=new DeclaredTexture(ts);
+	m_declaredTextures[name]=t;
+	declarations.push_back(t);
 	return true;
 }
 
@@ -410,11 +414,12 @@ bool Effect::DeclareTextureSampler(const TextureSampler *ts)
 	string texture_name	=ts->textureName;
 	if (IsDeclared(texture_name))
 	{
-		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second.type;
-		//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-		additionalTextureDeclarations[tsname].type		=sampler_type;
+		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second->type;
+		DeclaredTexture *t=new DeclaredTexture;
+		additionalTextureDeclarations[tsname]=t;
+		t->type			=sampler_type;
 		auto d=GetDeclaredTextures();
-		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
+		t->type_enum = (d.find(texture_name))->second->type_enum;
 		// We know that this texture-sampler combo will be used in this shader.
 		return true;
 	}
@@ -510,6 +515,24 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	string shaderContent					="";
 	std::set<const Function *> fns;
 	AccumulateFunctionsUsed(&sh.function,fns);
+
+	// Insert the textures declared that the functions use.
+	for(auto u=fns.begin();u!=fns.end();u++)
+	{
+		for(auto v=(*u)->textureSamplers.begin();v!=(*u)->textureSamplers.end();v++)
+		{
+			string ts_name=v->second->textureName;
+			const DeclaredTexture *dec=m_declaredTextures[ts_name];
+			WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
+			if(IsTextureWriteable(dec->type_enum))
+				shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
+			shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<v->first<<";\n";
+			if(IsTextureWriteable(dec->type_enum))
+				shaderCode<<"#endif\n";
+		}
+	}
+
+
 	std::map<int,const Function *> ordered_fns;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
@@ -825,7 +848,7 @@ string Effect::GetDeclaredType(std::string name) const
 		return "SamplerState";
 	auto i=m_declaredTextures.find(name);
 	if(i!=m_declaredTextures.end())
-		return i->second.type;
+		return i->second->type;
 	return "unknown";
 }
 
@@ -863,7 +886,7 @@ void Effect::PopulateProgramList()
 	ostringstream decl;
 	for(auto i=additionalTextureDeclarations.begin();i!=gEffect->additionalTextureDeclarations.end();i++)
 	{
-		decl << "uniform " << i->second.type << " " << i->first << ";\n";
+		decl << "uniform " << i->second->type << " " << i->first << ";\n";
 	}
 	m_sharedCode=(decl.str()+m_sharedCode);
 

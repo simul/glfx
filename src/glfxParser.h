@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 using namespace std;
 using namespace glfxParser;
+extern void WriteLineNumber(std::ostringstream &str,int fileno,int lineno);
 /// Values that represent LayoutType.
 enum LayoutType
 {
@@ -257,9 +258,17 @@ inline int GetTextureDimension(GLTextureType glTextureType,bool array_as_2d=fals
 		break;
 	}
 }
-struct DeclaredTexture
+
+struct Declaration
+{
+	int file_number;
+	int line_number;
+};
+
+struct DeclaredTexture:public Declaration
 {
 	std::string type;
+	std::string layout;
 	GLTextureType type_enum;
 };
 /// A struct representing a function that has been parsed from source.
@@ -336,6 +345,7 @@ struct ComputeLayout
 	int x,y,z;
 	std::string text() const;
 };
+
 struct CompilableShader
 {
 	std::string shaderName;
@@ -347,6 +357,7 @@ struct CompilableShader
 	int current_filenumber;
 	int maxGSVertexCount;
 };
+
 //! A shader to be compiled. 
 struct CompiledShader
 {
@@ -359,6 +370,7 @@ struct CompiledShader
 	std::string outputStruct;
 	std::string outputStructName;
 };
+
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
 extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);
