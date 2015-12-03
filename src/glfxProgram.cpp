@@ -522,7 +522,8 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 #endif
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
-        if(m_shaders[i].compiledShader->variantDeclarations.size())
+
+        if(m_shaders[i].compiledShader&&m_shaders[i].compiledShader->variantDeclarations.size())
 		{
 			for(auto j=m_shaders[i].compiledShader->variantDeclarations.begin();j!=m_shaders[i].compiledShader->variantDeclarations.end();j++)
 			this->variantVariables.push_back((*j));
