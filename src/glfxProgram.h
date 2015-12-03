@@ -32,11 +32,17 @@ namespace glfxParser
 		unsigned CompileAndLink(const std::string &shared_src,std::string& log) ;
 		struct Variant
 		{
+			Variant():programId(0)
+			{
+			}
 			unsigned programId;
 		};
 		unsigned GetVariantPass(unsigned v) const
 		{
-			return variants[v].programId;
+			auto e=variants.find(v);
+			if(e==variants.end())
+				return 0;
+			return e->second.programId;
 		}
 		const std::vector<std::string> GetVariantVariables() const
 		{

@@ -53,8 +53,6 @@ Technique::Technique(const map<std::string, Program>& passes)
 
 Technique::~Technique()
 {
-	for (auto it = m_passes.begin(); it != m_passes.end(); ++it)
-		glDeleteProgram(it->second.programId);
 }
 
 TechniqueGroup::~TechniqueGroup()
@@ -65,8 +63,7 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	,const map<string, set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout)
-	:programId(0)
-	,transformFeedback(false)
+	:transformFeedback(false)
 	,computeLayout(compute_layout)
 	,transformFeedbackTopology(POINTS)
 {
@@ -106,7 +103,6 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 }
 
 Program::Program()
-: programId(0)
 {
 }
 
@@ -128,7 +124,6 @@ const Program& Program::operator=(const Program& prog)
 	}
 	variants=prog.variants;
 	passState = prog.passState;
-	programId = prog.programId;
 	m_separable = prog.m_separable;
 	transformFeedback = prog.transformFeedback;
 	transformFeedbackTopology = prog.transformFeedbackTopology;
@@ -136,10 +131,6 @@ const Program& Program::operator=(const Program& prog)
 	return *this;
 }
 
-unsigned Program::GetApplicableVariant()
-{
-	return programId;
-}
 
 #ifdef GLFX_GLSLANG
 // Convert our shadertype list to Glslang's. Numerically, they are probably the same,
@@ -542,9 +533,10 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	for(int i=0;i<numVariants;i++)
 	{
 		vector<GLuint> shaders;
-		if (programId)
-			glDeleteProgram(programId);
-		programId=glCreateProgram();
+		Variant &v=variants[i];
+		if(v.programId)
+			glDeleteProgram(v.programId);
+		v.programId=glCreateProgram();
 		// This MUST match up with ShaderType enum definition.
 		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
 												GL_TESS_CONTROL_SHADER,
@@ -558,59 +550,58 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 			{
 				shaders.push_back(glCreateShader(shaderTypes[i]));
 				res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
-				glAttachShader(programId, shaders.back());
+				glAttachShader(v.programId, shaders.back());
 			}
-		}
-	}
-   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
-	// values from the shader.
-	if(IsTransformFeedbackShader())
-	{
-		ShaderType outputShader=m_shaders[GEOMETRY_SHADER].compiledShader?GEOMETRY_SHADER:VERTEX_SHADER;
-		const vector<string> &feedbackOutput=m_shaders[outputShader].compiledShader->feedbackOutput;
-		if(feedbackOutput.size())
+			}
+	   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
+		// values from the shader.
+		if(IsTransformFeedbackShader())
 		{
-			GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
-			for(int i=0;i<feedbackOutput.size();i++)
+			ShaderType outputShader=m_shaders[GEOMETRY_SHADER].compiledShader?GEOMETRY_SHADER:VERTEX_SHADER;
+			const vector<string> &feedbackOutput=m_shaders[outputShader].compiledShader->feedbackOutput;
+			if(feedbackOutput.size())
 			{
-				Strings[i]=feedbackOutput[i].c_str();
+				GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
+				for(int i=0;i<feedbackOutput.size();i++)
+				{
+					Strings[i]=feedbackOutput[i].c_str();
+				}
+				glTransformFeedbackVaryings(v.programId,(GLsizei)feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
+				delete Strings;
 			}
-			glTransformFeedbackVaryings(programId,(GLsizei)feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
-			delete Strings;
 		}
-	}
-    if(m_separable)
-        glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
-	try
-	{
-		glLinkProgram(programId);
-	}
-	catch(...)
-	{
-		throw std::runtime_error("Link error");
-	}
-    if(res)
-	{
-		GLint lnk;
-		glGetProgramiv(programId, GL_LINK_STATUS, &lnk);
-		res&=lnk;
-		if(!lnk)
+		if(m_separable)
+			glProgramParameteri(v.programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
+		try
 		{
-			sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
-			int len=0;
-			glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &len);
-			char infoLog[1024];
-			glGetProgramInfoLog(programId,1024,&len,infoLog);
-			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+			glLinkProgram(v.programId);
+		}
+		catch(...)
+		{
+			throw std::runtime_error("Link error");
+		}
+		if(res)
+		{
+			GLint lnk;
+			glGetProgramiv(v.programId, GL_LINK_STATUS, &lnk);
+			res&=lnk;
+			if(!lnk)
+			{
+				sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
+				int len=0;
+				glGetProgramiv(v.programId, GL_INFO_LOG_LENGTH, &len);
+				char infoLog[1024];
+				glGetProgramInfoLog(v.programId,1024,&len,infoLog);
+				sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+			}
+		}
+	
+		for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
+		{
+			glDetachShader(v.programId, *it);
+			glDeleteShader(*it);
 		}
 	}
-	
-    for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
-	{
-        glDetachShader(programId, *it);
-        glDeleteShader(*it);
-    }
-	
     log=sLog.str();
 	
 #ifdef GLFX_GLSLANG
@@ -619,7 +610,7 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
     if(!res)
         return 0;
 
-    return programId;
+    return variants[0].programId;
 }
 
 static int dirExists(const char *path)
