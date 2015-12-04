@@ -65,7 +65,7 @@ namespace glfxParser
 			return &(m_shaders[type]);
 		}
 	private:
-		int CompileShader(unsigned shader, const std::string& name,const std::string &shared, const std::string &src, ShaderType type,ostringstream& sLog) const;
+		int CompileShader(unsigned shader, const std::string& name,const std::string &variantDefs,const std::string &shared, const std::string &src, ShaderType type,ostringstream& sLog) const;
 		std::string	computeLayout;
 		// The names of the RW textures that have variants.
 		std::vector<std::string> variantVariables;

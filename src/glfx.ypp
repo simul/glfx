@@ -70,6 +70,10 @@
 		else errSem("Expected boolean.");
 		return false;
 	}
+	float toFloat(const string &str)
+	{
+		return atof(str.c_str());
+	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{
 		str<<"#line "<<lineno<<" "<<fileno<<endl;
@@ -94,13 +98,13 @@
 			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 		}
 	}
-	static string GetLayoutForTemplateType(string s)
+	static string GetLayoutForTemplateType(string s,string textureName)
 	{
 		if(s==string("vec4"))
 		{
 			// We want to be able to write both, so we will add in a #define rgba16_or_32f rgba32f or rgba16f
 			// at the appropriate time.
-			return "layout(rgba16_or_32f)";
+			return string("layout(format_for_")+textureName+")";
 		}
 		if(s==string("char4"))
 		{
@@ -384,7 +388,7 @@ prog : prog tok
 	| PRAGMA WARNING '(' warning-specifier ':' NUM ')'
 	{
 	}
-	| UNIFORM texture_type optional_templateval IDENTIFIER optional_register_semantic ';'
+	| optional_uniform texture_type optional_templateval IDENTIFIER optional_register_semantic ';'
 	{
 		string texture_type=$2.strs[0];
 		GLTextureType type_enum = ToGLTextureType($2.token);
@@ -395,7 +399,7 @@ prog : prog tok
 		string texture_name		=$4.strs[0];
 		string layout;
 		if(compute_only)
-			layout=GetLayoutForTemplateType(template_type)+" ";
+			layout=GetLayoutForTemplateType(template_type,texture_name)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 
 		DeclaredTexture dec;
@@ -427,7 +431,7 @@ prog : prog tok
 			LightingQueryResult lightingQueryResults[];
 		};
 	*/
-	| UNIFORM buffer_type optional_templateval IDENTIFIER ';'
+	| optional_uniform buffer_type optional_templateval IDENTIFIER ';'
 	{
 		string buffer_type=$2.strs[0];
 		bool compute_only=true;
@@ -443,7 +447,7 @@ prog : prog tok
 		if(compute_only)
 			sharedCode<<"#endif\n";
 	}
-	| UNIFORM IDENTIFIER IDENTIFIER ';'
+	| optional_uniform IDENTIFIER IDENTIFIER ';'
 	{
 		ostringstream decl;
 		decl<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<$3.strs[0]<<";";
@@ -2312,7 +2316,10 @@ initializer_list: initializer
 				}
 primary_exp	: IDENTIFIER
 				{
-					$$.strs[0]=$1.strs[0];
+					string varName=$1.strs[0];
+					$$.strs[0]=varName;
+					if(gEffect->IsTextureDeclared(varName))
+						buildFunction.declarations.insert(varName);
 				}
 			| SATURATE
 				{
@@ -2500,6 +2507,14 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(value);
 								else if(is_equal(name,"AddressW"))
 									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(value);
+								else if(is_equal(name,"MipLODBias"))
+									buildSamplerState.MipLODBias		=toFloat(value);
+								else if(is_equal(name,"MaxLod"))
+									buildSamplerState.MaxLod			=toFloat(value);
+								else if(is_equal(name,"MinLod"))
+									buildSamplerState.MinLod			=toFloat(value);
+								else if(is_equal(name,"MaxAnisotropy"))
+									buildSamplerState.MaxAnisotropy		=toFloat(value);
 								else
 								{
 									ostringstream str;

@@ -537,6 +537,12 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 		if(v.programId)
 			glDeleteProgram(v.programId);
 		v.programId=glCreateProgram();
+		ostringstream variantDefs;
+		for(int j=0;j<variantVariables.size();j++)
+		{
+			bool thisVariant16=((1<<j)&i)!=0;
+			variantDefs<<"#define format_for_"<<variantVariables[j]<<" "<<(thisVariant16?"rgba16f":"rgba32f")<<"\n";
+		}
 		// This MUST match up with ShaderType enum definition.
 		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
 												GL_TESS_CONTROL_SHADER,
@@ -549,10 +555,10 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 			if(m_shaders[i].compiledShader&&res)
 			{
 				shaders.push_back(glCreateShader(shaderTypes[i]));
-				res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
+				res &= CompileShader(shaders.back(), m_shaders[i].name,variantDefs.str(),shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
 				glAttachShader(v.programId, shaders.back());
 			}
-			}
+		}
 	   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
 		// values from the shader.
 		if(IsTransformFeedbackShader())
@@ -675,9 +681,9 @@ int do_mkdir(const char *path_utf8)
     return(status);
 }
 
-int Program::CompileShader(unsigned shader, const string& name,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
+int Program::CompileShader(unsigned shader, const string& name,const string &variantDefs,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
-	string preamble = m_shaders[type].preamble;
+	string preamble = variantDefs+m_shaders[type].preamble;
 	const char* strSrc[] = { preamble.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 3, strSrc, NULL);
 

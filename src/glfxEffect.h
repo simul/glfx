@@ -140,6 +140,7 @@ namespace glfxParser
 		void DeclareSamplerState(const std::string &name,const SamplerState &buildSamplerState);
 		Function * DeclareFunction(const std::string &functionName,Function &buildFunction);
 		void DeclareStruct(const string &name,const Struct &ts);
+bool IsTextureDeclared(const string &name);
 		bool DeclareTexture(const string &name,const DeclaredTexture &ts);
 		bool DeclareTextureSampler(const TextureSampler *ts);
 		void MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName);

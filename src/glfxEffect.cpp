@@ -411,6 +411,13 @@ ostringstream& Effect::Log()
     return m_log;
 }
 
+bool Effect::IsTextureDeclared(const string &name)
+{
+	if(m_declaredTextures.find(name)!=m_declaredTextures.end())
+		return true;
+	return false;
+}
+
 bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
 	DeclaredTexture *t=new DeclaredTexture(ts);
@@ -527,25 +534,29 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	std::ostringstream finalCode;
 	// Put together the source.
 	string shaderContent;
-	shaderCode<<"#define rgba16_or_32f rgba16f\n";
 	std::set<const Function *> fns;
 	AccumulateFunctionsUsed(&sh.function,fns);
 	// Insert the textures declared that the functions use.
+	std::set<string> declarationNames;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
 		for(auto v=(*u)->declarations.begin();v!=(*u)->declarations.end();v++)
 		{
-			string dec_name=*v;
-			const DeclaredTexture *dec=m_declaredTextures[dec_name];
-			WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
-			if(IsTextureWriteable(dec->type_enum))
-				shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
-			shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<dec_name<<";\n";
-			if(IsTextureWriteable(dec->type_enum))
-				shaderCode<<"#endif\n";
-			if(dec->variant)
-				compiledShader->variantDeclarations.insert(dec_name);
+			declarationNames.insert(*v);
 		}
+	}
+	for(auto w:declarationNames)
+	{
+		string dec_name=w;
+		const DeclaredTexture *dec=m_declaredTextures[dec_name];
+		WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
+		if(IsTextureWriteable(dec->type_enum))
+			shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
+		shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<dec_name<<";\n";
+		if(IsTextureWriteable(dec->type_enum))
+			shaderCode<<"#endif\n";
+		if(dec->variant)
+			compiledShader->variantDeclarations.insert(dec_name);
 	}
 
 
