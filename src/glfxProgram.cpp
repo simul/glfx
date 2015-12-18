@@ -683,7 +683,7 @@ int do_mkdir(const char *path_utf8)
 
 int Program::CompileShader(unsigned shader, const string& name,const string &variantDefs,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
-	string preamble = variantDefs+m_shaders[type].preamble;
+	string preamble = m_shaders[type].preamble+variantDefs;
 	const char* strSrc[] = { preamble.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 3, strSrc, NULL);
 
@@ -695,6 +695,8 @@ int Program::CompileShader(unsigned shader, const string& name,const string &var
 		binaryFilename=bin_dir+"/";
 		binaryFilename+=name+".glsl";
 		std::ofstream ofstr(binaryFilename);
+		ofstr.write(preamble.c_str(),strlen(preamble.c_str()));
+		ofstr.write(src.c_str(),strlen(src.c_str()));
 		ofstr.write(src.c_str(),strlen(src.c_str()));
 		if(errno!=0)
 		{

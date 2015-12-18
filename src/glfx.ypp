@@ -72,7 +72,7 @@
 	}
 	float toFloat(const string &str)
 	{
-		return atof(str.c_str());
+		return (float)atof(str.c_str());
 	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{
