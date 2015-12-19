@@ -728,25 +728,21 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const c
     catch(const char* err)
 	{
         gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(const string& err)
 	{
         gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(const std::exception& exc)
 	{
         gEffect->Log()<<exc.what()<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(...)
 	{
         gEffect->Log()<<"Unknown error occurred during parsing of source"<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     glfxpop_buffer_state();
@@ -978,7 +974,7 @@ GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int e,GLuint pass)
 
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
 {
-	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL || !gEffects[effect]->Active())
+	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL )
         return 0;
 	GLFX_ERROR_CHECK
 

@@ -35,8 +35,7 @@ typedef int errno_t;
 #include <set>
 
 Effect::Effect()
-    : m_active(true)
-	,current_group(NULL)
+    :current_group(NULL)
 	,current_texture_number(0)
 	,current_image_number(0)
 	,current_pass(0)
@@ -44,6 +43,11 @@ Effect::Effect()
 }
 
 Effect::~Effect()
+{
+	Clear();
+}
+
+void Effect::Clear()
 {
 	for (auto it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		delete it->second;
@@ -56,12 +60,6 @@ Effect::~Effect()
 		delete i->second;
 	for (auto i = glSamplerStates.begin(); i != glSamplerStates.end(); i++)
 		glDeleteSamplers(1,&(i->second));
-	for (auto i = m_declaredTextures.begin(); i != m_declaredTextures.end(); i++)
-		delete i->second;
-}
-
-void Effect::Clear()
-{
 	for(auto i=functions.begin();i!=functions.end();i++)
 	{
 		for(auto j=i->second.begin();j!=i->second.end();j++)
@@ -74,7 +72,10 @@ void Effect::Clear()
 	m_blendStates.clear();
 	m_depthStencilStates.clear();
 	m_samplerStates.clear();
+	for (auto i = m_declaredTextures.begin(); i != m_declaredTextures.end(); i++)
+		delete i->second;
 	m_declaredTextures.clear();
+	m_declaredTexturesByNumber.clear();
 	m_rasterizerStates.clear();
 	m_shaderLayouts.clear();
 	passStates.clear();
@@ -148,8 +149,8 @@ int Effect::GetImageNumber(const char *name)
 		{
 			std::cerr<<"cloudDensity";
 		}
-		textureNumberMap[n] = current_image_number + 1000;
-		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
+		textureNumberMap[n]=current_image_number+1000;
+		textureDimensions[current_image_number+1000]=GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 		current_image_number++;
 	}
 	return image_number;
@@ -158,13 +159,20 @@ int Effect::GetImageNumber(const char *name)
 void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
-	t.tex		=tex;
+	DeclaredTexture *dec=m_declaredTexturesByNumber[texture_number+(write?1000:0)];
+
+	bool dec_write=IsTextureWriteable(dec->type_enum);
+	if(dec_write!=write)
+	{
+		GLFX_CERR << "Texture declared as writeable?" << std::endl;
+	}
+	t.tex			=tex;
 	if (tex!=0&&textureDimensions[texture_number+(write?1000:0)] != dims)
 		GLFX_CERR << "Texture dimension mismatch" << std::endl;
-	t.depth		=depth;
-	t.format	=format;
-	t.write		=write;
-	t.write_mip	=write_mip;
+	t.depth			=depth;
+	if(format>0)
+		t.format	=format;
+	t.write_mip		=write_mip;
 }
 
 void Effect::SetSamplerState(const char *name, unsigned sam)
@@ -257,10 +265,7 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 {
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
-	// Fall out silently if this texture is not set.
-	//if(!t.tex)
-	//	return;
-	if(t.write)
+	if(texture_number>=1000)
 	{
 		glBindImageTexture(texture_number-1000
  			,t.tex
@@ -330,11 +335,6 @@ bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledS
 	}
 	m_compiledShaders[lvalCompiledShaderName]=compiledShader;
 	return true;
-}
-
-bool& Effect::Active()
-{
-    return m_active;
 }
 
 string& Effect::Filename()
@@ -422,6 +422,13 @@ bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
 	DeclaredTexture *t=new DeclaredTexture(ts);
 	m_declaredTextures[name]=t;
+	int num=0;
+	bool write=IsTextureWriteable(ts.type_enum);
+	if(write)
+		num=GetImageNumber(name.c_str());
+	else
+		num=GetTextureNumber(name.c_str());
+	m_declaredTexturesByNumber[num]=t;
 	declarations.push_back(t);
 	return true;
 }
@@ -1064,7 +1071,7 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 	{
 		int main_texture_number		=i->second;
 		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
-		if(!ta.write)
+		if(main_texture_number<1000)
 			continue;
 		GLenum f=ta.format;
 		if(f==GL_RGBA16F)
@@ -1095,7 +1102,7 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 		if(loc>=0)
 		{
 			SetTex(texture_number,ta,loc);
-			if(!ta.write)
+			if(texture_number<1000)
 				glBindSampler(texture_number,0);
 	GLFX_ERROR_CHECK
 		}

@@ -15,7 +15,6 @@ namespace glfxParser
 		unsigned tex;		//GLuint
 		int depth;
 		unsigned format;	//GLenum
-		bool write;
 		int write_mip;
 	};
 	//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
@@ -35,7 +34,11 @@ namespace glfxParser
 		std::map<std::string,BlendState*>					m_blendStates;
 		std::map<std::string,DepthStencilState*>			m_depthStencilStates;
 		std::map<std::string,SamplerState*>					m_samplerStates;
+
 		std::map<std::string,DeclaredTexture*>				m_declaredTextures;
+		std::map<int,DeclaredTexture*>						m_declaredTexturesByNumber;
+		std::map<std::string,int>							textureNumberMap;
+
 		std::map<std::string,RasterizerState*>				m_rasterizerStates;
 		std::map<std::string,ComputeLayout>					m_shaderLayouts;
 		std::map<unsigned,PassState>						passStates;
@@ -61,10 +64,9 @@ namespace glfxParser
 		std::map<string, DeclaredTexture *>					additionalTextureDeclarations;
 // STATE
 		ostringstream										m_log;
-		std::map<int, int>									textureDimensions;
-		std::map<int, TextureAssignment>					textureAssignmentMap;
-		std::map<std::string,int>							textureNumberMap;
-		bool												m_active;
+		std::map<int,int>									textureDimensions;
+		std::map<int,TextureAssignment>						textureAssignmentMap;
+		
 		unsigned											current_pass;
 		int													current_texture_number;
 		int													current_image_number;
@@ -159,7 +161,7 @@ bool IsTextureDeclared(const string &name);
 		void ApplyPassState(unsigned pass);
 		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
 		void SetSamplerState(const char *name, unsigned sam);
-		bool& Active();
+		
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
 		// STATE
 		TechniqueGroup *current_group;
