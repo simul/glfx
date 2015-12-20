@@ -320,7 +320,8 @@
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
 %token SA_MAXVERTEXCOUNT SA_NUMTHREADS
 %token SATURATE
-%token SHADER_PROFILE  
+%token SHADER_PROFILE 
+%token COMMENT
 
 %%
 
@@ -412,25 +413,9 @@ prog : prog tok
 		gEffect->DeclareTexture(texture_name,dec);
 
 		ostringstream decl;
-	/*	
-		WriteLineNumber(decl,dec.file_number,dec.line_number);
-		if(IsTextureWriteable(dec.type_enum))
-			decl<<"#ifdef IN_COMPUTE_SHADER\n";
-		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
-		if(IsTextureWriteable(dec.type_enum))
-			decl<<"#endif\n";
-		sharedCode << decl.str(); */
-	}
-	/*
-	Here we will transform from a HLSL-style templated uniform buffer:
-		RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
 
-	into a GLSL-style buffer:
-		layout(std430, binding = 2) buffer lightingQueryResults
-		{
-			LightingQueryResult lightingQueryResults[];
-		};
-	*/
+	}
+
 	| optional_uniform buffer_type optional_templateval IDENTIFIER ';'
 	{
 		string buffer_type=$2.strs[0];
@@ -539,7 +524,7 @@ prog : prog tok
 			buildSamplerState=SamplerState();
 		}
 		int true_linenumber=$4.lineno+(last_linenumber-global_linenumber);
-	//	WriteLineNumber(true_linenumber);
+	
 	}
 	| PROFILE SHADER_PROFILE '(' NUM ')' ';'
 	{
@@ -921,16 +906,32 @@ struct_definition: '{' struct_member_list '}'
     $$.strs[0]="{\n";
 	$$.strs[0]+=($2.strs[0]+"\n}\n");
 }
-struct_member_list: struct_member_list struct_memb
+struct_member_list: struct_member_list struct_element
 {
 	string list			=$1.strs[0];
 	string new_member	=$2.strs[0];
     $$.strs[0]=(list+"\n")+new_member;
 }
-| struct_memb
+| struct_element
 {
 	string member	=$1.strs[0];
     $$.strs[0]=member;
+}
+struct_element: struct_memb
+
+{
+	string str=$1.strs[0];
+	//if(write_line_number_next)
+//		str=
+    $$.strs[0]	=str;
+}
+| COMMENT
+{
+	Skip();
+}
+| WHITESPACE
+{
+	Skip();
 }
 struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
 {
@@ -1640,28 +1641,37 @@ declarator: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-statement:  expression ';'
-				{
-					$$.strs[0]=$1.strs[0]+";\n";
-					$$.lineno=$1.lineno;
-					$$.strs[1]="";
-				}
-			   |  ';'
-				{
-					$$.strs[0]=";\n";
-					$$.strs[1]="";
-				}
+statement:	COMMENT
+			{
+				$$.strs[0]=$1.strs[0];
+				$$.strs[1]="";
+			}
+			| WHITESPACE
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+			| expression ';'
+			{
+				$$.strs[0]=$1.strs[0]+$2.strs[0];
+				$$.lineno=$1.lineno;
+				$$.strs[1]="";
+			}
+			|  ';'
+			{
+				$$.strs[0]=";\n";
+				$$.strs[1]="";
+			}
 			| declaration ';'
-				{
-					$$.strs[0]=$1.strs[0]+";\n";
-					$$.strs[1]="";
-				}
+			{
+				$$.strs[0]=$1.strs[0]+";\n";
+				$$.strs[1]="";
+			}
 			| compound_statement
-				{
-					string compound_statement=$1.strs[0];
-					$$.strs[0]=compound_statement;
-					$$.strs[1]="";
-				}
+			{
+				string compound_statement=$1.strs[0];
+				$$.strs[0]=compound_statement;
+				$$.strs[1]="";
+			}
 			| IF '(' expression ')' statement
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];

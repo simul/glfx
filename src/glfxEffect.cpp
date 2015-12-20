@@ -261,7 +261,7 @@ void Effect::DeclareStruct(const string &name,const Struct &ts)
 	m_structs[name]	=rs;
 }
 
-void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
+void Effect::SetTex(int texture_number,int dim,const TextureAssignment &t,int location_in_shader)
 {
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
@@ -270,21 +270,22 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 		glBindImageTexture(texture_number-1000
  			,t.tex
  			,t.write_mip
-			,textureDimensions[texture_number] == 3
+			,dim == 3
 			,0
 			,GL_READ_WRITE
 			,t.format);
 		texture_number-=1000;
-/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
-	GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
-	GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
-	GLFX_ERROR_CHECK
+	/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
+		GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
+		GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
+		GLFX_ERROR_CHECK
 	}
 	else
 	{
+	GLFX_ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0+texture_number);
 		GLFX_ERROR_CHECK
-		if (textureDimensions[texture_number] == 2)
+		if (dim == 2)
 		{
 			// 2D but depth>1? That's an ARRAY texture.
 			if(t.depth>1)
@@ -293,16 +294,20 @@ void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_i
 				glBindTexture(GL_TEXTURE_2D,t.tex);
 			GLFX_ERROR_CHECK
 		}
-		else if (textureDimensions[texture_number] == 3)
+		else if (dim == 3)
 		{
 			glBindTexture(GL_TEXTURE_3D,t.tex);
 			GLFX_ERROR_CHECK
 		}
 		else
 		{
+	GLFX_ERROR_CHECK
 			throw std::runtime_error("Unknown texture dimension!");
+	GLFX_ERROR_CHECK
 		}
+	GLFX_ERROR_CHECK
 	}
+	GLFX_ERROR_CHECK
 	glUniform1i(location_in_shader,texture_number);
 	GLFX_ERROR_CHECK
 }
@@ -425,10 +430,17 @@ bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 	int num=0;
 	bool write=IsTextureWriteable(ts.type_enum);
 	if(write)
-		num=GetImageNumber(name.c_str());
+		num=GetImageNumber(name.c_str())+1000;
 	else
 		num=GetTextureNumber(name.c_str());
-	m_declaredTexturesByNumber[num]=t;
+	if(m_declaredTexturesByNumber.find(num)!=m_declaredTexturesByNumber.end())
+	{
+		GLFX_CERR<<"Already declared texture number "<<num<<std::endl;
+	}
+	else
+	{
+		m_declaredTexturesByNumber[num]=t;
+	}
 	declarations.push_back(t);
 	return true;
 }
@@ -1095,13 +1107,19 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 	{
 	GLFX_ERROR_CHECK
 		int main_texture_number		=i->second;
+	if(textureDimensions.find(main_texture_number)==textureDimensions.end())
+	{
+		GLFX_CERR<<"No dimension for texture "<<main_texture_number<<std::endl;
+		continue;
+	}
+	int dim	=textureDimensions[main_texture_number];
 		int texture_number			=main_texture_number;
 		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
 		GLint loc					=glGetUniformLocation(current_pass,i->first.c_str());
 	GLFX_ERROR_CHECK
 		if(loc>=0)
 		{
-			SetTex(texture_number,ta,loc);
+			SetTex(texture_number,dim,ta,loc);
 			if(texture_number<1000)
 				glBindSampler(texture_number,0);
 	GLFX_ERROR_CHECK
@@ -1129,17 +1147,17 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 						{
 							GLuint sampler_state =b->second;
 							glBindSampler(texture_number, sampler_state);
-							SetTex(texture_number, ta, loc2);
+							SetTex(texture_number,dim, ta, loc2);
 						}
 						else if (c != glSamplerStates.end())
 						{
 							GLuint sampler_state =c->second;
 							glBindSampler(texture_number, sampler_state);
-							SetTex(texture_number, ta, loc2);
+							SetTex(texture_number,dim,ta, loc2);
 						}
 						else
 						{
-							SetTex(main_texture_number, ta, loc2);
+							SetTex(main_texture_number,dim,ta, loc2);
 						}
 					}
 					texture_number++;

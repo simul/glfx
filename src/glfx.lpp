@@ -825,10 +825,13 @@ warning
 <IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"	{
 												stdReturn(':');
 											}
-<INITIAL,IN_RENDER_STATE,IN_SHADER,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
+<INITIAL,IN_RENDER_STATE,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)
 														glfxWrite(yytext); // Single line comment (with possible continuation)
-
+												}
+<IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
+													glfxlval.strs[0]=yytext;
+													stdReturn(COMMENT);
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER>"/*"         {
 													glfxPushState(IN_MULTILINE_COMMENT);
@@ -851,7 +854,11 @@ warning
 <INITIAL>[\t\n ]								{
 													if(gLexPassthrough) glfxWrite(yytext);
 												}
-<IN_RENDER_STATE,IN_STRUCT,IN_SHADER>[\t\n ]	{}// Without this line, the yylineno would get out of whack.
+<IN_RENDER_STATE,IN_STRUCT>[\t\n ]	{
+												}// Without this line, the yylineno would get out of whack.
+<IN_SHADER>[\t\n ]	{
+													stdReturn(WHITESPACE);
+												}// Without this line, the yylineno would get out of whack.
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>[ \t\n]*"{"[ \t\n]*		{
 													glfxlval.strs[0]=yytext;

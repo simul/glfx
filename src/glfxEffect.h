@@ -73,7 +73,7 @@ namespace glfxParser
 		std::map<std::string, unsigned>						prepared_sampler_states;	///< We keep a map of texture sampler states.
 		// Create the gl objects for samplers defined in the fx file.
 		bool PassHasTransformFeedback(unsigned pass);
-		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
+		void SetTex(int texture_number,int dim,const TextureAssignment &t,int location_in_shader);
 // POST-INIT
 		void CreateDefinedSamplers();
 	public:
