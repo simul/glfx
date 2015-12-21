@@ -136,6 +136,8 @@ int Effect::GetImageNumber(const char *name)
 	if(textureNumberMap.find(n)!=textureNumberMap.end())
 	{
 		image_number			=textureNumberMap[n]-1000;
+		if(image_number<0)
+			return -1;
 	}
 	else
 	{
@@ -161,7 +163,7 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
 	DeclaredTexture *dec=m_declaredTexturesByNumber[texture_number+(write?1000:0)];
 
-	bool dec_write=IsTextureWriteable(dec->type_enum);
+	bool dec_write=dec?IsTextureWriteable(dec->type_enum):false;
 	if(dec_write!=write)
 	{
 		GLFX_CERR << "Texture declared as writeable?" << std::endl;

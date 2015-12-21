@@ -83,7 +83,7 @@
 		WriteLineNumber(str,current_filenumber,lineno);//.c_str()<<"\""<<endl;
 	}
 	static bool write_line_number_next=false;
-	static void Skip()
+	void gSkip()
 	{
 		write_line_number_next=true;
 	}
@@ -927,11 +927,11 @@ struct_element: struct_memb
 }
 | COMMENT
 {
-	Skip();
+	gSkip();
 }
 | WHITESPACE
 {
-	Skip();
+	gSkip();
 }
 struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
 {

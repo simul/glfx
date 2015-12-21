@@ -106,6 +106,7 @@ the last is C code to be copied verbatim to the output.
 	{
 		return modReturn_(u, yytext);
 	}
+	extern void gSkip();
 #define stdReturn return stdReturn_
 #define modReturn return modReturn_
 %}
@@ -831,7 +832,7 @@ warning
 												}
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													glfxlval.strs[0]=yytext;
-													stdReturn(COMMENT);
+													gSkip();
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER>"/*"         {
 													glfxPushState(IN_MULTILINE_COMMENT);
