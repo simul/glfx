@@ -610,7 +610,9 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 		}
 	//	if(!res)
 		{
+#ifdef GLFX_GLSLANG
 			GlslangValidateProgram(shared_src,variantDefs.str(),sLog);
+#endif
 		}
 	
 		for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
