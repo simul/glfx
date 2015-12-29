@@ -418,8 +418,8 @@ prog : prog tok
 
 	| optional_uniform buffer_type optional_templateval IDENTIFIER ';'
 	{
-		string buffer_type=$2.strs[0];
-		bool compute_only=true;
+		//string buffer_type=$2.strs[0];
+		bool compute_only=($2.token==RW_STRUCTUREDBUFFER);
 		ostringstream decl;
 		if(compute_only)
 			sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
@@ -1006,7 +1006,8 @@ param_declaration: param opt_sq location
         prepend<<"layout(location="<<$3.num<<") ";
         break;
     case REGISTER_NAME:
-        prepend<<"layout(location="<<$3.strs[0]<<") ";
+	// GL Doesn't recognize arbitrary text for this.
+        //prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     case SEMANTIC:
 		template_=getGLInputSemantic($3.num);

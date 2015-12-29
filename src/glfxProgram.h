@@ -75,6 +75,7 @@ namespace glfxParser
 		bool		transformFeedback;
 		Topology transformFeedbackTopology;
 		friend int	::glfxparse();
+		void GlslangValidateProgram(const string &shared_src,string variantDefs,ostringstream &sLog);
 	};
 	class Technique
 	{

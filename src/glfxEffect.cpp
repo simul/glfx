@@ -158,7 +158,7 @@ int Effect::GetImageNumber(const char *name)
 	return image_number;
 }
 
-void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
+void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip,bool layered,int layer,bool cubemap)
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
 	DeclaredTexture *dec=m_declaredTexturesByNumber[texture_number+(write?1000:0)];
@@ -174,7 +174,10 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 	t.depth			=depth;
 	if(format>0)
 		t.format	=format;
-	t.write_mip		=write_mip;
+	t.write_mip		=mip;
+	t.layered		=layered;
+	t.layer			=layer;
+	t.cubemap		=cubemap;
 }
 
 void Effect::SetSamplerState(const char *name, unsigned sam)
@@ -272,8 +275,8 @@ void Effect::SetTex(int texture_number,int dim,const TextureAssignment &t,int lo
 		glBindImageTexture(texture_number-1000
  			,t.tex
  			,t.write_mip
-			,dim == 3
-			,0
+			,t.layered		//dim == 3
+			,t.layered?t.layer:0	// 0
 			,GL_READ_WRITE
 			,t.format);
 		texture_number-=1000;
@@ -290,7 +293,12 @@ void Effect::SetTex(int texture_number,int dim,const TextureAssignment &t,int lo
 		if (dim == 2)
 		{
 			// 2D but depth>1? That's an ARRAY texture.
-			if(t.depth>1)
+			if(t.cubemap)
+			{
+				glBindTexture(GL_TEXTURE_CUBE_MAP,t.tex);
+				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+			}
+			else if(t.depth>1)
 				glBindTexture(GL_TEXTURE_2D_ARRAY,t.tex);
 			else
 				glBindTexture(GL_TEXTURE_2D,t.tex);
@@ -766,7 +774,7 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		{
 		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
 			shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
-			shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';\n'<<endl;
+			shaderCode<<it->storage<<" "<<type<<" "<<it->identifier<<";\n"<<endl;
 		}
 	}
 	// Add the return variable.

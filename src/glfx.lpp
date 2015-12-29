@@ -765,11 +765,9 @@ warning
 <INITIAL>"true"									{glfxlval.num=1; stdReturn(NUM);}
 <INITIAL>"false"								{glfxlval.num=0; stdReturn(NUM);}
 <INITIAL>{ID_BLCK}								{
-													{
-														glfxlval.lineno=yylineno;
-														glfxlval.strs[0]=yytext;
-														stdReturn(IDENTIFIER);
-													}
+													glfxlval.lineno=yylineno;
+													glfxlval.strs[0]=yytext;
+													stdReturn(IDENTIFIER);
 												}
 <INITIAL>{ID_BLCK}"::"{ID_BLCK}					{
 													if(gLexPassthrough)
@@ -822,9 +820,14 @@ warning
 												}
 <INITIAL,IN_UNIFORM_DECL>"="				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn('=');}
 <INITIAL,IN_UNIFORM_DECL>";"				if(gLexPassthrough) glfxWrite(yytext); else {stdReturn(';');}
-<INITIAL,IN_UNIFORM_DECL>":"				{stdReturn(':');}
-<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE>":"	{
+<INITIAL,IN_UNIFORM_DECL>":"				{
 												stdReturn(':');
+											}
+<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE,IN_SHADER>":"	{
+												stdReturn(':');
+											}
+<IN_STRUCT,IN_PRAGMA,IN_RENDER_STATE,IN_SHADER>"?"	{
+												stdReturn('?');
 											}
 <INITIAL,IN_RENDER_STATE,IN_STRUCT>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n		{
 													if(gLexPassthrough)

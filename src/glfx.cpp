@@ -802,11 +802,11 @@ int GLFX_APIENTRY glfxGetEffectImageNumber(int e,const char *name)
     return gEffects[e]->GetImageNumber(name);
 }
 
-void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip)
+void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap)
 {
 	if(e<0||e>=(int)gEffects.size())
 		return ;
-	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write,write_mip);
+	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write,write_mip, layered, layer,cubemap);
 }
 
 void GLFX_APIENTRY glfxSetEffectSamplerState(int e, const char *name, GLuint sampler)

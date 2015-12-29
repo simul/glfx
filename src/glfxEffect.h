@@ -16,6 +16,9 @@ namespace glfxParser
 		int depth;
 		unsigned format;	//GLenum
 		int write_mip;
+		bool layered;		///< Whether it is layered.
+		bool cubemap;		///< Whether it's a cubemap.
+		int layer;			///< Which layer of a texture array.
 	};
 	//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 	//! We will use the keyword Profile.
@@ -159,7 +162,7 @@ bool IsTextureDeclared(const string &name);
 		// Returns the variant pass if needed.
 		unsigned ApplyPassTextures(unsigned pass);
 		void ApplyPassState(unsigned pass);
-		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip);
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap);
 		void SetSamplerState(const char *name, unsigned sam);
 		
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;

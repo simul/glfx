@@ -105,7 +105,8 @@ GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);
 GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
 GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
-GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip);
+// TODO: really we should just assume that the texture is of the type specified in the shader.
+GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap);
 GLFXAPI void glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler);
 
 

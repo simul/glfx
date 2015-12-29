@@ -470,6 +470,52 @@ void ProcessConfigFile(TBuiltInResource &Resources)
   //  if (configStrings)
    //     FreeFileData(configStrings);
 }
+
+void Program::GlslangValidateProgram(const string &shared_src,string variantDefs,ostringstream &sLog)
+{
+	sLog<<"Glslang validation"<<std::endl;
+	bool res=true;
+	EShMessages messages = EShMsgDefault;
+	int defaultVersion=110;
+	std::vector<glslang::TShader*> glslang_shaders;
+	glslang::TProgram *glsl_program = new glslang::TProgram;
+	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	{
+		if(res&&m_shaders[i].compiledShader)
+		{
+			EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
+			glslang::TShader* shader = new glslang::TShader(stage);
+			glslang_shaders.push_back(shader);
+			static int l=0;
+			string shr=shared_src;
+			if(l)
+				shr=shared_src.substr(0,l);
+	
+			string preamble = m_shaders[i].preamble+variantDefs;
+			const char* strSrc[] = { preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str() };
+			const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
+			static int s=3;
+			shader->setStrings(shaderStrings,s);
+			TBuiltInResource Resources;
+			ProcessConfigFile(Resources);
+			res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
+			const char *info=shader->getInfoDebugLog();
+			sLog<<info;
+			if(res)
+				glsl_program->addShader(shader);
+		}
+	}
+	if(res)
+	{
+		res&=(int)(glsl_program->link(messages));
+		sLog<<glsl_program->getInfoLog();
+	}
+	while(glslang_shaders.size() > 0)
+	{
+		delete glslang_shaders.back();
+		glslang_shaders.pop_back();
+	}
+}
 #endif
 unsigned Program::CompileAndLink(const string &shared_src,string& log) 
 {
@@ -479,45 +525,6 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	if(glfxIsGlslangValidationEnabled())
 	{
 		glslang::InitializeProcess();
-		std::vector<glslang::TShader*> glslang_shaders;
-    
-		EShMessages messages = EShMsgDefault;
-		int defaultVersion=110;
-		glslang::TProgram *glsl_program = new glslang::TProgram;
-		for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
-		{
-			if(res&&m_shaders[i].compiledShader)
-			{
-				EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
-				glslang::TShader* shader = new glslang::TShader(stage);
-				glslang_shaders.push_back(shader);
-				static int l=0;
-				string shr=shared_src;
-				if(l)
-					shr=shared_src.substr(0,l);
-		
-				const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
-				static int s=3;
-				shader->setStrings(shaderStrings,s);
-				TBuiltInResource Resources;
-				ProcessConfigFile(Resources);
-				res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
-				sLog<<shader->getInfoLog();
-
-				glsl_program->addShader(shader);
-			}
-		}
-		if(res)
-		{
-			res&=(int)(glsl_program->link(messages));
-			sLog<<glsl_program->getInfoLog();
-		}
-		delete glsl_program;
-		while (glslang_shaders.size() > 0)
-		{
-			delete glslang_shaders.back();
-			glslang_shaders.pop_back();
-		}
 	}
 #endif
     for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
@@ -600,6 +607,10 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 				glGetProgramInfoLog(v.programId,1024,&len,infoLog);
 				sLog<<"Linkage details:"<<endl<<infoLog<<endl;
 			}
+		}
+	//	if(!res)
+		{
+			GlslangValidateProgram(shared_src,variantDefs.str(),sLog);
 		}
 	
 		for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
@@ -696,7 +707,7 @@ int Program::CompileShader(unsigned shader, const string& name,const string &var
 		binaryFilename+=name+".glsl";
 		std::ofstream ofstr(binaryFilename);
 		ofstr.write(preamble.c_str(),strlen(preamble.c_str()));
-		ofstr.write(src.c_str(),strlen(src.c_str()));
+		ofstr.write(shared.c_str(),strlen(shared.c_str()));
 		ofstr.write(src.c_str(),strlen(src.c_str()));
 		if(errno!=0)
 		{
