@@ -164,7 +164,7 @@ void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum 
 	DeclaredTexture *dec=m_declaredTexturesByNumber[texture_number+(write?1000:0)];
 
 	bool dec_write=dec?IsTextureWriteable(dec->type_enum):false;
-	if(dec_write!=write)
+	if(dec!=NULL&&dec_write!=write)
 	{
 		GLFX_CERR << "Texture declared as writeable?" << std::endl;
 	}
@@ -272,13 +272,14 @@ void Effect::SetTex(int texture_number,int dim,const TextureAssignment &t,int lo
 	GLFX_ERROR_CHECK
 	if(texture_number>=1000)
 	{
-		glBindImageTexture(texture_number-1000
- 			,t.tex
- 			,t.write_mip
-			,t.layered		//dim == 3
-			,t.layered?t.layer:0	// 0
-			,GL_READ_WRITE
-			,t.format);
+		if(t.format>0)
+			glBindImageTexture(texture_number-1000
+ 				,t.tex
+ 				,t.write_mip
+				,t.layered		//dim == 3
+				,t.layered?t.layer:0	// 0
+				,GL_READ_WRITE
+				,t.format);
 		texture_number-=1000;
 	/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
 		GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
@@ -581,7 +582,10 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
 		if(IsTextureWriteable(dec->type_enum))
 			shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
-		shaderCode<<dec->layout<<"uniform "<<dec->type<<" "<<dec_name<<";\n";
+		shaderCode<<dec->layout<<"uniform ";
+		if(dec->variant)
+			shaderCode<<dec_name<<"_";
+		shaderCode<<dec->type<<" "<<dec_name<<";\n";
 		if(IsTextureWriteable(dec->type_enum))
 			shaderCode<<"#endif\n";
 		if(dec->variant)

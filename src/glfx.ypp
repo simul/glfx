@@ -397,6 +397,8 @@ prog : prog tok
 		
 		stringReplaceAll(texture_type,"RWTexture","image");
 		string template_type	=$3.strs[0];
+		if(template_type.length()==0)
+			template_type="vec4";
 		string texture_name		=$4.strs[0];
 		string layout;
 		if(compute_only)
@@ -404,12 +406,13 @@ prog : prog tok
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
 
 		DeclaredTexture dec;
-		dec.variant		=(template_type==string("vec4"));
-		dec.file_number	=current_filenumber;
-		dec.line_number	=$1.lineno+last_linenumber-global_linenumber;
-		dec.type		=type;
-		dec.type_enum	=type_enum;
-		dec.layout		=layout;
+		dec.variant			=compute_only&&IsRWTexture(type_enum);//(template_type==string("vec4"));
+		dec.file_number		=current_filenumber;
+		dec.line_number		=$1.lineno+last_linenumber-global_linenumber;
+		dec.type			=type;
+		dec.texel_format	=template_type;
+		dec.type_enum		=type_enum;
+		dec.layout			=layout;
 		gEffect->DeclareTexture(texture_name,dec);
 
 		ostringstream decl;
@@ -1797,7 +1800,7 @@ assignment_exp: conditional_exp
 			{
 				ostringstream str;
 				if($2.token=='=')
-					str<<"imageStore("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),"<<assignment_exp<<")";
+					str<<"imageStore("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),convertToImageFormatof_"<<varName<<"("<<assignment_exp<<"))";
 				else
 					errSem(string("Unsupported operator for image store: ")+assignment_operator);
 				$$.strs[0]=str.str();

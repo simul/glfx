@@ -267,9 +267,10 @@ struct Declaration
 
 struct DeclaredTexture:public Declaration
 {
-	bool variant;			// if true, we must define 16-bit and 32-bit texture output versions.
+	bool variant;			// if true, we must define different versions for different texture output formats.
 	std::string type;
 	std::string layout;
+	std::string texel_format;
 	GLTextureType type_enum;
 };
 /// A struct representing a function that has been parsed from source.

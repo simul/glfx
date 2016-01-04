@@ -2,11 +2,18 @@
 #define GLFXPROGRAM_H
 #include <map>
 #include <set>
+#include <string>
 #include "glfxClasses.h"
 struct CompiledShader;
 namespace glfxParser
 {
 	struct TextureSampler;
+	struct VariantFormat
+	{
+		std::string layoutDeclaration;
+		char typeLetter;
+		std::string memberType;
+	};
 	//! A Program in glsl is equivalent to a Pass in hlsl.
 	class Program
 	{

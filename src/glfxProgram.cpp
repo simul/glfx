@@ -532,11 +532,32 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
         if(m_shaders[i].compiledShader&&m_shaders[i].compiledShader->variantDeclarations.size())
 		{
 			for(auto j=m_shaders[i].compiledShader->variantDeclarations.begin();j!=m_shaders[i].compiledShader->variantDeclarations.end();j++)
-			this->variantVariables.push_back((*j));
+				variantVariables.push_back((*j));
 		}
 	}
-	// The number of variants is 2^ the number of variant variables.
-	int numVariants=1<<(variantVariables.size());
+	// The number of variants is 3^ the number of variant variables.
+	//vector<VariantFormat> variantFormats;
+	//variantFormats.push_back(VariantFormat());
+	vector<string> variantFormats;
+	vector<string> variantTypeLetter;
+	vector<string> variantMemberType;
+
+	variantFormats.push_back("rgba32f");
+	variantTypeLetter.push_back("");
+	variantMemberType.push_back("vec4");
+	variantFormats.push_back("rgba16f");
+	variantTypeLetter.push_back("");
+	variantMemberType.push_back("vec4");
+	variantFormats.push_back("rgba8ui");
+	variantTypeLetter.push_back("u");
+	variantMemberType.push_back("uvec4");
+	int numVariants=0;
+	for(int j=0;j<variantVariables.size();j++)
+	{
+		auto v=variantVariables[j];
+		
+	}
+	int numVariants=pow((int)3,(int)variantVariables.size());
 	for(int i=0;i<numVariants;i++)
 	{
 		vector<GLuint> shaders;
@@ -545,10 +566,15 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 			glDeleteProgram(v.programId);
 		v.programId=glCreateProgram();
 		ostringstream variantDefs;
+		int combination=i;
 		for(int j=0;j<variantVariables.size();j++)
 		{
-			bool thisVariant16=((1<<j)&i)!=0;
-			variantDefs<<"#define format_for_"<<variantVariables[j]<<" "<<(thisVariant16?"rgba16f":"rgba32f")<<"\n";
+			int remainder=combination%(variantFormats.size());
+			combination/=(variantFormats.size());
+			variantDefs<<"#define format_for_"<<variantVariables[j]<<" "<<(variantFormats[remainder].c_str())<<"\n";
+			variantDefs<<"#define "<<variantVariables[j]<<"_image2D "<<(variantTypeLetter[remainder].c_str())<<"image2D\n";
+			variantDefs<<"#define "<<variantVariables[j]<<"_image3D "<<(variantTypeLetter[remainder].c_str())<<"image3D\n";
+			variantDefs<<"#define convertToImageFormatof_"<<variantVariables[j]<<" "<<(variantMemberType[remainder].c_str())<<"\n";
 		}
 		// This MUST match up with ShaderType enum definition.
 		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
