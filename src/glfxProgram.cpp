@@ -517,7 +517,51 @@ void Program::GlslangValidateProgram(const string &shared_src,string variantDefs
 	}
 }
 #endif
-unsigned Program::CompileAndLink(const string &shared_src,string& log) 
+
+void GetVariantFormats(std::vector<VariantFormat> &variantFormats,std::string texelFormat)
+{
+	if(texelFormat==std::string("vec4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba32f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba16f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+}
+
+int Program::GetVariantNumber(const std::map<std::string,GLenum> variableFormats)
+{
+	int varnum=0;
+	int mul=1;
+	for(auto j:variantMap)
+	{
+		string varName=j.first;
+		auto u=variableFormats.find(varName);
+		GLenum format=GL_RGBA32F;
+		if(u==variableFormats.end())
+		{
+			format=u->second;
+		}
+		varnum*=mul;
+		int this_format=0;
+		if(format==GL_RGBA16F)
+			this_format=1;
+		varnum+=this_format;
+		mul*=j.second.size();
+	}
+	return varnum;
+}
+
+unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::string,DeclaredTexture*> &declaredTextures,string& log)
 {
     GLint res=1;
     ostringstream sLog;
@@ -527,37 +571,28 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 		glslang::InitializeProcess();
 	}
 #endif
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	variantMap.clear();
+	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 	{
         if(m_shaders[i].compiledShader&&m_shaders[i].compiledShader->variantDeclarations.size())
 		{
 			for(auto j=m_shaders[i].compiledShader->variantDeclarations.begin();j!=m_shaders[i].compiledShader->variantDeclarations.end();j++)
-				variantVariables.push_back((*j));
+			{
+				const DeclaredTexture *dec=declaredTextures.find(*j)->second;
+				std::vector<VariantFormat> variantFormats;
+				GetVariantFormats(variantFormats,dec->type);
+			//	variantVariables.push_back((*j));
+				variantMap[*j]=variantFormats;
+			}
 		}
 	}
-	// The number of variants is 3^ the number of variant variables.
-	//vector<VariantFormat> variantFormats;
-	//variantFormats.push_back(VariantFormat());
-	vector<string> variantFormats;
-	vector<string> variantTypeLetter;
-	vector<string> variantMemberType;
 
-	variantFormats.push_back("rgba32f");
-	variantTypeLetter.push_back("");
-	variantMemberType.push_back("vec4");
-	variantFormats.push_back("rgba16f");
-	variantTypeLetter.push_back("");
-	variantMemberType.push_back("vec4");
-	variantFormats.push_back("rgba8ui");
-	variantTypeLetter.push_back("u");
-	variantMemberType.push_back("uvec4");
-	int numVariants=0;
-	for(int j=0;j<variantVariables.size();j++)
+	int numVariants=1;
+	for(auto v:variantMap)
 	{
-		auto v=variantVariables[j];
-		
+		numVariants*=(int)v.second.size();
 	}
-	int numVariants=pow((int)3,(int)variantVariables.size());
+	// Each variant is a specific combination of the variant variables.
 	for(int i=0;i<numVariants;i++)
 	{
 		vector<GLuint> shaders;
@@ -567,14 +602,18 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 		v.programId=glCreateProgram();
 		ostringstream variantDefs;
 		int combination=i;
-		for(int j=0;j<variantVariables.size();j++)
+		// What are the variant choices for this particular variant?
+		for(auto j:variantMap)
 		{
+			string varName=j.first;
+			std::vector<VariantFormat> &variantFormats=j.second;
 			int remainder=combination%(variantFormats.size());
 			combination/=(variantFormats.size());
-			variantDefs<<"#define format_for_"<<variantVariables[j]<<" "<<(variantFormats[remainder].c_str())<<"\n";
-			variantDefs<<"#define "<<variantVariables[j]<<"_image2D "<<(variantTypeLetter[remainder].c_str())<<"image2D\n";
-			variantDefs<<"#define "<<variantVariables[j]<<"_image3D "<<(variantTypeLetter[remainder].c_str())<<"image3D\n";
-			variantDefs<<"#define convertToImageFormatof_"<<variantVariables[j]<<" "<<(variantMemberType[remainder].c_str())<<"\n";
+			VariantFormat &v=variantFormats[remainder];
+			variantDefs<<"#define format_for_"<<varName<<" "<<(v.layoutDeclaration.c_str())<<"\n";
+			variantDefs<<"#define "<<varName<<"_image2D "<<(v.typeLetter.c_str())<<"image2D\n";
+			variantDefs<<"#define "<<varName<<"_image3D "<<(v.typeLetter.c_str())<<"image3D\n";
+			variantDefs<<"#define convertToImageFormatof_"<<varName<<" "<<(v.memberType.c_str())<<"\n";
 		}
 		// This MUST match up with ShaderType enum definition.
 		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,

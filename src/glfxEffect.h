@@ -30,6 +30,7 @@ namespace glfxParser
 		~Effect();
 		Effect();
 	protected:
+// FUNDAMENTAL DATA: This must be cached if we want to reload the effect without rebuilding it from source.
 		string												m_dir;
 		string												m_filename;
 		std::vector<Declaration *>							declarations;

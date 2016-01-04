@@ -366,24 +366,20 @@ string& Effect::Dir()
 unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log)
 {
 	GLFX_ERROR_CHECK
-	if(tech.length() == 0)
-	{
-		std::cerr<<"Must have a technique"<<std::endl;
-		assert(tech.length());
-		return 0;
-	}
-	
 	TechniqueGroup *group	=current_group;
 	map<string, Technique*>::iterator it = group->m_techniques.find(tech);
 	if (it == group->m_techniques.end())
+	{
+		std::cerr<<"Can't find technique: "<<tech.c_str()<<std::endl;
 		return 0;
+	}
 	Technique *t			=it->second;
 	map<string, Program>::iterator pp=t->GetPasses().begin();
 	if(pass.length())
 		pp=t->GetPasses().find(pass);
 	if(pp==t->GetPasses().end())
 		return 0;
-	unsigned programId		= pp->second.CompileAndLink(m_sharedCode,log);
+	unsigned programId		= pp->second.CompileAndLink(m_sharedCode,m_declaredTextures,log);
 	if(programId)
 	{
 		GLFX_ERROR_CHECK
@@ -405,22 +401,7 @@ unsigned Effect::BuildProgram(const string& tech, const string& pass, string& lo
 		}
 	}
 	return programId;
-}/*
-
-unsigned Effect::GetProgramVariant(unsigned main_program)
-{
-	TechniqueGroup *group	=current_group;
-	for(auto i=group->m_techniques.begin();i!=group->m_techniques.end();i++)
-	{
-		for(auto j=i->second->GetPasses().begin();j!=i->second->GetPasses().end();j++)
-		{
-			if(main_program==j->second.programId)
-				return j->second.GetApplicableVariant();
-		}
-	}
-	return 0;
 }
-*/
 
 ostringstream& Effect::Log()
 {
@@ -1091,8 +1072,9 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 	if(!pass)
 		return 0;
 	GLFX_ERROR_CHECK
-	unsigned variantNumber=0;
 	auto p=passProgramMap.find(pass);
+	// The variant is chosen by 
+	std::map<string,GLenum> variableFormats;
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
 		int main_texture_number		=i->second;
@@ -1100,19 +1082,9 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 		if(main_texture_number<1000)
 			continue;
 		GLenum f=ta.format;
-		if(f==GL_RGBA16F)
-		{
-			auto u=p->second->GetVariantVariables();
-			int variantIndex=0;
-			for(auto v=u.begin();v!=u.end();v++,variantIndex++)
-			{
-				if((*v)==i->first)
-				{
-					variantNumber|=(1<<variantIndex);
-				}
-			}
-		}
+		variableFormats[i->first]=f;
 	}
+	int variantNumber=p->second->GetVariantNumber(variableFormats);
 	 current_pass=pass;
 	if(variantNumber)
 		current_pass=p->second->GetVariantPass(variantNumber);
@@ -1268,7 +1240,6 @@ void Effect::ApplyPassState(unsigned pass)
 void Effect::SaveToCache(const std::string &filename)
 {
 	std::ofstream ofs(filename);
-//	string												m_dir;
 	ofs<<"source: "<<m_filename<<endl;
 	for(map<string,TechniqueGroup*>::const_iterator i=m_techniqueGroups.begin();i!=m_techniqueGroups.end();i++)
 	{

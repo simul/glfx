@@ -5,15 +5,18 @@
 #include <string>
 #include "glfxClasses.h"
 struct CompiledShader;
+struct DeclaredTexture;
 namespace glfxParser
 {
 	struct TextureSampler;
+
 	struct VariantFormat
 	{
 		std::string layoutDeclaration;
-		char typeLetter;
+		std::string typeLetter;
 		std::string memberType;
 	};
+
 	//! A Program in glsl is equivalent to a Pass in hlsl.
 	class Program
 	{
@@ -36,7 +39,7 @@ namespace glfxParser
 		Program(const Program& prog);
 		~Program();
 		const Program &operator=(const Program &);
-		unsigned CompileAndLink(const std::string &shared_src,std::string& log) ;
+		unsigned CompileAndLink(const std::string &shared_src,const std::map<std::string,DeclaredTexture*> &declaredTextures,std::string& log) ;
 		struct Variant
 		{
 			Variant():programId(0)
@@ -51,9 +54,11 @@ namespace glfxParser
 				return 0;
 			return e->second.programId;
 		}
-		const std::vector<std::string> GetVariantVariables() const
+		int GetVariantNumber(const std::map<std::string,GLenum> variableFormats);
+		const vector<VariantFormat> &GetVariantsForTexture(const std::string &name) const
 		{
-			return variantVariables;
+			auto i=variantMap.find(name);
+			return i->second;
 		}
 		bool IsTransformFeedbackShader() const
 		{
@@ -74,8 +79,10 @@ namespace glfxParser
 	private:
 		int CompileShader(unsigned shader, const std::string& name,const std::string &variantDefs,const std::string &shared, const std::string &src, ShaderType type,ostringstream& sLog) const;
 		std::string	computeLayout;
+		// A map of the variable names to the vector of variants it each variable have.
+		map<string,vector<VariantFormat> > variantMap;
 		// The names of the RW textures that have variants.
-		std::vector<std::string> variantVariables;
+		//std::vector<std::string> variantVariables;
 		std::map<unsigned,Variant> variants;
 		Shader		m_shaders[NUM_OF_SHADER_TYPES];
 		bool		m_separable;

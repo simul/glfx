@@ -178,36 +178,36 @@ extern int glfxdebug;
 enum GLTextureType
 {
 	unknwownTextureType
-	, gsampler1D				//	GL_TEXTURE_1D						1D texture
-	, gsampler2D				//	GL_TEXTURE_2D						2D texture
-	, gsampler3D				//	GL_TEXTURE_3D						3D texture
-	, gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
-	, gsampler2DRect			//	GL_TEXTURE_RECTANGLE				Rectangle Texture
-	, gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
-	, gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
-	, gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
-	, gsamplerBuffer			//	GL_TEXTURE_BUFFER					Buffer Texture
-	, gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
-	, gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
-	, sampler1DShadow			//	GL_TEXTURE_1D
-	, sampler2DShadow			//	GL_TEXTURE_2D
-	, samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
-	, sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
-	, sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
-	, sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
-	, samplerCubeArrayShadow	//	GL_TEXTURE_CUBE_MAP_ARRAY
+	,gsampler1D					//	GL_TEXTURE_1D						1D texture
+	,gsampler2D					//	GL_TEXTURE_2D						2D texture
+	,gsampler3D					//	GL_TEXTURE_3D						3D texture
+	,gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
+	,gsampler2DRect				//	GL_TEXTURE_RECTANGLE				Rectangle Texture
+	,gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
+	,gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
+	,gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
+	,gsamplerBuffer				//	GL_TEXTURE_BUFFER					Buffer Texture
+	,gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
+	,gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
+	,sampler1DShadow			//	GL_TEXTURE_1D
+	,sampler2DShadow			//	GL_TEXTURE_2D
+	,samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
+	,sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
+	,sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
+	,sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
+	,samplerCubeArrayShadow		//	GL_TEXTURE_CUBE_MAP_ARRAY
 	// Read-write textures - "images" in GLSL parlance:
-	, gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
-	, gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
-	, gimage3D					//	GL_TEXTURE_3D
-	, gimageCube				//	GL_TEXTURE_CUBE_MAP
-	, gimage2DRect				//	GL_TEXTURE_RECTANGLE
-	, gimage1DArray				//	GL_TEXTURE_1D_ARRAY
-	, gimage2DArray				//	GL_TEXTURE_2D_ARRAY
-	, gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
-	, gimageBuffer				//	GL_TEXTURE_BUFFER
-	, gimage2DMS				//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
-	, gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	,gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
+	,gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
+	,gimage3D					//	GL_TEXTURE_3D
+	,gimageCube					//	GL_TEXTURE_CUBE_MAP
+	,gimage2DRect				//	GL_TEXTURE_RECTANGLE
+	,gimage1DArray				//	GL_TEXTURE_1D_ARRAY
+	,gimage2DArray				//	GL_TEXTURE_2D_ARRAY
+	,gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
+	,gimageBuffer				//	GL_TEXTURE_BUFFER
+	,gimage2DMS					//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	,gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
 
 inline bool IsTextureWriteable(GLTextureType glTextureType)
