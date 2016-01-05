@@ -676,7 +676,8 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 	//	if(!res)
 		{
 #ifdef GLFX_GLSLANG
-			GlslangValidateProgram(shared_src,variantDefs.str(),sLog);
+			if(glfxIsGlslangValidationEnabled())
+				GlslangValidateProgram(shared_src,variantDefs.str(),sLog);
 #endif
 		}
 	
@@ -689,7 +690,8 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
     log=sLog.str();
 	
 #ifdef GLFX_GLSLANG
-             glslang::FinalizeProcess();
+	if(glfxIsGlslangValidationEnabled())
+		glslang::FinalizeProcess();
 #endif
     if(!res)
         return 0;
