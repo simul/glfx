@@ -580,7 +580,7 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 			{
 				const DeclaredTexture *dec=declaredTextures.find(*j)->second;
 				std::vector<VariantFormat> variantFormats;
-				GetVariantFormats(variantFormats,dec->type);
+				GetVariantFormats(variantFormats,dec->texel_format);
 			//	variantVariables.push_back((*j));
 				variantMap[*j]=variantFormats;
 			}
@@ -591,6 +591,11 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 	for(auto v:variantMap)
 	{
 		numVariants*=(int)v.second.size();
+	}
+	if(!numVariants)
+	{
+		GLFX_CERR<<"No variants at all for this program"<<std::endl;
+		numVariants=1;
 	}
 	// Each variant is a specific combination of the variant variables.
 	for(int i=0;i<numVariants;i++)
@@ -786,22 +791,31 @@ int Program::CompileShader(unsigned shader, const string& name,const string &var
 	}
     glCompileShader(shader);
     
-    GLint tmp,res;
-    glGetShaderiv(shader,GL_COMPILE_STATUS, &tmp);
-    res=tmp;
+    GLint res;
+    glGetShaderiv(shader,GL_COMPILE_STATUS, &res);
     //if(!tmp)
 	{
-		if(!tmp)
+		GLint ln;
+		if(!res)
 			sLog<<"Status: "<<name<<" shader compiled with errors"<<endl;
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
-		char* infoLog=new char[tmp];
-		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
-		if (strlen(infoLog)>0)
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &ln);
+		char* infoLog="";
+		if(ln!=0)
 		{
-			sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
-			sLog<<binaryFilename<<": output glsl"<<endl;
+			infoLog=new char[ln];
+			infoLog[0]=0;
+			glGetShaderInfoLog(shader,ln, &ln, infoLog);
+			if (strlen(infoLog)>0)
+			{
+				string fullBinaryPath;
+				char pth[_MAX_PATH];
+				_getcwd(pth,_MAX_PATH);
+				fullBinaryPath=(string(pth)+"/")+binaryFilename;
+				sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
+				sLog<<fullBinaryPath.c_str()<<": output glsl"<<endl;
+			}
+			delete[] infoLog;
 		}
-		delete[] infoLog;
 	}
     return res;
 }
