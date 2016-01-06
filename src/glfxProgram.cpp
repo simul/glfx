@@ -536,6 +536,58 @@ void GetVariantFormats(std::vector<VariantFormat> &variantFormats,std::string te
 		v.memberType="uvec4";
 		variantFormats.push_back(v);
 	}
+	else if(texelFormat==std::string("float"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="r16f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="r8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("char4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba8_snorm";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("uchar4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("uint"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("int"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32i";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else
+	{
+		GLFX_CERR<<"Non known variants for "<<texelFormat.c_str()<<std::endl;
+	}
 }
 
 int Program::GetVariantNumber(const std::map<std::string,GLenum> variableFormats)

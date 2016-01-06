@@ -100,31 +100,12 @@
 	}
 	static string GetLayoutForTemplateType(string s,string textureName)
 	{
-		if(s==string("vec4"))
+		// In HLSL, vec4 and float textures are "adaptable" and the actual texture might be a different format.
+		//if(s==string("vec4")||s==string("float"))
 		{
 			// We want to be able to write both, so we will add in a #define rgba16_or_32f rgba32f or rgba16f
 			// at the appropriate time.
 			return string("layout(format_for_")+textureName+")";
-		}
-		if(s==string("char4"))
-		{
-			return "layout(rgba8)";
-		}
-		if(s==string("uchar4"))
-		{
-			return "layout(rgba8)";
-		}
-		if(s==string("float"))
-		{
-			return "layout(r32f)";
-		}
-		if(s==string("uint"))
-		{
-			return "layout(r32ui)";
-		}
-		if(s==string("int"))
-		{
-			return "layout(r32i)";
 		}
 		return "";
 	}
