@@ -556,8 +556,12 @@ void GetVariantFormats(std::vector<VariantFormat> &variantFormats,std::string te
 	{
 		VariantFormat v;
 		v.layoutDeclaration="rgba8_snorm";
-		v.typeLetter="u";
-		v.memberType="uvec4";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba8i";
+		v.typeLetter="i";
+		v.memberType="ivec4";
 		variantFormats.push_back(v);
 	}
 	else if(texelFormat==string("uchar4"))
@@ -608,7 +612,7 @@ int Program::GetVariantNumber(const std::map<std::string,GLenum> variableFormats
 		if(format==GL_RGBA16F)
 			this_format=1;
 		varnum+=this_format;
-		mul*=j.second.size();
+		mul*=(int)j.second.size();
 	}
 	return varnum;
 }
@@ -669,6 +673,7 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 			VariantFormat &v=variantFormats[remainder];
 			variantDefs<<"#define format_for_"<<varName<<" "<<(v.layoutDeclaration.c_str())<<"\n";
 			variantDefs<<"#define "<<varName<<"_image2D "<<(v.typeLetter.c_str())<<"image2D\n";
+			variantDefs<<"#define "<<varName<<"_image2DArray "<<(v.typeLetter.c_str())<<"image2DArray\n";
 			variantDefs<<"#define "<<varName<<"_image3D "<<(v.typeLetter.c_str())<<"image3D\n";
 			variantDefs<<"#define convertToImageFormatof_"<<varName<<" "<<(v.memberType.c_str())<<"\n";
 		}
@@ -859,10 +864,11 @@ int Program::CompileShader(unsigned shader, const string& name,const string &var
 			glGetShaderInfoLog(shader,ln, &ln, infoLog);
 			if (strlen(infoLog)>0)
 			{
-				string fullBinaryPath;
+				string fullBinaryPath=binaryFilename;
 				char pth[_MAX_PATH];
 				_getcwd(pth,_MAX_PATH);
-				fullBinaryPath=(string(pth)+"/")+binaryFilename;
+				if(binaryFilename.find(":")>=binaryFilename.size())
+					fullBinaryPath=(string(pth)+"/")+binaryFilename;
 				sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
 				sLog<<fullBinaryPath.c_str()<<": output glsl"<<endl;
 			}
