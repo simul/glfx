@@ -1,0 +1,58 @@
+#include "shader_platform.sl"
+#include "../SL/common.sl"
+uniform RWTexture2D<vec4> outputTexture;
+uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
+
+[numthreads(8,8,1)]
+//SV_DispatchThreadID
+shader void CS_Test(uint3 g : SV_GroupID, uint3 t : SV_GroupThreadID)
+{
+	uint3 pos=g*8+t;
+	outputTexture[pos]=vec4(frac(vec3(pos)/7.0),1.0);
+}
+shader vec4 Test_MSAA(posTexVertexOutput IN) : SV_Target
+{
+	vec4 c=TEXTURE_LOAD_MSAA(imageTextureMS,int2(50.0*IN.texCoords),0);
+	return c;
+}
+
+shader vec4 PS_ReturnTest(posTexVertexOutput IN) : SV_TARGET
+{
+	//return vec4(IN.texCoords.xy,1.0,0.5);
+	if(IN.texCoords.x<=0.5)
+		return vec4(1.0,0.5,0.0,0.5);
+	return vec4(0.0,0.5,1.0,0.5);
+}
+
+VertexShader mainvs_5_0=CompileShader(vs_5_0,VS_SimpleFullscreen());
+
+technique cstest
+{
+	pass p0 
+	{
+		SetComputeShader(CompileShader(cs_5_0,CS_Test()));
+	}
+}
+
+technique pstest
+{
+    pass returntest
+    {
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,PS_ReturnTest()));
+    }
+    pass msaa
+    {
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,Test_MSAA()));
+    }
+}
+
+technique exposure_gamma
+{
+    pass msaa
+    {
+		SetVertexShader(mainvs_5_0);
+		SetPixelShader(CompileShader(ps_5_0,Test_MSAA()));
+    }
+}

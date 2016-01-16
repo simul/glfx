@@ -11,7 +11,7 @@ the last is C code to be copied verbatim to the output.
 %option fast
 %option ecs
 %option prefix="glfx"
-%option outfile="src/glfxScanner.cpp" header-file="src/glfxScanner.h"
+%option outfile="src/generated/glfxScanner.cpp" header-file="src/generated/glfxScanner.h"
 
 %{
 	#define YYDEBUG 1

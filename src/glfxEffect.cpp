@@ -29,7 +29,7 @@ typedef int errno_t;
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
-#include "glfxScanner.h"
+#include "generated/glfxScanner.h"
 #include "glfxProgram.h"
 #include "glfxErrorCheck.h"
 #include <set>

@@ -1,6 +1,6 @@
 %name-prefix "glfx"
-%output "src/glfxLALRParser.cpp"
-%defines "src/glfxLALRParser.hpp"
+%output "src/generated/glfxLALRParser.cpp"
+%defines "src/generated/glfxLALRParser.hpp"
 %{
 	//#define YYFPRINTF glfxprintf
 	#define YYDEBUG 1

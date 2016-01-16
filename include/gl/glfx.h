@@ -109,7 +109,6 @@ GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
 GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap);
 GLFXAPI void glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler);
 
-
 //! Get the number of techniques in the effect
 GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect);
 GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueGroupCount(int effect);

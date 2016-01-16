@@ -2,7 +2,7 @@
 %option warn
 %option noyywrap
 %option prefix="prepro_"
-%option outfile="src/PreprocessLexer.cpp" header-file="src/PreprocessLexer.h"
+%option outfile="src/generated/PreprocessLexer.cpp" header-file="src/generated/PreprocessLexer.h"
 %x IFILE PREPRO DEFINING DEFINING2 DEFINING3 DEFINING4 IN_MACRO_DEFINITION IF_STATEMENT START_INSERTING_MACRO INSERTING_MACRO IN_MULTILINE_COMMENT
 
 %{
@@ -570,7 +570,7 @@ int newfile(const char *fn)
 	if(!f)
 	{
 	GLFX_ERRNO_BREAK
-		prepro_error((string("File not found ")+fn).c_str());
+		prepro_error((string("File not found: \"")+fn+"\"").c_str());
 		return 0;
 	}
 	GLFX_ERRNO_BREAK

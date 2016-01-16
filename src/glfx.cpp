@@ -51,7 +51,7 @@ typedef int errno_t;
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
-#include "glfxScanner.h"
+#include "generated/glfxScanner.h"
 #include "glfxProgram.h"
 #include "StringToWString.h"
 #include "StringFunctions.h"
@@ -658,15 +658,18 @@ int GLFX_APIENTRY glfxGenEffect()
 #include <chrono>
 bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const char **file_paths_utf8, const char **macros, const char **defs) 
 {
-	cout << chrono::high_resolution_clock::period::den << endl;
+	//cout <<"chrono::high_resolution_clock"<< chrono::high_resolution_clock::period::den << endl;
 	auto start_time = chrono::high_resolution_clock::now();
     bool retVal=true;
     shaderPathsUtf8.clear();
-	const char **path=file_paths_utf8;
-	while(*path)
+	if(file_paths_utf8)
 	{
-		shaderPathsUtf8.push_back(*path);
-		path++;
+		const char **path=file_paths_utf8;
+		while(*path)
+		{
+			shaderPathsUtf8.push_back(*path);
+			path++;
+		}
 	}
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(string(file)));
 	string src;
@@ -676,12 +679,15 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 		prepro_open=&OpenFile;
 		prepro_close=&CloseFile;
 		std::map<std::string, std::string> defines;
-		const char **m = macros,**d=defs;
-		while(*m&&*d)
+		if(macros&&defs)
 		{
-			defines[*m] = *d;
-			m++;
-			d++;
+			const char **m = macros,**d=defs;
+			while(*m&&*d)
+			{
+				defines[*m] = *d;
+				m++;
+				d++;
+			}
 		}
 		defines["GLFX"] = "1";
 		retVal&=preprocess(file, defines);
