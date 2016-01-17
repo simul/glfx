@@ -30,14 +30,16 @@ if (MSVC)
                           LINK_FLAGS "/ENTRY:mainCRTStartup")
 endif()
 
-FILE( COPY ${EFFECT_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE( GLOB EFFECT_FILES "*.sfx" )
+
+SOURCE_GROUP( "Shaders" FILES ${EFFECT_FILES} )
 
 FILE( GLOB COMMON_HEADER_FILES
 "*.h"
 )
 SOURCE_GROUP( "Header Files" FILES ${COMMON_HEADER_FILES} )
 
-add_executable(triangle WIN32 MACOSX_BUNDLE Triangle.cpp ${COMMON_HEADER_FILES})
+add_executable(triangle WIN32 MACOSX_BUNDLE Triangle.cpp ${COMMON_HEADER_FILES} ${EFFECT_FILES})
 
 set(WINDOWS_BINARIES triangle)
 

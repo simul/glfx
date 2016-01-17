@@ -16,7 +16,7 @@ SET (LIB_DESTINATION "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}" CACHE STRING "Li
 ## the following are directories where stuff will be installed to
 SET(INCLUDE_INSTALL_DIR      "${CMAKE_INSTALL_PREFIX}/include/GL/" CACHE PATH "The subdirectory to the header prefix")
 SET(PKGCONFIG_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/pkgconfig/" CACHE STRING "Base directory for pkgconfig files")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 IF(NOT WIN32)
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/glfx.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/glfx.pc @ONLY)

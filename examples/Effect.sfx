@@ -1,5 +1,3 @@
-#include "shader_platform.sl"
-#include "../SL/common.sl"
 uniform RWTexture2D<vec4> outputTexture;
 uniform TEXTURE2DMS_FLOAT4 imageTextureMS;
 

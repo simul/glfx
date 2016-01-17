@@ -38,22 +38,24 @@ int main(int argCount, char** szArgList)
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
-	glewInit();
     window = glfwCreateWindow(640,480,"Simple example",NULL,NULL);
     if (!window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+	GLenum glewres=glewInit();
+    if (!glewres)
+        exit(EXIT_FAILURE);
+	GLuint empty_vao=0;
+	glGenVertexArrays(1,&empty_vao);
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
     glfwSetKeyCallback(window, key_callback);
 	int effect=glfxGenEffect();
-	glfxParseEffectFromFile(effect,"../examples/Effect.sfx",NULL,NULL,NULL);
-	GLuint empty_vao=0;
-	glGenVertexArrays(1,&empty_vao);
+	glfxParseEffectFromFile(effect,"../../examples/Effect.sfx",NULL,NULL,NULL);
 
 	// Make the texture:
     while(!glfwWindowShouldClose(window))
