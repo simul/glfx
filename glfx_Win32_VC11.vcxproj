@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
+    <ClInclude Include="src\BufferedStringStreamBuf.h" />
     <ClInclude Include="src\FileLoader.h" />
     <ClInclude Include="src\generated\glfxLALRParser.hpp" />
     <ClInclude Include="src\generated\glfxScanner.h" />
@@ -83,37 +84,37 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
     </CustomBuild>
     <CustomBuild Include="src\glfx.ypp">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\Preprocessor.lpp">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
@@ -123,13 +124,13 @@
     <CustomBuild Include="src\Preprocessor.ypp">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
