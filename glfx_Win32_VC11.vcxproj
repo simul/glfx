@@ -327,7 +327,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -346,7 +346,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -362,7 +362,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -452,7 +452,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;NDEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
