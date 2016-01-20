@@ -36,6 +36,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\FileLoader.cpp" />
+    <ClCompile Include="src\generated\glfxLALRParser.cpp" />
+    <ClCompile Include="src\generated\glfxScanner.cpp" />
+    <ClCompile Include="src\generated\PreprocessLexer.cpp" />
+    <ClCompile Include="src\generated\PreprocessParser.cpp" />
     <ClCompile Include="src\glfx.cpp" />
     <ClCompile Include="src\glfxEffect.cpp" />
     <ClCompile Include="src\glfxErrorCheck.cpp" />
@@ -56,6 +60,10 @@
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
     <ClInclude Include="src\FileLoader.h" />
+    <ClInclude Include="src\generated\glfxLALRParser.hpp" />
+    <ClInclude Include="src\generated\glfxScanner.h" />
+    <ClInclude Include="src\generated\PreprocessLexer.h" />
+    <ClInclude Include="src\generated\PreprocessParser.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
     <ClInclude Include="src\glfxErrorCheck.h" />

@@ -23,14 +23,7 @@
     <ClCompile Include="src\glfx.cpp" />
     <ClCompile Include="src\glfxEffect.cpp" />
     <ClCompile Include="src\glfxErrorCheck.cpp" />
-    <ClCompile Include="src\generated\glfxLALRParser.cpp" />
     <ClCompile Include="src\glfxProgram.cpp" />
-    <ClCompile Include="src\generated\glfxScanner.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4018</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">4018</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="src\generated\PreprocessLexer.cpp" />
-    <ClCompile Include="src\generated\PreprocessParser.cpp" />
     <ClCompile Include="src\ShaderCompiler.cpp" />
     <ClCompile Include="src\StringFunctions.cpp" />
     <ClCompile Include="src\StringToWString.cpp" />
@@ -42,13 +35,9 @@
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
     <ClInclude Include="src\glfxErrorCheck.h" />
-    <ClInclude Include="src\generated\glfxLALRParser.hpp" />
     <ClInclude Include="src\glfxParser.h" />
     <ClInclude Include="src\glfxProgram.h" />
-    <ClInclude Include="src\generated\glfxScanner.h" />
-    <ClInclude Include="src\generated\PreprocessLexer.h" />
     <ClInclude Include="src\Preprocessor.h" />
-    <ClInclude Include="src\generated\PreprocessParser.h" />
     <ClInclude Include="src\StringFunctions.h" />
     <ClInclude Include="src\StringToWString.h" />
     <ClInclude Include="src\VisualStudioDebugOutput.h" />
