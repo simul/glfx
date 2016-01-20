@@ -161,9 +161,9 @@ GLenum toBlendGLEnum(const std::string &str)
 		return GL_ONE_MINUS_DST_COLOR;
 	else if(is_equal(str,"SRC_ALPHA_SAT"))
 	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown blend type: "<<str;
+		glfxerror(ostr.str().c_str());
 		return 0;
 	}
 	else if(is_equal(str,"BLEND_FACTOR"))
@@ -180,9 +180,9 @@ GLenum toBlendGLEnum(const std::string &str)
 		return GL_ONE_MINUS_SRC1_ALPHA;
 	else
 	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown blend type: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -197,9 +197,9 @@ GLenum toBlendOpGLEnum(const std::string &str)
 		return GL_FUNC_ADD;
 	else
 	{
-		ostringstream str;
-		str<<"unknown blend operation: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown blend operation: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -254,9 +254,9 @@ GLenum toDepthFuncGLEnum(const std::string &str)
 		return GL_GEQUAL;
 	else
 	{
-		ostringstream str;
-		str<<"unknown depth function: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown depth function: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -289,9 +289,9 @@ GLenum toMinFilterModeGLEnum(const std::string &str)
 		return GL_LINEAR_MIPMAP_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly	
 	else
 	{
-		ostringstream str;
-		str<<"unknown filter mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown filter mode: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -314,9 +314,9 @@ GLenum toMagFilterModeGLEnum(const std::string &str)
 		return GL_LINEAR;	
 	else
 	{
-		ostringstream str;
-		str<<"unknown filter mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown filter mode: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -331,9 +331,9 @@ GLenum toAddressModeGLEnum(const std::string &str)
 		return GL_CLAMP_TO_EDGE;
 	else
 	{
-		ostringstream str;
-		str<<"unknown addressing mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown addressing mode: "<<str;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
