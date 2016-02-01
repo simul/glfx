@@ -38,6 +38,7 @@ typedef int errno_t;
 #endif
 #include "generated/glfxScanner.h"
 #include "glfxProgram.h"
+
 const vector<string> &TechniqueGroup::GetTechniqueList()
 {
 	m_techniqueNames.clear();
@@ -499,7 +500,7 @@ void Program::GlslangValidateProgram(const string &shared_src,string variantDefs
 			TBuiltInResource Resources;
 			ProcessConfigFile(Resources);
 			res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
-			const char *info=shader->getInfoDebugLog();
+			const char *info=shader->getInfoLog();
 			sLog<<info;
 			if(res)
 				glsl_program->addShader(shader);
@@ -669,7 +670,7 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 			string varName=j.first;
 			std::vector<VariantFormat> &variantFormats=j.second;
 			int remainder=combination%(variantFormats.size());
-			combination/=(variantFormats.size());
+			combination/=(int)(variantFormats.size());
 			VariantFormat &v=variantFormats[remainder];
 			variantDefs<<"#define format_for_"<<varName<<" "<<(v.layoutDeclaration.c_str())<<"\n";
 			variantDefs<<"#define "<<varName<<"_image2D "<<(v.typeLetter.c_str())<<"image2D\n";
@@ -735,7 +736,7 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 				sLog<<"Linkage details:"<<endl<<infoLog<<endl;
 			}
 		}
-	//	if(!res)
+		if(!res)
 		{
 #ifdef GLFX_GLSLANG
 			if(glfxIsGlslangValidationEnabled())

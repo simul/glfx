@@ -82,7 +82,11 @@
 	{
 		WriteLineNumber(str,current_filenumber,lineno);//.c_str()<<"\""<<endl;
 	}
-	static bool write_line_number_next=false;
+	void WriteLineNumberFromYYLine(std::ostringstream &str,int yylineno)
+	{
+		WriteLineNumber(str,current_filenumber,yylineno+last_linenumber-global_linenumber);
+	}
+	bool write_line_number_next=false;
 	void gSkip()
 	{
 		write_line_number_next=true;
@@ -659,7 +663,7 @@ prog : prog tok
 		buildFunction.content_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		WriteLineNumber(str,current_filenumber,buildFunction.content_linenumber);
 		str<< buildFunction.returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<buildFunction.content<<"\n}\n";
-		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
+		WriteLineNumber(sharedCode,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 		buildFunction.main_linenumber=$1.lineno;
 		//glfxWrite(str.str().c_str());
 		buildFunction.source				=str.str();
@@ -1643,12 +1647,12 @@ statement:	COMMENT
 			}
 			|  ';'
 			{
-				$$.strs[0]=";\n";
+				$$.strs[0]=$1.strs[0];
 				$$.strs[1]="";
 			}
 			| declaration ';'
 			{
-				$$.strs[0]=$1.strs[0]+";\n";
+				$$.strs[0]=$1.strs[0]+$2.strs[0];
 				$$.strs[1]="";
 			}
 			| compound_statement
@@ -1681,7 +1685,7 @@ statement:	COMMENT
 				}
 			| DO statement WHILE '(' expression ')' ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
 					$$.strs[1]="";
 				}
 			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
@@ -1692,17 +1696,17 @@ statement:	COMMENT
 				}
 			| GOTO IDENTIFIER ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 					$$.strs[1]="";
 				}
 			| CONTINUE ';'
 				{
-					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
 					$$.strs[1]="";
 				}
 			| BREAK ';'
 				{
-					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
 					$$.strs[1]="";
 				}
 			| RETURN optional_expression ';'
@@ -1715,7 +1719,7 @@ statement:	COMMENT
 				}
 				else
 				{
-					$$.strs[0]=($1.strs[0]+" ")+optional_expression+";\n";
+					$$.strs[0]=($1.strs[0]+" ")+optional_expression+$3.strs[0];
 					$$.strs[1]=optional_expression;
 				}
 				$$.lineno=$1.lineno;

@@ -88,6 +88,9 @@ the last is C code to be copied verbatim to the output.
 	}
 	std::string recent;
 	std::string accw;
+	extern void gSkip();
+	extern bool write_line_number_next;
+	extern void WriteLineNumberFromYYLine(std::ostringstream &str,int yylineno);
 	void accumulateWhitespace(const char *w)
 	{
 		accw+=w;
@@ -96,7 +99,16 @@ the last is C code to be copied verbatim to the output.
 	{
 		glfxlval.token=u;
 		glfxlval.lineno=yylineno;
-		glfxlval.strs[0] = txt;//accw
+		glfxlval.strs[0] = txt;
+		if(write_line_number_next)
+		{
+			ostringstream line_txt;
+			line_txt<<"\n";
+			WriteLineNumberFromYYLine(line_txt,glfxlval.lineno);
+			line_txt<<txt;
+			glfxlval.strs[0]=line_txt.str();
+			write_line_number_next=false;
+		}
 		recent+=glfxlval.strs[0]+" ";
 		while(recent.length()>100)
 			recent.erase(0,1);
@@ -106,7 +118,6 @@ the last is C code to be copied verbatim to the output.
 	{
 		return modReturn_(u, yytext);
 	}
-	extern void gSkip();
 #define stdReturn return stdReturn_
 #define modReturn return modReturn_
 %}
@@ -602,6 +613,7 @@ warning
 													stdReturn(UNIFORM);
 												}
 <IN_SHADER>";"[ \t\n]*							{
+													glfxlval.strs[0]=yytext;
 													stdReturn(';');
 												}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{FLOAT_BLCK}	{
@@ -834,8 +846,10 @@ warning
 														glfxWrite(yytext); // Single line comment (with possible continuation)
 												}
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
-													glfxlval.strs[0]=yytext;
+													// Write an empty statement: preserve line numbers
+													//modReturn(';',";\n");
 													gSkip();
+													
 												}
 <INITIAL,IN_RENDER_STATE,IN_SHADER>"/*"         {
 													glfxPushState(IN_MULTILINE_COMMENT);
