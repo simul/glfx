@@ -247,6 +247,9 @@ warning
 <INITIAL,IN_UNIFORM_DECL,IN_RENDER_STATE>"register"						{
 													stdReturn(REGISTER);
 												}
+<INITIAL,IN_SHADER,IN_UNIFORM_DECL>"textureSize"	{
+													stdReturn(RESERVED_WORD);
+												}
 <IN_UNIFORM_DECL,IN_UNDEFINE,IN_PRAGMA>{ID_BLCK}	{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
@@ -874,9 +877,7 @@ warning
 												}
 <IN_RENDER_STATE,IN_STRUCT>[\t\n ]	{
 												}// Without this line, the yylineno would get out of whack.
-<IN_SHADER>[\t\n ]	{
-													stdReturn(WHITESPACE);
-												}// Without this line, the yylineno would get out of whack.
+
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>[ \t\n]*"{"[ \t\n]*		{
 													glfxlval.strs[0]=yytext;
