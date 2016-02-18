@@ -307,7 +307,6 @@
 %token SATURATE
 %token SHADER_PROFILE 
 %token COMMENT
-%token RESERVED_WORD
 
 %%
 
