@@ -157,14 +157,14 @@ namespace glfxParser
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
 	#endif
 	
-	extern GLenum toBlendGLEnum(const std::string &str);
-	extern GLenum toBlendOpGLEnum(const std::string &str);
-	extern GLenum toDepthFuncGLEnum(const std::string &str);
-	extern GLenum toFillModeGLenum(const std::string &str);
-	extern GLenum toCullModeGLenum(const std::string &str);
-	extern GLenum toMinFilterModeGLEnum(const std::string &str);
-	extern GLenum toMagFilterModeGLEnum(const std::string &str);
-	extern GLenum toAddressModeGLEnum(const std::string &str);
+	extern GLenum toBlendGLEnum(int);
+	extern GLenum toBlendOpGLEnum(int);
+	extern GLenum toDepthFuncGLEnum(int);
+	extern GLenum toFillModeGLenum(int);
+	extern GLenum toCullModeGLenum(int);
+	extern GLenum toMinFilterModeGLEnum(int);
+	extern GLenum toMagFilterModeGLEnum(int);
+	extern GLenum toAddressModeGLEnum(int);
 }
 														   
 #define YYSTYPE glfxstype

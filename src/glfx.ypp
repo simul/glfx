@@ -51,8 +51,13 @@
 	int global_linenum			=0;
 	int filenum					=0;
 	#pragma optimize("",off)
-	bool is_equal(const string& a, const char * b)
+	bool is_equal(const string& A, const char * b)
 	{
+		string a = A;
+		while (a.length()>0 && a[0] == '\n' || a[0] == ' ' || a[0] == '\t')
+			a = a.substr(1, a.length() - 1);
+		while (a.length()>0&&a[a.length() - 1] == '\n' || a[a.length() - 1] == ' ' || a[a.length() - 1] == '\t')
+			a = a.substr(0, a.length() - 1);
 		size_t sz = a.size();
 		if (strlen(b) != sz)
 			return false;
@@ -74,17 +79,23 @@
 	{
 		return (float)atof(str.c_str());
 	}
+	std::string LineNumber( int fileno, int lineno)
+	{
+		std::ostringstream str;
+		str << lineno << " " << fileno;
+		return str.str();
+	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{
-		str<<"#line "<<lineno<<" "<<fileno<<endl;
+		str<<"#line "<< LineNumber(lineno,fileno)<<endl;
 	}
 	void WriteLineNumber(std::ostringstream &str,int lineno)
 	{
 		WriteLineNumber(str,current_filenumber,lineno);//.c_str()<<"\""<<endl;
 	}
-	void WriteLineNumberFromYYLine(std::ostringstream &str,int yylineno)
+	std::string LineNumberFromYYLine(int yylineno)
 	{
-		WriteLineNumber(str,current_filenumber,yylineno+last_linenumber-global_linenumber);
+		return LineNumber(current_filenumber,yylineno+last_linenumber-global_linenumber);
 	}
 	bool write_line_number_next=false;
 	void gSkip()
@@ -295,7 +306,7 @@
 %}
 
 %token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD LOAD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
+%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER P_FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
 %token WARNING DEF MESSAGE PACK_MATRIX
@@ -307,7 +318,15 @@
 %token SATURATE
 %token SHADER_PROFILE 
 %token COMMENT
-
+//filter_mode
+%token MIN_MAG_MIP_POINT MIN_MAG_POINT_MIP_LINEAR MIN_POINT_MAG_LINEAR_MIP_POINT MIN_POINT_MAG_MIP_LINEAR MIN_LINEAR_MAG_MIP_POINT MIN_LINEAR_MAG_POINT_MIP_LINEAR MIN_MAG_LINEAR_MIP_POINT MIN_MAG_MIP_LINEAR ANISOTROPIC
+%token SRC_ALPHA INV_SRC_ALPHA ZERO ONE SRC_COLOR INV_SRC_COLOR DEST_ALPHA INV_DEST_ALPHA DEST_COLOR INV_DEST_COLOR SRC_ALPHA_SAT BLEND_FACTOR INV_BLEND_FACTOR SRC1_COLOR INV_SRC1_COLOR SRC1_ALPHA INV_SRC1_ALPHA
+%token BLEND_OP_ADD BLEND_OP_SUBTRACT BLEND_OP_MAX
+%token CULL_FRONT_FACES CULL_BACK_FACES
+%token RENDERSTATE_RVALUE_NONE
+%token FILL_MODE_SOLID FILL_MODE_WIREFRAME
+%token DEPTH_PASS_ALWAYS DEPTH_PASS_NEVER DEPTH_PASS_LESS DEPTH_PASS_GREATER DEPTH_PASS_LESS_EQUAL DEPTH_PASS_GREATER_EQUAL
+%token TEXTURE_WRAP TEXTURE_MIRROR TEXTURE_CLAMP
 %%
 
 prog : prog tok
@@ -720,14 +739,14 @@ prog : prog tok
 		gEffect->AddTechniqueGroup(groupName,buildTechniqueGroup);
 		buildTechniqueGroup.m_techniques.clear();
 	};
-	line_statement: LINE lex_fx NUM NUM lex_passthrough
+	line_statement: LINE lex_fx NUM NUM lex_passthrough EOL
 	{
 		last_linenumber		=$3.num;
 		current_filenumber	=$4.num;
 		global_linenumber	=$1.lineno+1;	// the line AFTER the #line directve.
 		WriteLineNumber(sharedCode,current_filenumber,last_linenumber);
 	}
-	ignore_line_statement: LINE NUM NUM
+	ignore_line_statement: LINE NUM NUM EOL
 	{
 		last_linenumber		=$2.num;
 		current_filenumber	=$3.num;
@@ -876,11 +895,6 @@ function_content : '{' statement_list '}' { /* Read next block */
     $$.lineno= $2.lineno;
 };
 
-read_block : { /* Read next block */
-    $$.strs[0]= glfxreadblock('{', '}');
-    $$.lineno= glfxget_lineno();
-};
-
 optional_return_semantic: ':' IDENTIFIER
  {
     $$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -906,12 +920,17 @@ struct_member_list: struct_member_list struct_element
     $$.strs[0]=member;
 }
 struct_element: struct_memb
-
 {
 	string str=$1.strs[0];
 	//if(write_line_number_next)
 //		str=
     $$.strs[0]	=str;
+}
+|
+ignore_line_statement
+{
+	$$.lineno = $1.lineno;
+	$$.num = -1;
 }
 | COMMENT
 {
@@ -1235,7 +1254,7 @@ shaders_list : shaders_list shader_def
 		$$.strs[2]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
-vec4: IDENTIFIER '(' FLOAT ',' FLOAT ',' FLOAT ',' FLOAT ')'
+vec4: IDENTIFIER '(' P_FLOAT ',' P_FLOAT ',' P_FLOAT ',' P_FLOAT ')'
 	  {
 		  $$.strs[0]=$1.strs[0]+"(";
 		  $$.strs[0]+=$3.strs[0]+",";
@@ -1520,7 +1539,7 @@ statement_list: statement_list statement
 					$$.strs[0]	="";
 					$$.strs[1]	="";
 				}
-line_statement_in_shader: LINE NUM NUM 
+line_statement_in_shader: LINE NUM NUM EOL
 	{
 		last_linenumber		=$2.num;
 		current_filenumber	=$3.num;
@@ -2004,8 +2023,9 @@ get_dims_exp:	postfix_exp '.' GET_DIMS
 postfix_exp		: primary_exp
 					{
 						$$.token=$1.token;
-						$$.strs[0]=$1.strs[0];
-						$$.strs[2]=$1.strs[0];			//Command
+						string varName = $1.strs[0];
+						$$.strs[0]= varName;
+						$$.strs[2]= varName;			//Command
 					}
 					| postfix_exp '[' expression ']'
 					{
@@ -2243,7 +2263,7 @@ postfix_exp		: primary_exp
 						}
 						$$.strs[0]=expr1+expr2+params+expr4;
 					}
-					| postfix_exp '('			')'
+					| postfix_exp '(' ')'
 					{
 						// ok this could be a function call.
 						string command=$1.strs[2];
@@ -2337,7 +2357,7 @@ const		: NUM
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-			| FLOAT
+			| P_FLOAT
 				{
 					$$.strs[0]=$1.strs[0];
 				}
@@ -2411,6 +2431,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							$$.lineno		=$3.lineno;
 							string name		=$1.strs[0];
 							string value	=$3.strs[0];
+							int token		= $3.token;
 							int index		=$1.num;
 							int ival		=$3.num;
 							float fval		=$3.fnum;
@@ -2418,9 +2439,9 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							if(renderState==RASTERIZER_STATE)
 							{
 								if(is_equal(name,"FillMode"))
-									buildRasterizerState.FillMode=(GLenum)toFillModeGLenum(value);
+									buildRasterizerState.FillMode=(GLenum)toFillModeGLenum(token);
 								else if(is_equal(name,"CullMode"))
-									buildRasterizerState.CullMode=(GLenum)toCullModeGLenum(value);
+									buildRasterizerState.CullMode=(GLenum)toCullModeGLenum(token);
 								else if(is_equal(name,"FrontCounterClockwise"))
 									buildRasterizerState.FrontCounterClockwise=toBool(value);
 								else if(is_equal(name,"DepthBias"))
@@ -2458,7 +2479,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 										errSem("Unknown depth write mask");
 								}
 								else if(is_equal(name,"DepthFunc"))
-									buildDepthStencilState.DepthFunc=(GLenum)toDepthFuncGLEnum(value);
+									buildDepthStencilState.DepthFunc=(GLenum)toDepthFuncGLEnum(token);
 								else
 								{
 									ostringstream str;
@@ -2469,17 +2490,17 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							if(renderState==BLEND_STATE)
 							{
 								if(is_equal(name,"SrcBlend"))
-									buildBlendState.SrcBlend=(GLenum)toBlendGLEnum(value);
+									buildBlendState.SrcBlend=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"DestBlend"))
-									buildBlendState.DestBlend=(GLenum)toBlendGLEnum(value);
+									buildBlendState.DestBlend=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"BlendOp"))
-									buildBlendState.BlendOp=(GLenum)toBlendOpGLEnum(value);
+									buildBlendState.BlendOp=(GLenum)toBlendOpGLEnum(token);
 								else if(is_equal(name,"SrcBlendAlpha"))
-									buildBlendState.SrcBlendAlpha=(GLenum)toBlendGLEnum(value);
+									buildBlendState.SrcBlendAlpha=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"DestBlendAlpha"))
-									buildBlendState.DestBlendAlpha=(GLenum)toBlendGLEnum(value);
+									buildBlendState.DestBlendAlpha=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"BlendOpAlpha"))
-									buildBlendState.BlendOpAlpha=(GLenum)toBlendOpGLEnum(value);
+									buildBlendState.BlendOpAlpha=(GLenum)toBlendOpGLEnum(token);
 								else if(is_equal(name,"AlphaToCoverageEnable"))
 									buildBlendState.AlphaToCoverageEnable=toBool(value);
 								else if(is_equal(name,"BlendEnable"))
@@ -2497,15 +2518,15 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							{
 								if(is_equal(name,"Filter"))
 								{
-									buildSamplerState.MinFilter			=(GLenum)toMinFilterModeGLEnum(value);
-									buildSamplerState.MagFilter			=(GLenum)toMagFilterModeGLEnum(value);
+									buildSamplerState.MinFilter			=(GLenum)toMinFilterModeGLEnum(token);
+									buildSamplerState.MagFilter			=(GLenum)toMagFilterModeGLEnum(token);
 								}
 								else if(is_equal(name,"AddressU"))
-									buildSamplerState.AddressU			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressU			=(GLenum)toAddressModeGLEnum(token);
 								else if(is_equal(name,"AddressV"))
-									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(token);
 								else if(is_equal(name,"AddressW"))
-									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(token);
 								else if(is_equal(name,"MipLODBias"))
 									buildSamplerState.MipLODBias		=toFloat(value);
 								else if(is_equal(name,"MaxLod"))
@@ -2543,21 +2564,278 @@ optional_index : '[' NUM ']'
 						{
 							 $$.num=0;
 						};
-render_state_rvalue : IDENTIFIER
-						{
-							$$.lineno=$1.lineno;
-							$$.strs[0]=$1.strs[0];
-						}
-						| NUM
-						{
-							$$.lineno=$1.lineno;
-							$$.num=$1.num;
-						}
-						| FLOAT
-						{
-							$$.lineno=$1.lineno;
-							$$.fnum=$1.fnum;
-						};
+render_state_rvalue: IDENTIFIER
+					{
+						$$.lineno = $1.lineno;
+						$$.strs[0] = $1.strs[0];
+					}
+					| NUM
+					{
+						$$.lineno = $1.lineno;
+						$$.num = $1.num;
+						$$.token = $1.token;
+					}
+						| P_FLOAT
+					{
+						$$.lineno = $1.lineno;
+						$$.fnum = $1.fnum;
+						$$.token = $1.token;
+					}
+					| filter_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| blend_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| blend_op
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| cull_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+						| fill_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| RENDERSTATE_RVALUE_NONE
+					{
+						// THis could be different types depending on context: cull or fill.
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| depth_func
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| texture_addressing_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+filter_mode: MIN_MAG_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_POINT_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_POINT_MAG_LINEAR_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_POINT_MAG_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_LINEAR_MAG_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_LINEAR_MAG_POINT_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_LINEAR_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| ANISOTROPIC
+					{
+						$$.lineno = $1.lineno;
+						$$.token =$1.token
+					}
+blend_mode: SRC_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| ZERO
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| ONE
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| DEST_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_DEST_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| DEST_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_DEST_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC_ALPHA_SAT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| BLEND_FACTOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_BLEND_FACTOR
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| SRC1_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC1_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC1_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC1_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+blend_op: BLEND_OP_ADD
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| BLEND_OP_SUBTRACT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| BLEND_OP_MAX
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+fill_mode: FILL_MODE_WIREFRAME
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| FILL_MODE_SOLID
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+cull_mode:	CULL_FRONT_FACES
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| CULL_BACK_FACES
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+depth_func: DEPTH_PASS_ALWAYS
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_NEVER
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_LESS
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_GREATER
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_LESS_EQUAL
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_GREATER_EQUAL
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+
+texture_addressing_mode: TEXTURE_WRAP
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| TEXTURE_MIRROR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| TEXTURE_CLAMP
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
 type_spec: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0];

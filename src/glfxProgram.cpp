@@ -493,8 +493,7 @@ void Program::GlslangValidateProgram(const string &shared_src,string variantDefs
 				shr=shared_src.substr(0,l);
 	
 			string preamble = m_shaders[i].preamble+variantDefs;
-			const char* strSrc[] = { preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str() };
-			const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
+			const char* shaderStrings[]={ preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
 			static int s=3;
 			shader->setStrings(shaderStrings,s);
 			TBuiltInResource Resources;
@@ -638,7 +637,7 @@ unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::st
 				const DeclaredTexture *dec=declaredTextures.find(*j)->second;
 				std::vector<VariantFormat> variantFormats;
 				GetVariantFormats(variantFormats,dec->texel_format);
-			//	variantVariables.push_back((*j));
+			
 				variantMap[*j]=variantFormats;
 			}
 		}

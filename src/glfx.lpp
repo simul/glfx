@@ -90,39 +90,18 @@ the last is C code to be copied verbatim to the output.
 	std::string accw;
 	extern void gSkip();
 	extern bool write_line_number_next;
-	extern void WriteLineNumberFromYYLine(std::ostringstream &str,int yylineno);
+	extern std::string LineNumberFromYYLine(int yylineno);
 	void accumulateWhitespace(const char *w)
 	{
 		accw+=w;
 	}
-	int modReturn_(int u,const char *txt)
-	{
-		glfxlval.token=u;
-		glfxlval.lineno=yylineno;
-		glfxlval.strs[0] = txt;
-		if(write_line_number_next)
-		{
-			ostringstream line_txt;
-			line_txt<<"\n";
-			WriteLineNumberFromYYLine(line_txt,glfxlval.lineno);
-			line_txt<<txt;
-			glfxlval.strs[0]=line_txt.str();
-			write_line_number_next=false;
-		}
-		recent+=glfxlval.strs[0]+" ";
-		while(recent.length()>100)
-			recent.erase(0,1);
-		return (u);
-	}
-	int stdReturn_(int u)
-	{
-		return modReturn_(u, yytext);
-	}
+	int modReturn_(int u, const char *txt);
+	int stdReturn_(int u);
 #define stdReturn return stdReturn_
 #define modReturn return modReturn_
 %}
 
-%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_PRAGMA IN_MULTILINE_COMMENT
+%x IN_SHADER IN_FUNCTION IN_DEFINE IN_UNDEFINE IN_SHADER_COMPILE IN_RENDER_STATE IN_STRUCT IN_TEXTURE_DECL IN_UNIFORM_DECL IN_PRAGMA IN_MULTILINE_COMMENT IN_LINE
 
 ID_BLCK [a-zA-Z_][a-zA-Z0-9_]*
 NUM_BLCK 0|([1-9][0-9]*)
@@ -189,7 +168,7 @@ warning
 														glfxWrite(yytext); 
 													stdReturn(MACRO_DEFINITION);
 											}
-<IN_DEFINE,IN_UNDEFINE,IN_PRAGMA>\n			{
+<IN_DEFINE,IN_UNDEFINE,IN_PRAGMA,IN_LINE>\n			{
 												if(gLexPassthrough)
 													glfxWrite(yytext); 
 												glfxPopState();
@@ -311,6 +290,7 @@ warning
 <INITIAL,IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>"#line"	{
 														glfxlval.lineno=yylineno;
 														glfxlval.strs[0]=yytext;
+														glfxPushState(IN_LINE);
 														stdReturn(LINE);
 													}
 <INITIAL>^"#include"[\t ]+{STR_BLCK}[\t ]*\n	{
@@ -619,14 +599,70 @@ warning
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>{FLOAT_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.fnum=(float)atof(yytext);
-													stdReturn(FLOAT);
+													stdReturn(P_FLOAT);
 												}
-<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_PRAGMA,IN_STRUCT>{NUM_BLCK}	{
+<IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_PRAGMA,IN_STRUCT,IN_LINE>{NUM_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.num=atoi(yytext);
 													glfxlval.strs[0]=yytext;
 													stdReturn(NUM);
 												}
+<IN_LINE>\n	{
+	accumulateWhitespace(yytext);
+	glfxPopState();
+}
+
+<IN_RENDER_STATE>(?i:MIN_MAG_MIP_POINT)					{stdReturn(MIN_MAG_MIP_POINT); }
+<IN_RENDER_STATE>(?i:MIN_MAG_POINT_MIP_LINEAR)			{stdReturn(MIN_MAG_POINT_MIP_LINEAR); }
+<IN_RENDER_STATE>(?i:MIN_POINT_MAG_LINEAR_MIP_POINT)	{stdReturn(MIN_POINT_MAG_LINEAR_MIP_POINT); }
+<IN_RENDER_STATE>(?i:MIN_POINT_MAG_MIP_LINEAR)			{stdReturn(MIN_POINT_MAG_MIP_LINEAR);}
+<IN_RENDER_STATE>(?i:MIN_LINEAR_MAG_MIP_POINT)			{stdReturn(MIN_LINEAR_MAG_MIP_POINT);}
+<IN_RENDER_STATE>(?i:MIN_LINEAR_MAG_POINT_MIP_LINEAR)	{stdReturn(MIN_LINEAR_MAG_POINT_MIP_LINEAR);}
+<IN_RENDER_STATE>(?i:MIN_MAG_LINEAR_MIP_POINT)			{stdReturn(MIN_MAG_LINEAR_MIP_POINT);}
+<IN_RENDER_STATE>(?i:MIN_MAG_MIP_LINEAR)				{stdReturn(MIN_MAG_MIP_LINEAR);}
+<IN_RENDER_STATE>(?i:ANISOTROPIC)						{stdReturn(ANISOTROPIC);}
+
+<IN_RENDER_STATE>(?i:SRC_ALPHA)					{stdReturn(SRC_ALPHA);}
+<IN_RENDER_STATE>(?i:INV_SRC_ALPHA)				{stdReturn(INV_SRC_ALPHA);}
+<IN_RENDER_STATE>(?i:ZERO)						{stdReturn(ZERO	);}
+<IN_RENDER_STATE>(?i:ONE)						{stdReturn(ONE);}
+<IN_RENDER_STATE>(?i:SRC_COLOR)					{stdReturn(SRC_COLOR);}
+<IN_RENDER_STATE>(?i:INV_SRC_COLOR)				{stdReturn(INV_SRC_COLOR);}
+<IN_RENDER_STATE>(?i:DEST_ALPHA)				{stdReturn(DEST_ALPHA);}	
+<IN_RENDER_STATE>(?i:INV_DEST_ALPHA)			{stdReturn(INV_DEST_ALPHA);}
+<IN_RENDER_STATE>(?i:DEST_COLOR)				{stdReturn(DEST_COLOR);}
+<IN_RENDER_STATE>(?i:INV_DEST_COLOR)			{stdReturn(INV_DEST_COLOR);}
+<IN_RENDER_STATE>(?i:SRC_ALPHA_SAT)				{stdReturn(SRC_ALPHA_SAT);}
+<IN_RENDER_STATE>(?i:BLEND_FACTOR)				{stdReturn(BLEND_FACTOR	);}
+<IN_RENDER_STATE>(?i:INV_BLEND_FACTOR)			{stdReturn(INV_BLEND_FACTOR	);}
+<IN_RENDER_STATE>(?i:SRC1_COLOR)				{stdReturn(SRC1_COLOR);}
+<IN_RENDER_STATE>(?i:INV_SRC1_COLOR)			{stdReturn(INV_SRC1_COLOR);}
+<IN_RENDER_STATE>(?i:SRC1_ALPHA)				{stdReturn(SRC1_ALPHA);}
+<IN_RENDER_STATE>(?i:INV_SRC1_ALPHA)			{stdReturn(INV_SRC1_ALPHA);}
+
+<IN_RENDER_STATE>(?i:ADD)						{stdReturn(BLEND_OP_ADD		);}
+<IN_RENDER_STATE>(?i:SUBTRACT)					{stdReturn(BLEND_OP_SUBTRACT	);}
+<IN_RENDER_STATE>(?i:MAX)						{stdReturn(BLEND_OP_MAX		);}
+
+<IN_RENDER_STATE>(?i:FRONT)						{stdReturn(CULL_FRONT_FACES	);}
+<IN_RENDER_STATE>(?i:BACK)						{stdReturn(CULL_BACK_FACES	);}
+
+<IN_RENDER_STATE>(?i:NONE)						{stdReturn(RENDERSTATE_RVALUE_NONE);}
+
+<IN_RENDER_STATE>(?i:SOLID)						{stdReturn(FILL_MODE_SOLID); }
+<IN_RENDER_STATE>(?i:WIREFRAME)					{stdReturn(FILL_MODE_WIREFRAME); }
+   
+<IN_RENDER_STATE>(?i:WRAP)						{stdReturn(TEXTURE_WRAP); }
+<IN_RENDER_STATE>(?i:MIRROR)					{stdReturn(TEXTURE_MIRROR); }
+<IN_RENDER_STATE>(?i:CLAMP)						{stdReturn(TEXTURE_CLAMP); }
+
+<IN_RENDER_STATE>(?i:ALWAYS)					{stdReturn(DEPTH_PASS_ALWAYS);}
+<IN_RENDER_STATE>(?i:NEVER)						{stdReturn(DEPTH_PASS_NEVER	);}
+<IN_RENDER_STATE>(?i:LESS)						{stdReturn(DEPTH_PASS_LESS	);}
+<IN_RENDER_STATE>(?i:GREATER)					{stdReturn(DEPTH_PASS_GREATER		); }
+<IN_RENDER_STATE>(?i:LESS_EQUAL)				{stdReturn(DEPTH_PASS_LESS_EQUAL	); }
+<IN_RENDER_STATE>(?i:GREATER_EQUAL)				{stdReturn(DEPTH_PASS_GREATER_EQUAL); }
+
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER,IN_STRUCT,IN_TEXTURE_DECL>{ID_BLCK}	{
 													glfxlval.lineno=yylineno;
 													glfxlval.strs[0]=yytext;
@@ -758,7 +794,7 @@ warning
 														stdReturn(NUM);
 													}
 												}
-<INITIAL>{FLOAT_BLCK}							{glfxlval.fnum=(float)atof(yytext); stdReturn(FLOAT);}
+<INITIAL>{FLOAT_BLCK}							{glfxlval.fnum=(float)atof(yytext); stdReturn(P_FLOAT);}
 <INITIAL>"inout"	{
 													{
 														glfxlval.lineno=yylineno;
@@ -808,11 +844,6 @@ warning
 														glfxWrite(yytext);
 													else
 													{
-														if(read_shader||read_function)
-														{
-															brace++;
-															glfxPushState(IN_SHADER);
-														}
 														stdReturn('{');
 													}
 												}
@@ -847,7 +878,7 @@ warning
 												}
 <IN_SHADER>\/\/[^\n\\]*(\\+[^\\][^\n\\]*)*\n	{
 													// Write an empty statement: preserve line numbers
-													//modReturn(';',";\n");
+													glfxlval.strs[0] = yytext;
 													gSkip();
 													
 												}
@@ -880,22 +911,14 @@ warning
 <INITIAL>.										if(gLexPassthrough) glfxWrite(yytext); else {errLex(yytext);}
 <IN_SHADER,IN_RENDER_STATE,IN_STRUCT>[ \t\n]*"{"[ \t\n]*		{
 													glfxlval.strs[0]=yytext;
-													brace++;
 													stdReturn('{');
 												}
 <IN_SHADER>[ \t\n]*"}"[ \t\n]*					{
 													glfxlval.strs[0]=yytext;
-													brace--;
-													if(!brace)
-													{
-														glfxPopState();
-														stdReturn('}');
-													}
 													stdReturn('}');
 												}
 <IN_RENDER_STATE,IN_STRUCT>[ \t\n]*"}"[ \t\n]*					{
 													glfxlval.strs[0]=yytext;
-													brace--;
 													stdReturn('}');
 												}
 %%
@@ -929,8 +952,12 @@ const char *glfxGetStateText()
 		return "shader compile";
 	case IN_RENDER_STATE:
 		return "render state def";
+	case IN_LINE:
+		return "line statement";
+	case INITIAL:
+		return "initial state";
 	default:
-		return "default state";
+		return "unknown state";
 	};
 	return "";
 }
@@ -982,4 +1009,66 @@ string glfxreadblock(unsigned char openChar, unsigned char closeChar)
         }
     } while(!done);
     return str;
+}
+void yypush(std::string str)
+{
+	const char *p = str.c_str();
+	const char *q = p+strlen(p);
+	while (q > p)
+	{
+		--q;
+		unput(*q);
+	}
+}
+int modReturn_(int u, const char *txt)
+{
+	glfxlval.token = u;
+	glfxlval.lineno = yylineno;
+	if (write_line_number_next)
+	{
+		write_line_number_next = false;
+		if (YYSTATE != IN_LINE)		// No point in stacking these
+		{
+			std::string str = txt;
+			ostringstream line_txt;
+			line_txt << "\n#line ";
+			glfxlval.strs[0] = line_txt.str();
+			//line_txt << "\n";
+			// put the next token back onto the stack:
+			yypush(str);
+			yypush(string(" ") + LineNumberFromYYLine(glfxlval.lineno) + "\n");
+			recent += glfxlval.strs[0] + " ";
+			glfxPushState(IN_LINE);
+			return (LINE);
+		}
+	}
+	if (u == '}')
+	{
+		brace--;
+		if (YY_START == IN_SHADER)
+		{
+			if(!brace)
+				glfxPopState();
+		}
+	}
+	else if (u == '{')
+	{
+		if (read_shader || read_function)
+		{
+			glfxPushState(IN_SHADER);
+			read_shader = false;
+			read_function = false;
+		}
+		brace++;
+	}
+	glfxlval.strs[0] = (accw + txt);
+	accw.clear();
+	recent += glfxlval.strs[0] + " ";
+	while (recent.length()>100)
+		recent.erase(0, 1);
+	return (u);
+}
+int stdReturn_(int u)
+{
+	return modReturn_(u, yytext);
 }
