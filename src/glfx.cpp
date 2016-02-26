@@ -51,7 +51,8 @@ typedef int errno_t;
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
-#include "glfxScanner.h"
+#include "generated/glfxScanner.h"
+#include "generated/glfxLALRParser.hpp"
 #include "glfxProgram.h"
 #include "StringToWString.h"
 #include "StringFunctions.h"
@@ -137,141 +138,131 @@ int fdopen_s(FILE** pFile, int fildes, const char *mode)
 
 #endif
 
-GLenum toBlendGLEnum(const std::string &str)
+GLenum toBlendGLEnum(int f)
 {
-	if(is_equal(str,"SRC_ALPHA"))
+	if(f==SRC_ALPHA)
 		return GL_SRC_ALPHA;
-	else if(is_equal(str,"INV_SRC_ALPHA"))
+	else if(f==INV_SRC_ALPHA)
 		return GL_ONE_MINUS_SRC_ALPHA;
-	else if(is_equal(str,"ZERO"))
+	else if(f==ZERO)
 		return GL_ZERO;
-	else if(is_equal(str,"ONE"))
+	else if(f==ONE)
 		return GL_ONE;
-	else if(is_equal(str,"SRC_COLOR"))
+	else if(f==SRC_COLOR)
 		return GL_SRC_COLOR;
-	else if(is_equal(str,"INV_SRC_COLOR"))
+	else if(f==INV_SRC_COLOR)
 		return GL_ONE_MINUS_SRC_COLOR;
-	else if(is_equal(str,"DEST_ALPHA"))
+	else if(f==DEST_ALPHA)
 		return GL_DST_ALPHA;
-	else if(is_equal(str,"INV_DEST_ALPHA"))
+	else if(f==INV_DEST_ALPHA)
 		return GL_ONE_MINUS_DST_ALPHA;
-	else if(is_equal(str,"DEST_COLOR"))
+	else if(f==DEST_COLOR)
 		return GL_DST_COLOR;
-	else if(is_equal(str,"INV_DEST_COLOR"))
+	else if(f==INV_DEST_COLOR)
 		return GL_ONE_MINUS_DST_COLOR;
-	else if(is_equal(str,"SRC_ALPHA_SAT"))
+	else if(f==SRC_ALPHA_SAT)
 	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"Cannot translate blend type: SRC_ALPHA_SAT";
+		glfxerror(ostr.str().c_str());
 		return 0;
 	}
-	else if(is_equal(str,"BLEND_FACTOR"))
-	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
-		return 0;
-	}
-	else if(is_equal(str,"INV_BLEND_FACTOR"))
-	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
-		return 0;
-	}
-	else if(is_equal(str,"SRC1_COLOR"))
+	else if(f==BLEND_FACTOR)
+		return GL_CONSTANT_COLOR;
+	else if(f==INV_BLEND_FACTOR)
+		return GL_ONE_MINUS_CONSTANT_COLOR;
+	else if(f==SRC1_COLOR)
 		return GL_SRC1_COLOR;
-	else if(is_equal(str,"INV_SRC1_COLOR"))
+	else if(f==INV_SRC1_COLOR)
 		return GL_ONE_MINUS_SRC1_COLOR;
-	else if(is_equal(str,"SRC1_ALPHA"))
+	else if(f==SRC1_ALPHA)
 		return GL_SRC1_ALPHA;
-	else if(is_equal(str,"INV_SRC1_ALPHA"))
+	else if(f==INV_SRC1_ALPHA)
 		return GL_ONE_MINUS_SRC1_ALPHA;
 	else
 	{
-		ostringstream str;
-		str<<"unknown blend type: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown blend type: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toBlendOpGLEnum(const std::string &str)
+GLenum toBlendOpGLEnum(int f)
 {
-	if(is_equal(str,"ADD"))
+	if(f==BLEND_OP_ADD)
 		return GL_FUNC_ADD;
-	else if(is_equal(str,"SUBTRACT"))
+	else if(f==BLEND_OP_SUBTRACT)
 		return GL_FUNC_SUBTRACT;
-	else if(is_equal(str,"MAX"))
+	else if(f==BLEND_OP_MAX)
 		return GL_FUNC_ADD;
 	else
 	{
-		ostringstream str;
-		str<<"unknown blend operation: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown blend operation: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toFillModeGLenum(const std::string &str)
+GLenum toFillModeGLenum(int f)
 {
-	if(is_equal(str,"WIREFRAME"))
+	if(f== FILL_MODE_SOLID)
 		return GL_POLYGON;
-	else if(is_equal(str,"SOLID"))
+	else if(f==FILL_MODE_WIREFRAME)
 		return GL_LINES;
-	else if(is_equal(str,"NONE"))
+	else if(f==RENDERSTATE_RVALUE_NONE)
 		return GL_POINTS;
 	else
 	{
 		ostringstream err;
-		err<<"unknown fill mode: "<<str;
+		err<<"unknown fill mode: "<<f;
 		glfxerror(err.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toCullModeGLenum(const std::string &str)
+GLenum toCullModeGLenum(int f)
 {
-	if(is_equal(str,"FRONT"))
+	if(f==CULL_FRONT_FACES)
 		return GL_FRONT;
-	else if(is_equal(str,"BACK"))
+	else if(f==CULL_BACK_FACES)
 		return GL_BACK;
-	else if(is_equal(str,"NONE"))
+	else if(f== RENDERSTATE_RVALUE_NONE)
 		return GL_FRONT_AND_BACK;
 	else
 	{
 		ostringstream err;
-		err<<"unknown cull mode: "<<str;
+		err<<"unknown cull mode: "<<f;
 		glfxerror(err.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toDepthFuncGLEnum(const std::string &str)
+GLenum toDepthFuncGLEnum(int f)
 {
-	if(is_equal(str,"ALWAYS"))
+	if(f==DEPTH_PASS_ALWAYS)
 		return GL_ALWAYS;
-	else if(is_equal(str,"NEVER"))
+	else if(f== DEPTH_PASS_NEVER)
 		return GL_NEVER;
-	else if(is_equal(str,"LESS"))
+	else if(f== DEPTH_PASS_LESS)
 		return GL_LESS;
-	else if(is_equal(str,"GREATER"))
+	else if(f== DEPTH_PASS_GREATER)
 		return GL_GREATER;
-	else if(is_equal(str,"LESS_EQUAL"))
+	else if(f== DEPTH_PASS_LESS_EQUAL)
 		return GL_LEQUAL;
-	else if(is_equal(str,"GREATER_EQUAL"))
+	else if(f== DEPTH_PASS_GREATER_EQUAL)
 		return GL_GEQUAL;
 	else
 	{
-		ostringstream str;
-		str<<"unknown depth function: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown depth function: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toMinFilterModeGLEnum(const std::string &str)
+GLenum toMinFilterModeGLEnum(int f)
 {
 	/* These are the D3D11 filters we will support GL analogues to. There are also comparison, max and min filters, which we will ignore:
 	MIN_MAG_MIP_POINT                        
@@ -283,67 +274,67 @@ GLenum toMinFilterModeGLEnum(const std::string &str)
 	MIN_MAG_LINEAR_MIP_POINT                 
 	MIN_MAG_MIP_LINEAR                       
 	ANISOTROPIC   */
-	if(is_equal(str,"MIN_MAG_MIP_POINT"))
+	if(f==MIN_MAG_MIP_POINT)
 		return GL_NEAREST;
-	else if(is_equal(str,"MIN_MAG_POINT_MIP_LINEAR"))
+	else if(f==MIN_MAG_POINT_MIP_LINEAR)
 		return GL_NEAREST;		
-	else if(is_equal(str,"MIN_POINT_MAG_LINEAR_MIP_POINT"))
+	else if(f==MIN_POINT_MAG_LINEAR_MIP_POINT)
 		return GL_NEAREST;	
-	else if(is_equal(str,"MIN_LINEAR_MAG_POINT_MIP_LINEAR"))
+	else if(f==MIN_LINEAR_MAG_POINT_MIP_LINEAR)
 		return GL_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly
-	else if(is_equal(str,"MIN_MAG_LINEAR_MIP_POINT"))
+	else if(f==MIN_MAG_LINEAR_MIP_POINT)
 		return GL_LINEAR_MIPMAP_NEAREST;	
-	else if(is_equal(str,"MIN_MAG_MIP_LINEAR"))
+	else if(f==MIN_MAG_MIP_LINEAR)
 		return GL_LINEAR_MIPMAP_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly	
-	else if(is_equal(str,"ANISOTROPIC"))
+	else if(f==ANISOTROPIC)
 		return GL_LINEAR_MIPMAP_LINEAR;//GL_LINEAR_MIPMAP_LINEAR doesn't work properly	
 	else
 	{
-		ostringstream str;
-		str<<"unknown filter mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown filter mode: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toMagFilterModeGLEnum(const std::string &str)
+GLenum toMagFilterModeGLEnum(int f)
 {
-	if(is_equal(str,"MIN_MAG_MIP_POINT"))
+	if(f==MIN_MAG_MIP_POINT)
 		return GL_NEAREST;
-	else if(is_equal(str,"MIN_MAG_POINT_MIP_LINEAR"))
+	else if(f==MIN_MAG_POINT_MIP_LINEAR)
 		return GL_NEAREST;		
-	else if(is_equal(str,"MIN_POINT_MAG_LINEAR_MIP_POINT"))
+	else if(f==MIN_POINT_MAG_LINEAR_MIP_POINT)
 		return GL_LINEAR;	
-	else if(is_equal(str,"MIN_LINEAR_MAG_POINT_MIP_LINEAR"))
+	else if(f==MIN_LINEAR_MAG_POINT_MIP_LINEAR)
 		return GL_NEAREST;
-	else if(is_equal(str,"MIN_MAG_LINEAR_MIP_POINT"))
+	else if(f==MIN_MAG_LINEAR_MIP_POINT)
 		return GL_LINEAR;	
-	else if(is_equal(str,"MIN_MAG_MIP_LINEAR"))
+	else if(f==MIN_MAG_MIP_LINEAR)
 		return GL_LINEAR;	
-	else if(is_equal(str,"ANISOTROPIC"))
+	else if(f==ANISOTROPIC)
 		return GL_LINEAR;	
 	else
 	{
-		ostringstream str;
-		str<<"unknown filter mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown filter mode: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
 
-GLenum toAddressModeGLEnum(const std::string &str)
+GLenum toAddressModeGLEnum(int f)
 {
-	if(is_equal(str,"Wrap"))
+	if(f== TEXTURE_WRAP)
 		return GL_REPEAT;
-	else if(is_equal(str,"Mirror"))
+	else if(f==TEXTURE_MIRROR)
 		return GL_MIRRORED_REPEAT;
-	else if(is_equal(str,"Clamp"))
+	else if(f==TEXTURE_CLAMP)
 		return GL_CLAMP_TO_EDGE;
 	else
 	{
-		ostringstream str;
-		str<<"unknown addressing mode: "<<str;
-		glfxerror(str.str().c_str());
+		ostringstream ostr;
+		ostr<<"unknown addressing mode: "<<f;
+		glfxerror(ostr.str().c_str());
 	}
 	return 0;
 }
@@ -668,30 +659,36 @@ int GLFX_APIENTRY glfxGenEffect()
 #include <chrono>
 bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const char **file_paths_utf8, const char **macros, const char **defs) 
 {
-	cout << chrono::high_resolution_clock::period::den << endl;
+	//cout <<"chrono::high_resolution_clock"<< chrono::high_resolution_clock::period::den << endl;
 	auto start_time = chrono::high_resolution_clock::now();
     bool retVal=true;
     shaderPathsUtf8.clear();
-	const char **path=file_paths_utf8;
-	while(*path)
+	if(file_paths_utf8)
 	{
-		shaderPathsUtf8.push_back(*path);
-		path++;
+		const char **path=file_paths_utf8;
+		while(*path)
+		{
+			shaderPathsUtf8.push_back(*path);
+			path++;
+		}
 	}
 	shaderPathsUtf8.push_back(GetDirectoryFromFilename(string(file)));
 	string src;
-	int pptime=0,buildtime=0;
+	int64_t pptime=0,buildtime=0;
 	try
 	{
 		prepro_open=&OpenFile;
 		prepro_close=&CloseFile;
 		std::map<std::string, std::string> defines;
-		const char **m = macros,**d=defs;
-		while(*m&&*d)
+		if(macros&&defs)
 		{
-			defines[*m] = *d;
-			m++;
-			d++;
+			const char **m = macros,**d=defs;
+			while(*m&&*d)
+			{
+				defines[*m] = *d;
+				m++;
+				d++;
+			}
 		}
 		defines["GLFX"] = "1";
 		retVal&=preprocess(file, defines);
@@ -738,25 +735,21 @@ bool GLFX_APIENTRY glfxParseEffectFromMemory(int effect, const char* src,const c
     catch(const char* err)
 	{
         gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(const string& err)
 	{
         gEffect->Log()<<err<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(const std::exception& exc)
 	{
         gEffect->Log()<<exc.what()<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     catch(...)
 	{
         gEffect->Log()<<"Unknown error occurred during parsing of source"<<endl;
-        gEffect->Active()=false;
         retVal=false;
     }
     glfxpop_buffer_state();
@@ -816,11 +809,11 @@ int GLFX_APIENTRY glfxGetEffectImageNumber(int e,const char *name)
     return gEffects[e]->GetImageNumber(name);
 }
 
-void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip)
+void GLFX_APIENTRY glfxSetEffectTexture(int e,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap)
 {
 	if(e<0||e>=(int)gEffects.size())
 		return ;
-	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write,mip);
+	gEffects[e]->SetTexture( texture_number, tex, dims, depth,format, write,write_mip, layered, layer,cubemap);
 }
 
 void GLFX_APIENTRY glfxSetEffectSamplerState(int e, const char *name, GLuint sampler)
@@ -988,7 +981,7 @@ GLFXAPI void GLFX_APIENTRY glfxApplyPassState(int e,GLuint pass)
 
 GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass)
 {
-	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL || !gEffects[effect]->Active())
+	if ((size_t)effect >= gEffects.size() || gEffects[effect] == NULL || pass == NULL )
         return 0;
 	GLFX_ERROR_CHECK
 
@@ -1025,4 +1018,9 @@ GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const
     gEffects[effect]->Log()<<slog;
 
     return progid;
-}
+}/*
+
+GLuint GLFX_APIENTRY glfxGetProgramVariant(int effect,GLuint main_program)
+{
+	return gEffects[effect]->GetProgramVariant(main_program);
+}*/

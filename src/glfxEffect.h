@@ -15,8 +15,10 @@ namespace glfxParser
 		unsigned tex;		//GLuint
 		int depth;
 		unsigned format;	//GLenum
-		bool write;
-		int mip;
+		int write_mip;
+		bool layered;		///< Whether it is layered.
+		bool cubemap;		///< Whether it's a cubemap.
+		int layer;			///< Which layer of a texture array.
 	};
 	//! For GLFX we will define a mapping in source between HLSL-style profile id's (e.g. vs_4_0) and the corresponding GLSL version numbers.
 	//! We will use the keyword Profile.
@@ -24,14 +26,23 @@ namespace glfxParser
 	//!		Profile vs_4_0(410);
 	class Effect
 	{
+	public:
+		~Effect();
+		Effect();
 	protected:
+// FUNDAMENTAL DATA: This must be cached if we want to reload the effect without rebuilding it from source.
 		string												m_dir;
 		string												m_filename;
+		std::vector<Declaration *>							declarations;
 		std::map<std::string,TechniqueGroup*>				m_techniqueGroups;
 		std::map<std::string,BlendState*>					m_blendStates;
 		std::map<std::string,DepthStencilState*>			m_depthStencilStates;
 		std::map<std::string,SamplerState*>					m_samplerStates;
-		std::map<std::string,DeclaredTexture>				m_declaredTextures;
+
+		std::map<std::string,DeclaredTexture*>				m_declaredTextures;
+		std::map<int,DeclaredTexture*>						m_declaredTexturesByNumber;
+		std::map<std::string,int>							textureNumberMap;
+
 		std::map<std::string,RasterizerState*>				m_rasterizerStates;
 		std::map<std::string,ComputeLayout>					m_shaderLayouts;
 		std::map<unsigned,PassState>						passStates;
@@ -54,25 +65,22 @@ namespace glfxParser
 		std::vector<std::string>							m_techniqueNames;
 		std::vector<std::string>							m_techniqueGroupNames;
 // TEMPORARIES USED IN CONSTRUCTION
-		std::map<string, DeclaredTexture>					additionalTextureDeclarations;
+		std::map<string, DeclaredTexture *>					additionalTextureDeclarations;
 // STATE
 		ostringstream										m_log;
-		std::map<int, int>									textureDimensions;
-		std::map<int, TextureAssignment>					textureAssignmentMap;
-		std::map<std::string,int>							textureNumberMap;
-		bool												m_active;
+		std::map<int,int>									textureDimensions;
+		std::map<int,TextureAssignment>						textureAssignmentMap;
+		
 		unsigned											current_pass;
 		int													current_texture_number;
 		int													current_image_number;
 		std::map<std::string, unsigned>						prepared_sampler_states;	///< We keep a map of texture sampler states.
 		// Create the gl objects for samplers defined in the fx file.
 		bool PassHasTransformFeedback(unsigned pass);
-		void SetTex(int texture_number,const TextureAssignment &t,int location_in_shader);
+		void SetTex(int texture_number,int dim,const TextureAssignment &t,int location_in_shader);
 // POST-INIT
 		void CreateDefinedSamplers();
 	public:
-		~Effect();
-		Effect();
 		void SaveToCache(const std::string &filename);
 		void LoadFromCache(const std::string &filename);
 // GET INFO
@@ -84,7 +92,7 @@ namespace glfxParser
 		{
 			return m_profileToVersion;
 		}
-		const std::map<std::string,DeclaredTexture> &GetDeclaredTextures() const
+		const std::map<std::string,DeclaredTexture*> &GetDeclaredTextures() const
 		{
 			return m_declaredTextures;
 		}
@@ -117,6 +125,7 @@ namespace glfxParser
 		void SetSharedCode(const string &str);
 		ostringstream& Log();
 		unsigned BuildProgram(const string& tech, const string& pass, string& log);
+		//unsigned GetProgramVariant(unsigned main_program);
 		unsigned CreateSampler(const string& sampler) const;
 		bool SetVersionForProfile(int v,const std::string &prof);
 		void AddComputeLayout(const std::string &name,const ComputeLayout &tg);
@@ -137,6 +146,7 @@ namespace glfxParser
 		void DeclareSamplerState(const std::string &name,const SamplerState &buildSamplerState);
 		Function * DeclareFunction(const std::string &functionName,Function &buildFunction);
 		void DeclareStruct(const string &name,const Struct &ts);
+bool IsTextureDeclared(const string &name);
 		bool DeclareTexture(const string &name,const DeclaredTexture &ts);
 		bool DeclareTextureSampler(const TextureSampler *ts);
 		void MergeTextureSamplers(const std::map<std::string,TextureSampler*> &ts,const std::string &shaderName);
@@ -150,11 +160,12 @@ namespace glfxParser
 		void Apply(unsigned pass);
 		void Reapply(unsigned pass);
 		void Unapply();
-		void ApplyPassTextures(unsigned pass);
+		// Returns the variant pass if needed.
+		unsigned ApplyPassTextures(unsigned pass);
 		void ApplyPassState(unsigned pass);
-		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int mip);
+		void SetTexture(int texture_number,unsigned tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap);
 		void SetSamplerState(const char *name, unsigned sam);
-		bool& Active();
+		
 		void AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const;
 		// STATE
 		TechniqueGroup *current_group;

@@ -36,105 +36,101 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\FileLoader.cpp" />
+    <ClCompile Include="src\generated\glfxLALRParser.cpp" />
+    <ClCompile Include="src\generated\glfxScanner.cpp" />
+    <ClCompile Include="src\generated\PreprocessLexer.cpp" />
+    <ClCompile Include="src\generated\PreprocessParser.cpp" />
     <ClCompile Include="src\glfx.cpp" />
     <ClCompile Include="src\glfxEffect.cpp" />
     <ClCompile Include="src\glfxErrorCheck.cpp" />
-    <ClCompile Include="src\glfxLALRParser.cpp" />
     <ClCompile Include="src\glfxProgram.cpp" />
-    <ClCompile Include="src\glfxScanner.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4018</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">4018</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4018</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">4018</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="src\PreprocessLexer.cpp" />
-    <ClCompile Include="src\PreprocessParser.cpp" />
     <ClCompile Include="src\ShaderCompiler.cpp" />
     <ClCompile Include="src\StringFunctions.cpp" />
     <ClCompile Include="src\StringToWString.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\glfx.h" />
+    <ClInclude Include="src\BufferedStringStreamBuf.h" />
     <ClInclude Include="src\FileLoader.h" />
+    <ClInclude Include="src\generated\glfxLALRParser.hpp" />
+    <ClInclude Include="src\generated\glfxScanner.h" />
+    <ClInclude Include="src\generated\PreprocessLexer.h" />
+    <ClInclude Include="src\generated\PreprocessParser.h" />
     <ClInclude Include="src\glfxClasses.h" />
     <ClInclude Include="src\glfxEffect.h" />
     <ClInclude Include="src\glfxErrorCheck.h" />
-    <ClInclude Include="src\glfxLALRParser.hpp" />
     <ClInclude Include="src\glfxParser.h" />
     <ClInclude Include="src\glfxProgram.h" />
-    <ClInclude Include="src\glfxScanner.h" />
-    <ClInclude Include="src\PreprocessLexer.h" />
     <ClInclude Include="src\Preprocessor.h" />
-    <ClInclude Include="src\PreprocessParser.h" />
     <ClInclude Include="src\StringFunctions.h" />
     <ClInclude Include="src\StringToWString.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\glfx.lpp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/glfxScanner.h;./src/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/glfxScanner.h;./src/generated/glfxScanner.cpp</Outputs>
     </CustomBuild>
     <CustomBuild Include="src\glfx.ypp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_bison.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/glfxLALRParser.hpp;./src/glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/glfxLALRParser.hpp;./src/generated/glfxLALRParser.cpp</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\Preprocessor.lpp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/PreprocessLexer.h;./src/PreprocessLexer.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_flex.exe" "%(FullPath)"</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/PreprocessLexer.h;./src/generated/PreprocessLexer.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SIMUL)\External\win_flex_bison\win_flex.exe" "%(FullPath)"</Message>
     </CustomBuild>
     <CustomBuild Include="src\Preprocessor.ypp">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/PreprocessParser.h;./src/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">./src/generated/PreprocessParser.h;./src/generated/PreprocessParser.cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">"win_bison.exe" -v -x "%(FullPath)"</Command>
@@ -319,7 +315,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -338,7 +334,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -354,7 +350,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -409,7 +405,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
@@ -444,7 +440,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;NDEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>

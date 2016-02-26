@@ -1,8 +1,8 @@
 %name-prefix "prepro_"
 %debug
 %error-verbose
-%output "src/PreprocessParser.cpp"
-%defines "src/PreprocessParser.h"
+%output "src/generated/PreprocessParser.cpp"
+%defines "src/generated/PreprocessParser.h"
 %{
     #ifdef _MSC_VER
 		// MS's C++ compiler is more strict than gcc
@@ -671,7 +671,7 @@ void prepro_error(const char *errmsg)
 	int lex_linenumber=prepro_get_lineno();
 	int true_linenumber=lex_linenumber;//+last_linenumber-global_linenumber;
 	const char *txt=prepro_get_text();
-	if(*txt)
+	if(txt&&*txt)
 		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: \""<< txt<<"\" Preprocessor "<<errmsg;
 	else
 		errMsg<<currentFilename<<"("<< true_linenumber<<") : error: Preprocessor "<<errmsg;

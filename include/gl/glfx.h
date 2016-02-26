@@ -90,8 +90,12 @@ GLFXAPI bool GLFX_APIENTRY glfxParseEffectFromMemory( int effect, const char* sr
 *   program -- Program name
 * Return value: GL program id if success, 0 otherwise
 **************************************************/
-//GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* program);
 GLFXAPI GLuint GLFX_APIENTRY glfxCompileProgram(int effect, const char* technique, const char *pass);
+/*! This function gets a variant of the specified program, depending on the currently assigned writeable textures.
+This is required because GLSL needs an image (writeable texture) to be explicitly specified as 16-bit or 32-bit, so
+to avoid requiring developers to create 16- and 32-bit versions of shaders, we just create variants automatically.
+*/
+//GLFXAPI GLuint GLFX_APIENTRY glfxGetProgramVariant(int effect,GLuint main_program);
 
 GLFXAPI const char * GLFX_APIENTRY glfxGetCacheDirectory();
 GLFXAPI bool GLFX_APIENTRY glfxIsGlslangValidationEnabled();
@@ -101,11 +105,9 @@ GLFXAPI void glfxReapply(int effect,GLuint pass);
 GLFXAPI void glfxUnapply(int effect);
 GLFXAPI int glfxGetEffectTextureNumber(int effect,const char *name);
 GLFXAPI int glfxGetEffectImageNumber(int effect,const char *name);
-/// If mip is specified as 0 or above, the specific mipmap will be bound, otherwise (for textures to read) the whole mipmapped texture is bound.
-/// For texture writes, the mip will default to zero if not specified.
-GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip=-1);
+// TODO: really we should just assume that the texture is of the type specified in the shader.
+GLFXAPI void glfxSetEffectTexture(int effect,int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int write_mip,bool layered,int layer,bool cubemap);
 GLFXAPI void glfxSetEffectSamplerState(int effect, const char *name, GLuint sampler);
-
 
 //! Get the number of techniques in the effect
 GLFXAPI size_t GLFX_APIENTRY glfxGetTechniqueCount(int effect);

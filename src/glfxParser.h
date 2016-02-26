@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 using namespace std;
 using namespace glfxParser;
+extern void WriteLineNumber(std::ostringstream &str,int fileno,int lineno);
 /// Values that represent LayoutType.
 enum LayoutType
 {
@@ -156,14 +157,14 @@ namespace glfxParser
 	int fopen_s(FILE** pFile, const char *filename, const char *mode);
 	#endif
 	
-	extern GLenum toBlendGLEnum(const std::string &str);
-	extern GLenum toBlendOpGLEnum(const std::string &str);
-	extern GLenum toDepthFuncGLEnum(const std::string &str);
-	extern GLenum toFillModeGLenum(const std::string &str);
-	extern GLenum toCullModeGLenum(const std::string &str);
-	extern GLenum toMinFilterModeGLEnum(const std::string &str);
-	extern GLenum toMagFilterModeGLEnum(const std::string &str);
-	extern GLenum toAddressModeGLEnum(const std::string &str);
+	extern GLenum toBlendGLEnum(int);
+	extern GLenum toBlendOpGLEnum(int);
+	extern GLenum toDepthFuncGLEnum(int);
+	extern GLenum toFillModeGLenum(int);
+	extern GLenum toCullModeGLenum(int);
+	extern GLenum toMinFilterModeGLEnum(int);
+	extern GLenum toMagFilterModeGLEnum(int);
+	extern GLenum toAddressModeGLEnum(int);
 }
 														   
 #define YYSTYPE glfxstype
@@ -177,36 +178,36 @@ extern int glfxdebug;
 enum GLTextureType
 {
 	unknwownTextureType
-	, gsampler1D				//	GL_TEXTURE_1D						1D texture
-	, gsampler2D				//	GL_TEXTURE_2D						2D texture
-	, gsampler3D				//	GL_TEXTURE_3D						3D texture
-	, gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
-	, gsampler2DRect			//	GL_TEXTURE_RECTANGLE				Rectangle Texture
-	, gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
-	, gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
-	, gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
-	, gsamplerBuffer			//	GL_TEXTURE_BUFFER					Buffer Texture
-	, gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
-	, gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
-	, sampler1DShadow			//	GL_TEXTURE_1D
-	, sampler2DShadow			//	GL_TEXTURE_2D
-	, samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
-	, sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
-	, sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
-	, sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
-	, samplerCubeArrayShadow	//	GL_TEXTURE_CUBE_MAP_ARRAY
+	,gsampler1D					//	GL_TEXTURE_1D						1D texture
+	,gsampler2D					//	GL_TEXTURE_2D						2D texture
+	,gsampler3D					//	GL_TEXTURE_3D						3D texture
+	,gsamplerCube				//	GL_TEXTURE_CUBE_MAP					Cubemap Texture
+	,gsampler2DRect				//	GL_TEXTURE_RECTANGLE				Rectangle Texture
+	,gsampler1DArray			//	GL_TEXTURE_1D_ARRAY					1D Array Texture
+	,gsampler2DArray			//	GL_TEXTURE_2D_ARRAY					2D Array Texture
+	,gsamplerCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY			Cubemap Array Texture		(requires GL 4.0 or ARB_texture_cube_map_array)
+	,gsamplerBuffer				//	GL_TEXTURE_BUFFER					Buffer Texture
+	,gsampler2DMS				//	GL_TEXTURE_2D_MULTISAMPLE			Multisample Texture
+	,gsampler2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY		Multisample Array Texture
+	,sampler1DShadow			//	GL_TEXTURE_1D
+	,sampler2DShadow			//	GL_TEXTURE_2D
+	,samplerCubeShadow			//	GL_TEXTURE_CUBE_MAP
+	,sampler2DRectShadow		//	GL_TEXTURE_RECTANGLE
+	,sampler1DArrayShadow		//	GL_TEXTURE_1D_ARRAY
+	,sampler2DArrayShadow		//	GL_TEXTURE_2D_ARRAY
+	,samplerCubeArrayShadow		//	GL_TEXTURE_CUBE_MAP_ARRAY
 	// Read-write textures - "images" in GLSL parlance:
-	, gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
-	, gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
-	, gimage3D					//	GL_TEXTURE_3D
-	, gimageCube				//	GL_TEXTURE_CUBE_MAP
-	, gimage2DRect				//	GL_TEXTURE_RECTANGLE
-	, gimage1DArray				//	GL_TEXTURE_1D_ARRAY
-	, gimage2DArray				//	GL_TEXTURE_2D_ARRAY
-	, gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
-	, gimageBuffer				//	GL_TEXTURE_BUFFER
-	, gimage2DMS				//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
-	, gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	,gimage1D					//	GL_TEXTURE_1D or single layer from GL_TEXTURE_1D_ARRAY
+	,gimage2D					//	GL_TEXTURE_2D or single layer from:GL_TEXTURE_2D_ARRAY GL_TEXTURE_CUBE_MAP GL_TEXTURE_CUBE_MAP_ARRAY GL_TEXTURE_3D
+	,gimage3D					//	GL_TEXTURE_3D
+	,gimageCube					//	GL_TEXTURE_CUBE_MAP
+	,gimage2DRect				//	GL_TEXTURE_RECTANGLE
+	,gimage1DArray				//	GL_TEXTURE_1D_ARRAY
+	,gimage2DArray				//	GL_TEXTURE_2D_ARRAY
+	,gimageCubeArray			//	GL_TEXTURE_CUBE_MAP_ARRAY (requires GL 4.0 or ARB_texture_cube_map_array)
+	,gimageBuffer				//	GL_TEXTURE_BUFFER
+	,gimage2DMS					//	GL_TEXTURE_2D_MULTISAMPLE or single layer from: GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	,gimage2DMSArray			//	GL_TEXTURE_2D_MULTISAMPLE_ARRAY
 };
 
 inline bool IsTextureWriteable(GLTextureType glTextureType)
@@ -257,9 +258,19 @@ inline int GetTextureDimension(GLTextureType glTextureType,bool array_as_2d=fals
 		break;
 	}
 }
-struct DeclaredTexture
+
+struct Declaration
 {
+	int file_number;
+	int line_number;
+};
+
+struct DeclaredTexture:public Declaration
+{
+	bool variant;			// if true, we must define different versions for different texture output formats.
 	std::string type;
+	std::string layout;
+	std::string texel_format;
 	GLTextureType type_enum;
 };
 /// A struct representing a function that has been parsed from source.
@@ -276,6 +287,7 @@ struct Function
 	}
 	void operator=(const Function &f)
 	{
+		declarations		=f.declarations;
 		functionsCalled		=f.functionsCalled;
 		returnType			=f.returnType;
 		content				=f.content;
@@ -306,6 +318,9 @@ struct Function
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
+	/// While building the function this includes anything that's references. Afterwards we remove the parameters from this list, so it's a
+	/// just anything global that this function uses.
+	std::set<std::string> declarations;
 	std::vector<glfxstype::variable> parameters;					// the original parameters as defined in the source code.
 	std::vector<glfxstype::variable> expanded_parameters;			// the expanded parameter list including textureSamplers.
 	std::map<std::string,TextureSampler*> textureSamplers;			// this owns the TextureSamplers.
@@ -336,6 +351,7 @@ struct ComputeLayout
 	int x,y,z;
 	std::string text() const;
 };
+
 struct CompilableShader
 {
 	std::string shaderName;
@@ -347,6 +363,7 @@ struct CompilableShader
 	int current_filenumber;
 	int maxGSVertexCount;
 };
+
 //! A shader to be compiled. 
 struct CompiledShader
 {
@@ -358,7 +375,10 @@ struct CompiledShader
 	std::string source;
 	std::string outputStruct;
 	std::string outputStructName;
+	/// What RW textures, if any, need to have both 32-bit and 16-bit variants?
+	std::set<std::string> variantDeclarations;
 };
+
 extern void stringReplaceAll(std::string& str, const std::string& from, const std::string& to);
 extern int glfxprintf ( FILE * , const char * format, ... );
 extern string glfxreadblock(unsigned char openChar, unsigned char closeChar);

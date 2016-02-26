@@ -36,8 +36,9 @@ typedef int errno_t;
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
-#include "glfxScanner.h"
+#include "generated/glfxScanner.h"
 #include "glfxProgram.h"
+
 const vector<string> &TechniqueGroup::GetTechniqueList()
 {
 	m_techniqueNames.clear();
@@ -53,8 +54,6 @@ Technique::Technique(const map<std::string, Program>& passes)
 
 Technique::~Technique()
 {
-	for (auto it = m_passes.begin(); it != m_passes.end(); ++it)
-		glDeleteProgram(it->second.programId);
 }
 
 TechniqueGroup::~TechniqueGroup()
@@ -65,8 +64,7 @@ TechniqueGroup::~TechniqueGroup()
 
 Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 	,const map<string, set<TextureSampler*> > &textureSamplersByShader,const string &compute_layout)
-	:programId(0)
-	,transformFeedback(false)
+	:transformFeedback(false)
 	,computeLayout(compute_layout)
 	,transformFeedbackTopology(POINTS)
 {
@@ -106,7 +104,6 @@ Program::Program(const map<ShaderType,Shader>& shaders,const PassState &p
 }
 
 Program::Program()
-: programId(0)
 {
 }
 
@@ -126,14 +123,16 @@ const Program& Program::operator=(const Program& prog)
 	{
 		m_shaders[i] = prog.m_shaders[i];
 	}
+	variants=prog.variants;
 	passState = prog.passState;
-	programId = prog.programId;
 	m_separable = prog.m_separable;
 	transformFeedback = prog.transformFeedback;
 	transformFeedbackTopology = prog.transformFeedbackTopology;
 	computeLayout = prog.computeLayout;
 	return *this;
 }
+
+
 #ifdef GLFX_GLSLANG
 // Convert our shadertype list to Glslang's. Numerically, they are probably the same,
 // but we can't rely on that.
@@ -472,8 +471,153 @@ void ProcessConfigFile(TBuiltInResource &Resources)
   //  if (configStrings)
    //     FreeFileData(configStrings);
 }
+
+void Program::GlslangValidateProgram(const string &shared_src,string variantDefs,ostringstream &sLog)
+{
+	sLog<<"Glslang validation"<<std::endl;
+	bool res=true;
+	EShMessages messages = EShMsgDefault;
+	int defaultVersion=110;
+	std::vector<glslang::TShader*> glslang_shaders;
+	glslang::TProgram *glsl_program = new glslang::TProgram;
+	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	{
+		if(res&&m_shaders[i].compiledShader)
+		{
+			EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
+			glslang::TShader* shader = new glslang::TShader(stage);
+			glslang_shaders.push_back(shader);
+			static int l=0;
+			string shr=shared_src;
+			if(l)
+				shr=shared_src.substr(0,l);
+	
+			string preamble = m_shaders[i].preamble+variantDefs;
+			const char* shaderStrings[]={ preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
+			static int s=3;
+			shader->setStrings(shaderStrings,s);
+			TBuiltInResource Resources;
+			ProcessConfigFile(Resources);
+			res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
+			const char *info=shader->getInfoLog();
+			sLog<<info;
+			if(res)
+				glsl_program->addShader(shader);
+		}
+	}
+	if(res)
+	{
+		res&=(int)(glsl_program->link(messages));
+		sLog<<glsl_program->getInfoLog();
+	}
+	while(glslang_shaders.size() > 0)
+	{
+		delete glslang_shaders.back();
+		glslang_shaders.pop_back();
+	}
+}
 #endif
-unsigned Program::CompileAndLink(const string &shared_src,string& log) 
+
+void GetVariantFormats(std::vector<VariantFormat> &variantFormats,std::string texelFormat)
+{
+	if(texelFormat==std::string("vec4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba32f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba16f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==std::string("float"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="r16f";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="r8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("char4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba8_snorm";
+		v.typeLetter="";
+		v.memberType="vec4";
+		variantFormats.push_back(v);
+		v.layoutDeclaration="rgba8i";
+		v.typeLetter="i";
+		v.memberType="ivec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("uchar4"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="rgba8ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("uint"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32ui";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else if(texelFormat==string("int"))
+	{
+		VariantFormat v;
+		v.layoutDeclaration="r32i";
+		v.typeLetter="u";
+		v.memberType="uvec4";
+		variantFormats.push_back(v);
+	}
+	else
+	{
+		GLFX_CERR<<"Non known variants for "<<texelFormat.c_str()<<std::endl;
+	}
+}
+
+int Program::GetVariantNumber(const std::map<std::string,GLenum> variableFormats)
+{
+	int varnum=0;
+	int mul=1;
+	for(auto j:variantMap)
+	{
+		string varName=j.first;
+		auto u=variableFormats.find(varName);
+		GLenum format=GL_RGBA32F;
+		if(u==variableFormats.end())
+		{
+			format=u->second;
+		}
+		varnum*=mul;
+		int this_format=0;
+		if(format==GL_RGBA16F)
+			this_format=1;
+		varnum+=this_format;
+		mul*=(int)j.second.size();
+	}
+	return varnum;
+}
+
+unsigned Program::CompileAndLink(const string &shared_src,const std::map<std::string,DeclaredTexture*> &declaredTextures,string& log)
 {
     GLint res=1;
     ostringstream sLog;
@@ -481,125 +625,140 @@ unsigned Program::CompileAndLink(const string &shared_src,string& log)
 	if(glfxIsGlslangValidationEnabled())
 	{
 		glslang::InitializeProcess();
-		std::vector<glslang::TShader*> glslang_shaders;
-    
-		EShMessages messages = EShMsgDefault;
-		int defaultVersion=110;
-		glslang::TProgram *glsl_program = new glslang::TProgram;
+	}
+#endif
+	variantMap.clear();
+	for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
+	{
+        if(m_shaders[i].compiledShader&&m_shaders[i].compiledShader->variantDeclarations.size())
+		{
+			for(auto j=m_shaders[i].compiledShader->variantDeclarations.begin();j!=m_shaders[i].compiledShader->variantDeclarations.end();j++)
+			{
+				const DeclaredTexture *dec=declaredTextures.find(*j)->second;
+				std::vector<VariantFormat> variantFormats;
+				GetVariantFormats(variantFormats,dec->texel_format);
+			
+				variantMap[*j]=variantFormats;
+			}
+		}
+	}
+
+	int numVariants=1;
+	for(auto v:variantMap)
+	{
+		numVariants*=(int)v.second.size();
+	}
+	if(!numVariants)
+	{
+		GLFX_CERR<<"No variants at all for this program"<<std::endl;
+		numVariants=1;
+	}
+	// Each variant is a specific combination of the variant variables.
+	for(int i=0;i<numVariants;i++)
+	{
+		vector<GLuint> shaders;
+		Variant &v=variants[i];
+		if(v.programId)
+			glDeleteProgram(v.programId);
+		v.programId=glCreateProgram();
+		ostringstream variantDefs;
+		int combination=i;
+		// What are the variant choices for this particular variant?
+		for(auto j:variantMap)
+		{
+			string varName=j.first;
+			std::vector<VariantFormat> &variantFormats=j.second;
+			int remainder=combination%(variantFormats.size());
+			combination/=(int)(variantFormats.size());
+			VariantFormat &v=variantFormats[remainder];
+			variantDefs<<"#define format_for_"<<varName<<" "<<(v.layoutDeclaration.c_str())<<"\n";
+			variantDefs<<"#define "<<varName<<"_image2D "<<(v.typeLetter.c_str())<<"image2D\n";
+			variantDefs<<"#define "<<varName<<"_image2DArray "<<(v.typeLetter.c_str())<<"image2DArray\n";
+			variantDefs<<"#define "<<varName<<"_image3D "<<(v.typeLetter.c_str())<<"image3D\n";
+			variantDefs<<"#define convertToImageFormatof_"<<varName<<" "<<(v.memberType.c_str())<<"\n";
+		}
+		// This MUST match up with ShaderType enum definition.
+		GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
+												GL_TESS_CONTROL_SHADER,
+												GL_TESS_EVALUATION_SHADER,
+												GL_GEOMETRY_SHADER,
+												GL_FRAGMENT_SHADER,
+												GL_COMPUTE_SHADER};
 		for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
 		{
-			if(res&&m_shaders[i].compiledShader)
+			if(m_shaders[i].compiledShader&&res)
 			{
-				EShLanguage stage = ShaderTypeToEshLanguage((ShaderType)i);
-				glslang::TShader* shader = new glslang::TShader(stage);
-				glslang_shaders.push_back(shader);
-				static int l=0;
-				string shr=shared_src;
-				if(l)
-					shr=shared_src.substr(0,l);
-		
-				const char* shaderStrings[]={ m_shaders[i].preamble.c_str(),shr.c_str(),m_shaders[i].compiledShader->source.c_str()};
-				static int s=3;
-				shader->setStrings(shaderStrings,s);
-				TBuiltInResource Resources;
-				ProcessConfigFile(Resources);
-				res&=(int)shader->parse(&Resources,defaultVersion,EProfile::ECoreProfile,false,false,messages);
-				sLog<<shader->getInfoLog();
-
-				glsl_program->addShader(shader);
+				shaders.push_back(glCreateShader(shaderTypes[i]));
+				res &= CompileShader(shaders.back(), m_shaders[i].name,variantDefs.str(),shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
+				glAttachShader(v.programId, shaders.back());
 			}
+		}
+	   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
+		// values from the shader.
+		if(IsTransformFeedbackShader())
+		{
+			ShaderType outputShader=m_shaders[GEOMETRY_SHADER].compiledShader?GEOMETRY_SHADER:VERTEX_SHADER;
+			const vector<string> &feedbackOutput=m_shaders[outputShader].compiledShader->feedbackOutput;
+			if(feedbackOutput.size())
+			{
+				GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
+				for(int i=0;i<feedbackOutput.size();i++)
+				{
+					Strings[i]=feedbackOutput[i].c_str();
+				}
+				glTransformFeedbackVaryings(v.programId,(GLsizei)feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
+				delete Strings;
+			}
+		}
+		if(m_separable)
+			glProgramParameteri(v.programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
+		try
+		{
+			glLinkProgram(v.programId);
+		}
+		catch(...)
+		{
+			throw std::runtime_error("Link error");
 		}
 		if(res)
 		{
-			res&=(int)(glsl_program->link(messages));
-			sLog<<glsl_program->getInfoLog();
-		}
-		delete glsl_program;
-		while (glslang_shaders.size() > 0)
-		{
-			delete glslang_shaders.back();
-			glslang_shaders.pop_back();
-		}
-	}
-#endif
-    vector<GLuint> shaders;
-	if (programId)
-		glDeleteProgram(programId);
-    programId=glCreateProgram();
-	// This MUST match up with ShaderType enum definition.
-    GLenum shaderTypes[NUM_OF_SHADER_TYPES]={GL_VERTEX_SHADER,
-                                            GL_TESS_CONTROL_SHADER,
-                                            GL_TESS_EVALUATION_SHADER,
-                                            GL_GEOMETRY_SHADER,
-                                            GL_FRAGMENT_SHADER,
-                                            GL_COMPUTE_SHADER};
-    for(int i=0;i<NUM_OF_SHADER_TYPES;i++)
-	{
-        if(m_shaders[i].compiledShader&&res)
-		{
-            shaders.push_back(glCreateShader(shaderTypes[i]));
-			res &= CompileShader(shaders.back(), m_shaders[i].name,shared_src,m_shaders[i].compiledShader->source, (ShaderType)i,  sLog);
-            glAttachShader(programId, shaders.back());
-        }
-    }
-   // Some GL drivers INSIST on having glTransformFeedbackVaryings, even if we're just outputting the default
-	// values from the shader.
-	if(IsTransformFeedbackShader())
-	{
-		ShaderType outputShader=m_shaders[GEOMETRY_SHADER].compiledShader?GEOMETRY_SHADER:VERTEX_SHADER;
-		const vector<string> &feedbackOutput=m_shaders[outputShader].compiledShader->feedbackOutput;
-		if(feedbackOutput.size())
-		{
-			GLchar const **Strings=new GLchar const *[feedbackOutput.size()];
-			for(int i=0;i<feedbackOutput.size();i++)
+			GLint lnk;
+			glGetProgramiv(v.programId, GL_LINK_STATUS, &lnk);
+			res&=lnk;
+			if(!lnk)
 			{
-				Strings[i]=feedbackOutput[i].c_str();
+				sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
+				int len=0;
+				glGetProgramiv(v.programId, GL_INFO_LOG_LENGTH, &len);
+				char infoLog[1024];
+				glGetProgramInfoLog(v.programId,1024,&len,infoLog);
+				sLog<<"Linkage details:"<<endl<<infoLog<<endl;
 			}
-			glTransformFeedbackVaryings(programId,(GLsizei)feedbackOutput.size(), Strings, GL_INTERLEAVED_ATTRIBS);
-			delete Strings;
 		}
-	}
-    if(m_separable)
-        glProgramParameteri(programId, GL_PROGRAM_SEPARABLE, GL_TRUE);
-	try
-	{
-		glLinkProgram(programId);
-	}
-	catch(...)
-	{
-		throw std::runtime_error("Link error");
-	}
-    if(res)
-	{
-		GLint lnk;
-		glGetProgramiv(programId, GL_LINK_STATUS, &lnk);
-		res&=lnk;
-		if(!lnk)
+		if(!res)
 		{
-			sLog<<"Status: Link "<<(res ? "successful" : "failed")<<endl;
-			int len=0;
-			glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &len);
-			char infoLog[1024];
-			glGetProgramInfoLog(programId,1024,&len,infoLog);
-			sLog<<"Linkage details:"<<endl<<infoLog<<endl;
+#ifdef GLFX_GLSLANG
+			if(glfxIsGlslangValidationEnabled())
+				GlslangValidateProgram(shared_src,variantDefs.str(),sLog);
+#endif
+		}
+	
+		for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
+		{
+			glDetachShader(v.programId, *it);
+			glDeleteShader(*it);
 		}
 	}
-	
-    for(vector<GLuint>::const_iterator it=shaders.begin();it!=shaders.end();++it)
-	{
-        glDetachShader(programId, *it);
-        glDeleteShader(*it);
-    }
-	
     log=sLog.str();
 	
 #ifdef GLFX_GLSLANG
-             glslang::FinalizeProcess();
+	if(glfxIsGlslangValidationEnabled())
+		glslang::FinalizeProcess();
 #endif
     if(!res)
         return 0;
 
-    return programId;
+    return variants[0].programId;
 }
 
 static int dirExists(const char *path)
@@ -664,9 +823,9 @@ int do_mkdir(const char *path_utf8)
     return(status);
 }
 
-int Program::CompileShader(unsigned shader, const string& name,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
+int Program::CompileShader(unsigned shader, const string& name,const string &variantDefs,const string &shared,const string &src, ShaderType type, ostringstream& sLog) const
 {
-	string preamble = m_shaders[type].preamble;
+	string preamble = m_shaders[type].preamble+variantDefs;
 	const char* strSrc[] = { preamble.c_str(),shared.c_str(),src.c_str() };
 	glShaderSource(shader, 3, strSrc, NULL);
 
@@ -678,6 +837,8 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 		binaryFilename=bin_dir+"/";
 		binaryFilename+=name+".glsl";
 		std::ofstream ofstr(binaryFilename);
+		ofstr.write(preamble.c_str(),strlen(preamble.c_str()));
+		ofstr.write(shared.c_str(),strlen(shared.c_str()));
 		ofstr.write(src.c_str(),strlen(src.c_str()));
 		if(errno!=0)
 		{
@@ -687,22 +848,32 @@ int Program::CompileShader(unsigned shader, const string& name,const string &sha
 	}
     glCompileShader(shader);
     
-    GLint tmp,res;
-    glGetShaderiv(shader,GL_COMPILE_STATUS, &tmp);
-    res=tmp;
+    GLint res;
+    glGetShaderiv(shader,GL_COMPILE_STATUS, &res);
     //if(!tmp)
 	{
-		if(!tmp)
+		GLint ln;
+		if(!res)
 			sLog<<"Status: "<<name<<" shader compiled with errors"<<endl;
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &tmp);
-		char* infoLog=new char[tmp];
-		glGetShaderInfoLog(shader, tmp, &tmp, infoLog);
-		if (strlen(infoLog)>0)
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &ln);
+		char* infoLog="";
+		if(ln!=0)
 		{
-			sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
-			sLog<<binaryFilename<<": output glsl"<<endl;
+			infoLog=new char[ln];
+			infoLog[0]=0;
+			glGetShaderInfoLog(shader,ln, &ln, infoLog);
+			if (strlen(infoLog)>0)
+			{
+				string fullBinaryPath=binaryFilename;
+				char pth[_MAX_PATH];
+				_getcwd(pth,_MAX_PATH);
+				if(binaryFilename.find(":")>=binaryFilename.size())
+					fullBinaryPath=(string(pth)+"/")+binaryFilename;
+				sLog<<"Compilation details for "<<name<<" shader:"<<endl<<infoLog<<endl;
+				sLog<<fullBinaryPath.c_str()<<": output glsl"<<endl;
+			}
+			delete[] infoLog;
 		}
-		delete[] infoLog;
 	}
     return res;
 }

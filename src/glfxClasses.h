@@ -153,6 +153,10 @@ namespace glfxParser
 		GLenum	AddressU;
 		GLenum	AddressV;
 		GLenum	AddressW;
+		float MipLODBias;
+		float MaxLod;
+		float MinLod;
+		float MaxAnisotropy;
 	};
 	struct StructMember
 	{

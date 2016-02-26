@@ -1,6 +1,6 @@
 %name-prefix "glfx"
-%output "src/glfxLALRParser.cpp"
-%defines "src/glfxLALRParser.hpp"
+%output "src/generated/glfxLALRParser.cpp"
+%defines "src/generated/glfxLALRParser.hpp"
 %{
 	//#define YYFPRINTF glfxprintf
 	#define YYDEBUG 1
@@ -51,8 +51,13 @@
 	int global_linenum			=0;
 	int filenum					=0;
 	#pragma optimize("",off)
-	bool is_equal(const string& a, const char * b)
+	bool is_equal(const string& A, const char * b)
 	{
+		string a = A;
+		while (a.length()>0 && a[0] == '\n' || a[0] == ' ' || a[0] == '\t')
+			a = a.substr(1, a.length() - 1);
+		while (a.length()>0&&a[a.length() - 1] == '\n' || a[a.length() - 1] == ' ' || a[a.length() - 1] == '\t')
+			a = a.substr(0, a.length() - 1);
 		size_t sz = a.size();
 		if (strlen(b) != sz)
 			return false;
@@ -70,16 +75,30 @@
 		else errSem("Expected boolean.");
 		return false;
 	}
+	float toFloat(const string &str)
+	{
+		return (float)atof(str.c_str());
+	}
+	std::string LineNumber( int fileno, int lineno)
+	{
+		std::ostringstream str;
+		str << lineno << " " << fileno;
+		return str.str();
+	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{
-		str<<"#line "<<lineno<<" "<<fileno<<endl;
+		str<<"#line "<< LineNumber(lineno,fileno)<<endl;
 	}
 	void WriteLineNumber(std::ostringstream &str,int lineno)
 	{
 		WriteLineNumber(str,current_filenumber,lineno);//.c_str()<<"\""<<endl;
 	}
-	static bool write_line_number_next=false;
-	static void Skip()
+	std::string LineNumberFromYYLine(int yylineno)
+	{
+		return LineNumber(current_filenumber,yylineno+last_linenumber-global_linenumber);
+	}
+	bool write_line_number_next=false;
+	void gSkip()
 	{
 		write_line_number_next=true;
 	}
@@ -94,31 +113,14 @@
 			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 		}
 	}
-	static string GetLayoutForTemplateType(string s)
+	static string GetLayoutForTemplateType(string s,string textureName)
 	{
-		if(s==string("vec4"))
+		// In HLSL, vec4 and float textures are "adaptable" and the actual texture might be a different format.
+		//if(s==string("vec4")||s==string("float"))
 		{
-			return "layout(rgba32f)";
-		}
-		if(s==string("char4"))
-		{
-			return "layout(rgba8)";
-		}
-		if(s==string("uchar4"))
-		{
-			return "layout(rgba8)";
-		}
-		if(s==string("float"))
-		{
-			return "layout(r32f)";
-		}
-		if(s==string("uint"))
-		{
-			return "layout(r32ui)";
-		}
-		if(s==string("int"))
-		{
-			return "layout(r32i)";
+			// We want to be able to write both, so we will add in a #define rgba16_or_32f rgba32f or rgba16f
+			// at the appropriate time.
+			return string("layout(format_for_")+textureName+")";
 		}
 		return "";
 	}
@@ -208,7 +210,7 @@
 		}
 		auto j = gEffect->GetDeclaredTextures().find(textureName);
 		if (j != gEffect->GetDeclaredTextures().end())
-			return (GLTextureType)j->second.type_enum;
+			return (GLTextureType)j->second->type_enum;
 		return unknwownTextureType;
 	}
 	GLTextureType ToGLTextureType(int t);
@@ -304,7 +306,7 @@
 %}
 
 %token WHITESPACE UNIFORM REGISTER SHADER CONSTANT_BUFFER PROGRAM INTERFACE IDENTIFIER SAMPLE SAMPLE_LOD LOAD GET_DIMS STORAGEQ GL_FRAGDEPTH SHADER_COMMAND SET_RASTERIZER_COMMAND SET_DEPTH_COMMAND SET_BLEND_COMMAND
-%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER FLOAT
+%token SV_DISPATCHTHREADID SV_GROUPTHREADID SV_GROUPID SV_VERTEXID NUM INCLUDE SAMPLER P_FLOAT
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
 %token WARNING DEF MESSAGE PACK_MATRIX
@@ -314,8 +316,17 @@
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
 %token SA_MAXVERTEXCOUNT SA_NUMTHREADS
 %token SATURATE
-%token SHADER_PROFILE  
-
+%token SHADER_PROFILE 
+%token COMMENT
+//filter_mode
+%token MIN_MAG_MIP_POINT MIN_MAG_POINT_MIP_LINEAR MIN_POINT_MAG_LINEAR_MIP_POINT MIN_POINT_MAG_MIP_LINEAR MIN_LINEAR_MAG_MIP_POINT MIN_LINEAR_MAG_POINT_MIP_LINEAR MIN_MAG_LINEAR_MIP_POINT MIN_MAG_MIP_LINEAR ANISOTROPIC
+%token SRC_ALPHA INV_SRC_ALPHA ZERO ONE SRC_COLOR INV_SRC_COLOR DEST_ALPHA INV_DEST_ALPHA DEST_COLOR INV_DEST_COLOR SRC_ALPHA_SAT BLEND_FACTOR INV_BLEND_FACTOR SRC1_COLOR INV_SRC1_COLOR SRC1_ALPHA INV_SRC1_ALPHA
+%token BLEND_OP_ADD BLEND_OP_SUBTRACT BLEND_OP_MAX
+%token CULL_FRONT_FACES CULL_BACK_FACES
+%token RENDERSTATE_RVALUE_NONE
+%token FILL_MODE_SOLID FILL_MODE_WIREFRAME
+%token DEPTH_PASS_ALWAYS DEPTH_PASS_NEVER DEPTH_PASS_LESS DEPTH_PASS_GREATER DEPTH_PASS_LESS_EQUAL DEPTH_PASS_GREATER_EQUAL
+%token TEXTURE_WRAP TEXTURE_MIRROR TEXTURE_CLAMP
 %%
 
 prog : prog tok
@@ -382,47 +393,40 @@ prog : prog tok
 	| PRAGMA WARNING '(' warning-specifier ':' NUM ')'
 	{
 	}
-	| UNIFORM texture_type optional_templateval IDENTIFIER optional_register_semantic ';'
+	| optional_uniform texture_type optional_templateval IDENTIFIER optional_register_semantic ';'
 	{
 		string texture_type=$2.strs[0];
 		GLTextureType type_enum = ToGLTextureType($2.token);
-		bool compute_only=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
+		bool compute_only		=(texture_type==string("image3D"))||(texture_type.substr(0,2)==string("RW"));
 		
 		stringReplaceAll(texture_type,"RWTexture","image");
-		ostringstream decl;
-		if(compute_only)
-			sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
-		string template_type=$3.strs[0];
-		string texture_name=$4.strs[0];
+		string template_type	=$3.strs[0];
+		if(template_type.length()==0)
+			template_type="vec4";
+		string texture_name		=$4.strs[0];
 		string layout;
 		if(compute_only)
-			layout=GetLayoutForTemplateType(template_type)+" ";
+			layout=GetLayoutForTemplateType(template_type,texture_name)+" ";
 		string type=GetEquivalentGLTextureType(texture_type,template_type);
-		WriteLineNumber(decl,current_filenumber,$1.lineno+last_linenumber-global_linenumber);
 
-		decl<<layout<<"uniform "<<type<<" "<<texture_name<<";\n";
 		DeclaredTexture dec;
-		dec.type=type;
-		dec.type_enum=type_enum;
+		dec.variant			=compute_only&&IsRWTexture(type_enum);//(template_type==string("vec4"));
+		dec.file_number		=current_filenumber;
+		dec.line_number		=$1.lineno+last_linenumber-global_linenumber;
+		dec.type			=type;
+		dec.texel_format	=template_type;
+		dec.type_enum		=type_enum;
+		dec.layout			=layout;
 		gEffect->DeclareTexture(texture_name,dec);
-		sharedCode << decl.str(); 
-		if(compute_only)
-			sharedCode<<"#endif\n";
-	}
-	/*
-	Here we will transform from a HLSL-style templated uniform buffer:
-		RWStructuredBuffer<LightingQueryResult> lightingQueryResults;
 
-	into a GLSL-style buffer:
-		layout(std430, binding = 2) buffer lightingQueryResults
-		{
-			LightingQueryResult lightingQueryResults[];
-		};
-	*/
-	| UNIFORM buffer_type optional_templateval IDENTIFIER ';'
+		ostringstream decl;
+
+	}
+
+	| optional_uniform buffer_type optional_templateval IDENTIFIER ';'
 	{
-		string buffer_type=$2.strs[0];
-		bool compute_only=true;
+		//string buffer_type=$2.strs[0];
+		bool compute_only=($2.token==RW_STRUCTUREDBUFFER);
 		ostringstream decl;
 		if(compute_only)
 			sharedCode<<"#ifdef IN_COMPUTE_SHADER\n";
@@ -435,7 +439,7 @@ prog : prog tok
 		if(compute_only)
 			sharedCode<<"#endif\n";
 	}
-	| UNIFORM IDENTIFIER IDENTIFIER ';'
+	| optional_uniform IDENTIFIER IDENTIFIER ';'
 	{
 		ostringstream decl;
 		decl<<$1.strs[0]<<" "<<$2.strs[0]<<" "<<$3.strs[0]<<";";
@@ -527,7 +531,7 @@ prog : prog tok
 			buildSamplerState=SamplerState();
 		}
 		int true_linenumber=$4.lineno+(last_linenumber-global_linenumber);
-	//	WriteLineNumber(true_linenumber);
+	
 	}
 	| PROFILE SHADER_PROFILE '(' NUM ')' ';'
 	{
@@ -583,6 +587,12 @@ prog : prog tok
 			string type=j->type;
 			// We SHOULD check the type but don't yet.
 			string name=j->identifier;
+			// Is the paramater in our declarations list?
+			auto a=buildFunction.declarations.find(name);
+			if(a!=buildFunction.declarations.end())
+			{
+				buildFunction.declarations.erase(a);
+			}
 			// Is this one of the textures in the textureSampler list?
 			auto u=buildFunction.textureSamplersByTexture.find(name);
 			if(u!=buildFunction.textureSamplersByTexture.end())
@@ -629,7 +639,7 @@ prog : prog tok
 						string type=GetTypeOfParameter(buildFunction.parameters,ts->textureName);
 						if(type.length()==0)
 						{
-							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second.type;
+							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second->type;
 						}
 						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
 						//if(j->semantic.size())
@@ -672,7 +682,7 @@ prog : prog tok
 		buildFunction.content_linenumber=$1.lineno+(last_linenumber-global_linenumber);
 		WriteLineNumber(str,current_filenumber,buildFunction.content_linenumber);
 		str<< buildFunction.returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<buildFunction.content<<"\n}\n";
-		WriteLineNumber(str,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
+		WriteLineNumber(sharedCode,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 		buildFunction.main_linenumber=$1.lineno;
 		//glfxWrite(str.str().c_str());
 		buildFunction.source				=str.str();
@@ -685,6 +695,7 @@ prog : prog tok
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
 		sh.shaderName			=$3.strs[0];
 		sh.maxGSVertexCount		=maxVertexCount;
+
 		sh.function.returnType	=$2.strs[0];
 		sh.function.content		=$8.strs[0];
 		sh.returnable			=$8.strs[1];
@@ -697,13 +708,12 @@ prog : prog tok
 		ostringstream finalCode;
 		sh.function.parameters	=*$5.vars;
 
-		
+		sh.function.declarations					=buildFunction.declarations;
 		sh.function.textureSamplers					=buildFunction.textureSamplers;
 		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
 		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
 		sh.function.functionsCalled					=buildFunction.functionsCalled;
 		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
-
 
 		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
 		{
@@ -729,14 +739,14 @@ prog : prog tok
 		gEffect->AddTechniqueGroup(groupName,buildTechniqueGroup);
 		buildTechniqueGroup.m_techniques.clear();
 	};
-	line_statement: LINE lex_fx NUM NUM lex_passthrough
+	line_statement: LINE lex_fx NUM NUM lex_passthrough EOL
 	{
 		last_linenumber		=$3.num;
 		current_filenumber	=$4.num;
 		global_linenumber	=$1.lineno+1;	// the line AFTER the #line directve.
 		WriteLineNumber(sharedCode,current_filenumber,last_linenumber);
 	}
-	ignore_line_statement: LINE NUM NUM
+	ignore_line_statement: LINE NUM NUM EOL
 	{
 		last_linenumber		=$2.num;
 		current_filenumber	=$3.num;
@@ -885,11 +895,6 @@ function_content : '{' statement_list '}' { /* Read next block */
     $$.lineno= $2.lineno;
 };
 
-read_block : { /* Read next block */
-    $$.strs[0]= glfxreadblock('{', '}');
-    $$.lineno= glfxget_lineno();
-};
-
 optional_return_semantic: ':' IDENTIFIER
  {
     $$.strs[0]=$1.strs[0]+$2.strs[0];
@@ -903,16 +908,37 @@ struct_definition: '{' struct_member_list '}'
     $$.strs[0]="{\n";
 	$$.strs[0]+=($2.strs[0]+"\n}\n");
 }
-struct_member_list: struct_member_list struct_memb
+struct_member_list: struct_member_list struct_element
 {
 	string list			=$1.strs[0];
 	string new_member	=$2.strs[0];
     $$.strs[0]=(list+"\n")+new_member;
 }
-| struct_memb
+| struct_element
 {
 	string member	=$1.strs[0];
     $$.strs[0]=member;
+}
+struct_element: struct_memb
+{
+	string str=$1.strs[0];
+	//if(write_line_number_next)
+//		str=
+    $$.strs[0]	=str;
+}
+|
+ignore_line_statement
+{
+	$$.lineno = $1.lineno;
+	$$.num = -1;
+}
+| COMMENT
+{
+	gSkip();
+}
+| WHITESPACE
+{
+	gSkip();
 }
 struct_memb : optional_uniform IDENTIFIER IDENTIFIER opt_sq optional_semantic ';'
 {
@@ -987,7 +1013,8 @@ param_declaration: param opt_sq location
         prepend<<"layout(location="<<$3.num<<") ";
         break;
     case REGISTER_NAME:
-        prepend<<"layout(location="<<$3.strs[0]<<") ";
+	// GL Doesn't recognize arbitrary text for this.
+        //prepend<<"layout(location="<<$3.strs[0]<<") ";
         break;
     case SEMANTIC:
 		template_=getGLInputSemantic($3.num);
@@ -1227,7 +1254,7 @@ shaders_list : shaders_list shader_def
 		$$.strs[2]	="";
 		$$.sType	=(ShaderType)((int)NUM_OF_SHADER_TYPES+1);
 	};
-vec4: IDENTIFIER '(' FLOAT ',' FLOAT ',' FLOAT ',' FLOAT ')'
+vec4: IDENTIFIER '(' P_FLOAT ',' P_FLOAT ',' P_FLOAT ',' P_FLOAT ')'
 	  {
 		  $$.strs[0]=$1.strs[0]+"(";
 		  $$.strs[0]+=$3.strs[0]+",";
@@ -1357,7 +1384,6 @@ shader_compile: IDENTIFIER
 			string tempName							=gsName+"_GS_with_SO";
 			$$.strs[0]								=tempName;
 		
-			//gEffect->GetCompiledShaders()[tempName]	=new_cs=new CompiledShader;
 			if(i==gEffect->GetCompiledShaders().end())
 			{
 				ostringstream msg;
@@ -1513,7 +1539,7 @@ statement_list: statement_list statement
 					$$.strs[0]	="";
 					$$.strs[1]	="";
 				}
-line_statement_in_shader: LINE NUM NUM 
+line_statement_in_shader: LINE NUM NUM EOL
 	{
 		last_linenumber		=$2.num;
 		current_filenumber	=$3.num;
@@ -1623,28 +1649,37 @@ declarator: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 		}
-statement:  expression ';'
-				{
-					$$.strs[0]=$1.strs[0]+";\n";
-					$$.lineno=$1.lineno;
-					$$.strs[1]="";
-				}
-			   |  ';'
-				{
-					$$.strs[0]=";\n";
-					$$.strs[1]="";
-				}
+statement:	COMMENT
+			{
+				$$.strs[0]=$1.strs[0];
+				$$.strs[1]="";
+			}
+			| WHITESPACE
+			{
+				$$.strs[0]=$1.strs[0];
+			}
+			| expression ';'
+			{
+				$$.strs[0]=$1.strs[0]+$2.strs[0];
+				$$.lineno=$1.lineno;
+				$$.strs[1]="";
+			}
+			|  ';'
+			{
+				$$.strs[0]=$1.strs[0];
+				$$.strs[1]="";
+			}
 			| declaration ';'
-				{
-					$$.strs[0]=$1.strs[0]+";\n";
-					$$.strs[1]="";
-				}
+			{
+				$$.strs[0]=$1.strs[0]+$2.strs[0];
+				$$.strs[1]="";
+			}
 			| compound_statement
-				{
-					string compound_statement=$1.strs[0];
-					$$.strs[0]=compound_statement;
-					$$.strs[1]="";
-				}
+			{
+				string compound_statement=$1.strs[0];
+				$$.strs[0]=compound_statement;
+				$$.strs[1]="";
+			}
 			| IF '(' expression ')' statement
 				{
 					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0];
@@ -1669,7 +1704,7 @@ statement:  expression ';'
 				}
 			| DO statement WHILE '(' expression ')' ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+$5.strs[0]+$6.strs[0]+$7.strs[0];
 					$$.strs[1]="";
 				}
 			| FOR '(' for_init_statement ';' optional_expression ';' optional_expression ')' statement
@@ -1680,17 +1715,17 @@ statement:  expression ';'
 				}
 			| GOTO IDENTIFIER ';'
 				{
-					$$.strs[0]=$1.strs[0]+$2.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0]+$3.strs[0];
 					$$.strs[1]="";
 				}
 			| CONTINUE ';'
 				{
-					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
 					$$.strs[1]="";
 				}
 			| BREAK ';'
 				{
-					$$.strs[0]=$1.strs[0]+";\n";
+					$$.strs[0]=$1.strs[0]+$2.strs[0];
 					$$.strs[1]="";
 				}
 			| RETURN optional_expression ';'
@@ -1703,7 +1738,7 @@ statement:  expression ';'
 				}
 				else
 				{
-					$$.strs[0]=($1.strs[0]+" ")+optional_expression+";\n";
+					$$.strs[0]=($1.strs[0]+" ")+optional_expression+$3.strs[0];
 					$$.strs[1]=optional_expression;
 				}
 				$$.lineno=$1.lineno;
@@ -1769,7 +1804,7 @@ assignment_exp: conditional_exp
 			{
 				ostringstream str;
 				if($2.token=='=')
-					str<<"imageStore("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),"<<assignment_exp<<")";
+					str<<"imageStore("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),convertToImageFormatof_"<<varName<<"("<<assignment_exp<<"))";
 				else
 					errSem(string("Unsupported operator for image store: ")+assignment_operator);
 				$$.strs[0]=str.str();
@@ -1988,8 +2023,9 @@ get_dims_exp:	postfix_exp '.' GET_DIMS
 postfix_exp		: primary_exp
 					{
 						$$.token=$1.token;
-						$$.strs[0]=$1.strs[0];
-						$$.strs[2]=$1.strs[0];			//Command
+						string varName = $1.strs[0];
+						$$.strs[0]= varName;
+						$$.strs[2]= varName;			//Command
 					}
 					| postfix_exp '[' expression ']'
 					{
@@ -1999,7 +2035,6 @@ postfix_exp		: primary_exp
 						$$.strs[3]=index;
 						$$.strs[2]=$1.strs[2];			//Command
 
-						
 						// Is it actually a texture we're indexing?
 						GLTextureType glTextureType			=GetTextureType(buildFunction,varName);
 						if(glTextureType==0)
@@ -2008,6 +2043,7 @@ postfix_exp		: primary_exp
 						}
 						else
 						{
+							buildFunction.declarations.insert(varName);
 							ostringstream str;
 							if(IsRWTexture(glTextureType))
 							{
@@ -2025,8 +2061,9 @@ postfix_exp		: primary_exp
 						string textureName	=$1.strs[1];
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
-
+						
 						$$.strs[0]=GetSizeFunction( textureName, x, y,"");
+						buildFunction.declarations.insert(textureName);
 					}
 					| get_dims_exp '(' assignment_exp ',' assignment_exp ',' assignment_exp ')'
 					{
@@ -2035,6 +2072,7 @@ postfix_exp		: primary_exp
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
 						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
+						buildFunction.declarations.insert(textureName);
 					}
 					| tex_load_exp '(' argument_exp_list ')'
 					{
@@ -2083,6 +2121,7 @@ postfix_exp		: primary_exp
 							full_expr<<",int("<<msaa_index<<")";
 						full_expr<<")";
 						$$.strs[0]				=full_expr.str();
+						buildFunction.declarations.insert(textureName);
 					}
 					| sampling_exp '(' assignment_exp ',' argument_exp_list ')'
 					{
@@ -2090,7 +2129,8 @@ postfix_exp		: primary_exp
 						string command			=$1.strs[2];
 						string samplerStateName	=$3.strs[0];
 						string otherParams		=$5.strs[0];
-
+						
+						buildFunction.declarations.insert(textureName);
 						// The actual texturing command depends on the type of the texture.
 						if(IsDeclared(textureName))
 						{
@@ -2223,7 +2263,7 @@ postfix_exp		: primary_exp
 						}
 						$$.strs[0]=expr1+expr2+params+expr4;
 					}
-					| postfix_exp '('			')'
+					| postfix_exp '(' ')'
 					{
 						// ok this could be a function call.
 						string command=$1.strs[2];
@@ -2295,7 +2335,10 @@ initializer_list: initializer
 				}
 primary_exp	: IDENTIFIER
 				{
-					$$.strs[0]=$1.strs[0];
+					string varName=$1.strs[0];
+					$$.strs[0]=varName;
+					if(gEffect->IsTextureDeclared(varName))
+						buildFunction.declarations.insert(varName);
 				}
 			| SATURATE
 				{
@@ -2314,7 +2357,7 @@ const		: NUM
 				{
 					$$.strs[0]=$1.strs[0];
 				}
-			| FLOAT
+			| P_FLOAT
 				{
 					$$.strs[0]=$1.strs[0];
 				}
@@ -2388,6 +2431,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							$$.lineno		=$3.lineno;
 							string name		=$1.strs[0];
 							string value	=$3.strs[0];
+							int token		= $3.token;
 							int index		=$1.num;
 							int ival		=$3.num;
 							float fval		=$3.fnum;
@@ -2395,9 +2439,9 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							if(renderState==RASTERIZER_STATE)
 							{
 								if(is_equal(name,"FillMode"))
-									buildRasterizerState.FillMode=(GLenum)toFillModeGLenum(value);
+									buildRasterizerState.FillMode=(GLenum)toFillModeGLenum(token);
 								else if(is_equal(name,"CullMode"))
-									buildRasterizerState.CullMode=(GLenum)toCullModeGLenum(value);
+									buildRasterizerState.CullMode=(GLenum)toCullModeGLenum(token);
 								else if(is_equal(name,"FrontCounterClockwise"))
 									buildRasterizerState.FrontCounterClockwise=toBool(value);
 								else if(is_equal(name,"DepthBias"))
@@ -2435,7 +2479,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 										errSem("Unknown depth write mask");
 								}
 								else if(is_equal(name,"DepthFunc"))
-									buildDepthStencilState.DepthFunc=(GLenum)toDepthFuncGLEnum(value);
+									buildDepthStencilState.DepthFunc=(GLenum)toDepthFuncGLEnum(token);
 								else
 								{
 									ostringstream str;
@@ -2446,17 +2490,17 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							if(renderState==BLEND_STATE)
 							{
 								if(is_equal(name,"SrcBlend"))
-									buildBlendState.SrcBlend=(GLenum)toBlendGLEnum(value);
+									buildBlendState.SrcBlend=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"DestBlend"))
-									buildBlendState.DestBlend=(GLenum)toBlendGLEnum(value);
+									buildBlendState.DestBlend=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"BlendOp"))
-									buildBlendState.BlendOp=(GLenum)toBlendOpGLEnum(value);
+									buildBlendState.BlendOp=(GLenum)toBlendOpGLEnum(token);
 								else if(is_equal(name,"SrcBlendAlpha"))
-									buildBlendState.SrcBlendAlpha=(GLenum)toBlendGLEnum(value);
+									buildBlendState.SrcBlendAlpha=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"DestBlendAlpha"))
-									buildBlendState.DestBlendAlpha=(GLenum)toBlendGLEnum(value);
+									buildBlendState.DestBlendAlpha=(GLenum)toBlendGLEnum(token);
 								else if(is_equal(name,"BlendOpAlpha"))
-									buildBlendState.BlendOpAlpha=(GLenum)toBlendOpGLEnum(value);
+									buildBlendState.BlendOpAlpha=(GLenum)toBlendOpGLEnum(token);
 								else if(is_equal(name,"AlphaToCoverageEnable"))
 									buildBlendState.AlphaToCoverageEnable=toBool(value);
 								else if(is_equal(name,"BlendEnable"))
@@ -2474,15 +2518,23 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 							{
 								if(is_equal(name,"Filter"))
 								{
-									buildSamplerState.MinFilter			=(GLenum)toMinFilterModeGLEnum(value);
-									buildSamplerState.MagFilter			=(GLenum)toMagFilterModeGLEnum(value);
+									buildSamplerState.MinFilter			=(GLenum)toMinFilterModeGLEnum(token);
+									buildSamplerState.MagFilter			=(GLenum)toMagFilterModeGLEnum(token);
 								}
 								else if(is_equal(name,"AddressU"))
-									buildSamplerState.AddressU			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressU			=(GLenum)toAddressModeGLEnum(token);
 								else if(is_equal(name,"AddressV"))
-									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressV			=(GLenum)toAddressModeGLEnum(token);
 								else if(is_equal(name,"AddressW"))
-									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(value);
+									buildSamplerState.AddressW			=(GLenum)toAddressModeGLEnum(token);
+								else if(is_equal(name,"MipLODBias"))
+									buildSamplerState.MipLODBias		=toFloat(value);
+								else if(is_equal(name,"MaxLod"))
+									buildSamplerState.MaxLod			=toFloat(value);
+								else if(is_equal(name,"MinLod"))
+									buildSamplerState.MinLod			=toFloat(value);
+								else if(is_equal(name,"MaxAnisotropy"))
+									buildSamplerState.MaxAnisotropy		=toFloat(value);
 								else
 								{
 									ostringstream str;
@@ -2512,21 +2564,278 @@ optional_index : '[' NUM ']'
 						{
 							 $$.num=0;
 						};
-render_state_rvalue : IDENTIFIER
-						{
-							$$.lineno=$1.lineno;
-							$$.strs[0]=$1.strs[0];
-						}
-						| NUM
-						{
-							$$.lineno=$1.lineno;
-							$$.num=$1.num;
-						}
-						| FLOAT
-						{
-							$$.lineno=$1.lineno;
-							$$.fnum=$1.fnum;
-						};
+render_state_rvalue: IDENTIFIER
+					{
+						$$.lineno = $1.lineno;
+						$$.strs[0] = $1.strs[0];
+					}
+					| NUM
+					{
+						$$.lineno = $1.lineno;
+						$$.num = $1.num;
+						$$.token = $1.token;
+					}
+						| P_FLOAT
+					{
+						$$.lineno = $1.lineno;
+						$$.fnum = $1.fnum;
+						$$.token = $1.token;
+					}
+					| filter_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| blend_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| blend_op
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| cull_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+						| fill_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| RENDERSTATE_RVALUE_NONE
+					{
+						// THis could be different types depending on context: cull or fill.
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| depth_func
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| texture_addressing_mode
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+filter_mode: MIN_MAG_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_POINT_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_POINT_MAG_LINEAR_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_POINT_MAG_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_LINEAR_MAG_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_LINEAR_MAG_POINT_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_LINEAR_MIP_POINT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| MIN_MAG_MIP_LINEAR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+				| ANISOTROPIC
+					{
+						$$.lineno = $1.lineno;
+						$$.token =$1.token
+					}
+blend_mode: SRC_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| ZERO
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| ONE
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| DEST_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_DEST_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| DEST_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_DEST_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC_ALPHA_SAT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| BLEND_FACTOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_BLEND_FACTOR
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| SRC1_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC1_COLOR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| SRC1_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| INV_SRC1_ALPHA
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+blend_op: BLEND_OP_ADD
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| BLEND_OP_SUBTRACT
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| BLEND_OP_MAX
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+fill_mode: FILL_MODE_WIREFRAME
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| FILL_MODE_SOLID
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+
+cull_mode:	CULL_FRONT_FACES
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+			| CULL_BACK_FACES
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+depth_func: DEPTH_PASS_ALWAYS
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_NEVER
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_LESS
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_GREATER
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_LESS_EQUAL
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+			| DEPTH_PASS_GREATER_EQUAL
+			{
+				$$.lineno = $1.lineno;
+				$$.token = $1.token;
+			}
+
+texture_addressing_mode: TEXTURE_WRAP
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| TEXTURE_MIRROR
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
+					| TEXTURE_CLAMP
+					{
+						$$.lineno = $1.lineno;
+						$$.token = $1.token;
+					}
 type_spec: IDENTIFIER
 		{
 			$$.strs[0]=$1.strs[0];

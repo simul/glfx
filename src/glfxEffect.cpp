@@ -29,14 +29,13 @@ typedef int errno_t;
 #ifdef _MSC_VER
 #define YY_NO_UNISTD_H
 #endif
-#include "glfxScanner.h"
+#include "generated/glfxScanner.h"
 #include "glfxProgram.h"
 #include "glfxErrorCheck.h"
 #include <set>
 
 Effect::Effect()
-    : m_active(true)
-	,current_group(NULL)
+    :current_group(NULL)
 	,current_texture_number(0)
 	,current_image_number(0)
 	,current_pass(0)
@@ -44,6 +43,11 @@ Effect::Effect()
 }
 
 Effect::~Effect()
+{
+	Clear();
+}
+
+void Effect::Clear()
 {
 	for (auto it = m_techniqueGroups.begin(); it != m_techniqueGroups.end(); ++it)
 		delete it->second;
@@ -56,10 +60,6 @@ Effect::~Effect()
 		delete i->second;
 	for (auto i = glSamplerStates.begin(); i != glSamplerStates.end(); i++)
 		glDeleteSamplers(1,&(i->second));
-}
-
-void Effect::Clear()
-{
 	for(auto i=functions.begin();i!=functions.end();i++)
 	{
 		for(auto j=i->second.begin();j!=i->second.end();j++)
@@ -72,7 +72,10 @@ void Effect::Clear()
 	m_blendStates.clear();
 	m_depthStencilStates.clear();
 	m_samplerStates.clear();
+	for (auto i = m_declaredTextures.begin(); i != m_declaredTextures.end(); i++)
+		delete i->second;
 	m_declaredTextures.clear();
+	m_declaredTexturesByNumber.clear();
 	m_rasterizerStates.clear();
 	m_shaderLayouts.clear();
 	passStates.clear();
@@ -108,7 +111,7 @@ int Effect::GetTextureNumber(const char *name)
 		}
 		else
 		{
-			textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+			textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 		}
 		current_texture_number++;
 		// Now we will allocate sequential texture numbers to the sampler states that will be used with this texture...
@@ -118,7 +121,7 @@ int Effect::GetTextureNumber(const char *name)
 			const set<TextureSampler*> &ts=i->second;
 			for(auto j=ts.begin();j!=ts.end();j++)
 			{
-				textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+				textureDimensions[current_texture_number] = GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 				current_texture_number++;
 			}
 		}
@@ -133,6 +136,8 @@ int Effect::GetImageNumber(const char *name)
 	if(textureNumberMap.find(n)!=textureNumberMap.end())
 	{
 		image_number			=textureNumberMap[n]-1000;
+		if(image_number<0)
+			return -1;
 	}
 	else
 	{
@@ -140,29 +145,39 @@ int Effect::GetImageNumber(const char *name)
 		auto u=m_declaredTextures.find(n);
 		if(u==m_declaredTextures.end())
 			return 0;
-		if(!IsTextureWriteable(u->second.type_enum))
+		if(!IsTextureWriteable(u->second->type_enum))
 			return 0;
 		if(stricmp(name,"cloudDensity")==0)
 		{
 			std::cerr<<"cloudDensity";
 		}
-		textureNumberMap[n] = current_image_number + 1000;
-		textureDimensions[current_image_number + 1000] = GetTextureDimension(m_declaredTextures[n].type_enum,true);
+		textureNumberMap[n]=current_image_number+1000;
+		textureDimensions[current_image_number+1000]=GetTextureDimension(m_declaredTextures[n]->type_enum,true);
 		current_image_number++;
 	}
 	return image_number;
 }
 
-void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip)
+void Effect::SetTexture(int texture_number,GLuint tex,int dims,int depth,GLenum format,bool write,int mip,bool layered,int layer,bool cubemap)
 {
 	TextureAssignment &t=textureAssignmentMap[texture_number+(write?1000:0)];
-	t.tex		=tex;
+	DeclaredTexture *dec=m_declaredTexturesByNumber[texture_number+(write?1000:0)];
+
+	bool dec_write=dec?IsTextureWriteable(dec->type_enum):false;
+	if(dec!=NULL&&dec_write!=write)
+	{
+		GLFX_CERR << "Texture declared as writeable?" << std::endl;
+	}
+	t.tex			=tex;
 	if (tex!=0&&textureDimensions[texture_number+(write?1000:0)] != dims)
 		GLFX_CERR << "Texture dimension mismatch" << std::endl;
-	t.depth		=depth;
-	t.format	=format;
-	t.write		=write;
-	t.mip			=mip;
+	t.depth			=depth;
+	if(format>0)
+		t.format	=format;
+	t.write_mip		=mip;
+	t.layered		=layered;
+	t.layer			=layer;
+	t.cubemap		=cubemap;
 }
 
 void Effect::SetSamplerState(const char *name, unsigned sam)
@@ -251,51 +266,59 @@ void Effect::DeclareStruct(const string &name,const Struct &ts)
 	m_structs[name]	=rs;
 }
 
-void Effect::SetTex(int texture_number,const TextureAssignment &t,int location_in_shader)
+void Effect::SetTex(int texture_number,int dim,const TextureAssignment &t,int location_in_shader)
 {
 	// The effect knows the needed info: the format
 	GLFX_ERROR_CHECK
-	// Fall out silently if this texture is not set.
-	//if(!t.tex)
-	//	return;
-	if(t.write)
+	if(texture_number>=1000)
 	{
-		glBindImageTexture(texture_number-1000
- 			,t.tex
- 			,t.mip>=0?t.mip:0
-			,textureDimensions[texture_number] == 3
-			,0
-			,GL_READ_WRITE
-			,t.format);
+		if(t.format>0)
+			glBindImageTexture(texture_number-1000
+ 				,t.tex
+ 				,t.write_mip
+				,t.layered		//dim == 3
+				,t.layered?t.layer:0	// 0
+				,GL_READ_WRITE
+				,t.format);
 		texture_number-=1000;
-/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
-	GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
-	GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
-	GLFX_ERROR_CHECK
+	/*	GL_INVALID_VALUE is generated if unit greater than or equal to the value of GL_MAX_IMAGE_UNITS (0x8F38).
+		GL_INVALID_VALUE is generated if texture is not the name of an existing texture object.
+		GL_INVALID_VALUE is generated if level or layer is less than zero.	*/
+		GLFX_ERROR_CHECK
 	}
 	else
 	{
+	GLFX_ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0+texture_number);
 		GLFX_ERROR_CHECK
-		if (textureDimensions[texture_number] == 2)
+		if (dim == 2)
 		{
 			// 2D but depth>1? That's an ARRAY texture.
-			if(t.depth>1)
+			if(t.cubemap)
+			{
+				glBindTexture(GL_TEXTURE_CUBE_MAP,t.tex);
+				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+			}
+			else if(t.depth>1)
 				glBindTexture(GL_TEXTURE_2D_ARRAY,t.tex);
 			else
 				glBindTexture(GL_TEXTURE_2D,t.tex);
 			GLFX_ERROR_CHECK
 		}
-		else if (textureDimensions[texture_number] == 3)
+		else if (dim == 3)
 		{
 			glBindTexture(GL_TEXTURE_3D,t.tex);
 			GLFX_ERROR_CHECK
 		}
 		else
 		{
+	GLFX_ERROR_CHECK
 			throw std::runtime_error("Unknown texture dimension!");
+	GLFX_ERROR_CHECK
 		}
+	GLFX_ERROR_CHECK
 	}
+	GLFX_ERROR_CHECK
 	glUniform1i(location_in_shader,texture_number);
 	GLFX_ERROR_CHECK
 }
@@ -312,26 +335,22 @@ bool Effect::SetVersionForProfile(int profileNum,const std::string &profileName)
 
 bool Effect::AddCompiledShader(ShaderType sType,const std::string &lvalCompiledShaderName,const std::string &rvalCompiledShaderName)
 {
-		CompiledShader *compiledShader	=m_compiledShaders[rvalCompiledShaderName];
-		CompiledShaderMap::iterator i	=m_compiledShaders.find(lvalCompiledShaderName);
-		if(i!=gEffect->m_compiledShaders.end())
-		{
-			delete i->second;
-			// TODO: Warn here about double-compiling a shader.
-			m_log<<("double-compiling shader ")<<std::endl;
-		}
-		if(sType!=compiledShader->shaderType)
-		{
-			m_log<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
+	CompiledShader *compiledShader	=m_compiledShaders[rvalCompiledShaderName];
+	CompiledShaderMap::iterator i	=m_compiledShaders.find(lvalCompiledShaderName);
+	if(i!=gEffect->m_compiledShaders.end())
+	{
+		delete i->second;
+		// TODO: Warn here about double-compiling a shader.
+		m_log<<("double-compiling shader ")<<std::endl;
+	}
+	if(sType!=compiledShader->shaderType)
+	{
+		m_log<<((((string("Shader type mismatch for ")+lvalCompiledShaderName+" - can't assign ")+ShaderTypeToString(sType)+" shader to ")+ShaderTypeToString(compiledShader->shaderType)+" shader").c_str());
 
-			return false;
-		}
-		m_compiledShaders[lvalCompiledShaderName]=compiledShader;
-		return true;
-}
-bool& Effect::Active()
-{
-    return m_active;
+		return false;
+	}
+	m_compiledShaders[lvalCompiledShaderName]=compiledShader;
+	return true;
 }
 
 string& Effect::Filename()
@@ -347,47 +366,41 @@ string& Effect::Dir()
 unsigned Effect::BuildProgram(const string& tech, const string& pass, string& log)
 {
 	GLFX_ERROR_CHECK
-	if(tech.length() == 0)
+	TechniqueGroup *group	=current_group;
+	map<string, Technique*>::iterator it = group->m_techniques.find(tech);
+	if (it == group->m_techniques.end())
 	{
-		std::cerr<<"Must have a technique"<<std::endl;
-		assert(tech.length());
+		std::cerr<<"Can't find technique: "<<tech.c_str()<<std::endl;
 		return 0;
 	}
-	else
+	Technique *t			=it->second;
+	map<string, Program>::iterator pp=t->GetPasses().begin();
+	if(pass.length())
+		pp=t->GetPasses().find(pass);
+	if(pp==t->GetPasses().end())
+		return 0;
+	unsigned programId		= pp->second.CompileAndLink(m_sharedCode,m_declaredTextures,log);
+	if(programId)
 	{
-		TechniqueGroup *group=current_group;
-		map<string, Technique*>::iterator it = group->m_techniques.find(tech);
-		if (it == group->m_techniques.end())
-			return 0;
-		Technique *t	=it->second;
-		map<string, Program>::iterator pp=t->GetPasses().begin();
-		if(pass.length())
-			pp=t->GetPasses().find(pass);
-		if(pp==t->GetPasses().end())
-			return 0;
-		unsigned programId = pp->second.CompileAndLink(m_sharedCode,log);
-		if(programId)
+		GLFX_ERROR_CHECK
+		glObjectLabel(GL_PROGRAM,
+			programId,
+			(GLsizei)tech.length(),
+			tech.c_str());
+		GLFX_ERROR_CHECK
+		passStates[programId] = pp->second.passState;
+		passProgramMap[programId]=&pp->second;
+		if(pp->second.IsTransformFeedbackShader())
 		{
-			GLFX_ERROR_CHECK
-			glObjectLabel(GL_PROGRAM,
-				programId,
-				(GLsizei)tech.length(),
-				tech.c_str());
-			GLFX_ERROR_CHECK
-			passStates[programId] = pp->second.passState;
-			passProgramMap[programId]=&pp->second;
-			if(pp->second.IsTransformFeedbackShader())
+			Program::Shader *gs=pp->second.GetShader(GEOMETRY_SHADER);
+			if(gs)
 			{
-				Program::Shader *gs=pp->second.GetShader(GEOMETRY_SHADER);
-				if(gs)
-				{
-					if(gs->compiledShader)
-						pp->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
-				}
+				if(gs->compiledShader)
+					pp->second.SetOutputTopology(gs->compiledShader->transformFeedbackTopology);
 			}
 		}
-		return programId;
 	}
+	return programId;
 }
 
 ostringstream& Effect::Log()
@@ -395,9 +408,32 @@ ostringstream& Effect::Log()
     return m_log;
 }
 
+bool Effect::IsTextureDeclared(const string &name)
+{
+	if(m_declaredTextures.find(name)!=m_declaredTextures.end())
+		return true;
+	return false;
+}
+
 bool Effect::DeclareTexture(const string &name,const DeclaredTexture &ts)
 {
-	m_declaredTextures[name]=ts;
+	DeclaredTexture *t=new DeclaredTexture(ts);
+	m_declaredTextures[name]=t;
+	int num=0;
+	bool write=IsTextureWriteable(ts.type_enum);
+	if(write)
+		num=GetImageNumber(name.c_str())+1000;
+	else
+		num=GetTextureNumber(name.c_str());
+	if(m_declaredTexturesByNumber.find(num)!=m_declaredTexturesByNumber.end())
+	{
+		GLFX_CERR<<"Already declared texture number "<<num<<std::endl;
+	}
+	else
+	{
+		m_declaredTexturesByNumber[num]=t;
+	}
+	declarations.push_back(t);
 	return true;
 }
 
@@ -410,11 +446,12 @@ bool Effect::DeclareTextureSampler(const TextureSampler *ts)
 	string texture_name	=ts->textureName;
 	if (IsDeclared(texture_name))
 	{
-		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second.type;
-		//str<<"uniform "<<sampler_type<<" "<<tsname<<";\n";
-		additionalTextureDeclarations[tsname].type		=sampler_type;
+		string sampler_type =(GetDeclaredTextures()).find(texture_name)->second->type;
+		DeclaredTexture *t=new DeclaredTexture;
+		additionalTextureDeclarations[tsname]=t;
+		t->type			=sampler_type;
 		auto d=GetDeclaredTextures();
-		additionalTextureDeclarations[tsname].type_enum = (d.find(texture_name))->second.type_enum;
+		t->type_enum = (d.find(texture_name))->second->type_enum;
 		// We know that this texture-sampler combo will be used in this shader.
 		return true;
 	}
@@ -499,21 +536,50 @@ bool IsIntegerType(const string &type)
 	return false;
 }
 
-void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,const std::string &compiledsh)
+void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &sh,const std::string &compiledName)
 {
-	CompiledShader *compiledShader=m_compiledShaders[compiledsh];
+	CompiledShader *compiledShader=m_compiledShaders[compiledName];
 	compiledShader->transformFeedbackTopology = UNDEFINED_TOPOLOGY;
 	std::ostringstream shaderCode;
 	std::ostringstream extraDeclarations;
 	std::ostringstream finalCode;
 	// Put together the source.
-	string shaderContent					="";
+	string shaderContent;
 	std::set<const Function *> fns;
 	AccumulateFunctionsUsed(&sh.function,fns);
+	// Insert the textures declared that the functions use.
+	std::set<string> declarationNames;
+	for(auto u=fns.begin();u!=fns.end();u++)
+	{
+		for(auto v=(*u)->declarations.begin();v!=(*u)->declarations.end();v++)
+		{
+			declarationNames.insert(*v);
+		}
+	}
+	for(auto w:declarationNames)
+	{
+		string dec_name=w;
+		const DeclaredTexture *dec=m_declaredTextures[dec_name];
+		WriteLineNumber(shaderCode,dec->file_number,dec->line_number);
+		if(IsTextureWriteable(dec->type_enum))
+			shaderCode<<"#ifdef IN_COMPUTE_SHADER\n";
+		shaderCode<<dec->layout<<"uniform ";
+		if(dec->variant)
+			shaderCode<<dec_name<<"_";
+		shaderCode<<dec->type<<" "<<dec_name<<";\n";
+		if(IsTextureWriteable(dec->type_enum))
+			shaderCode<<"#endif\n";
+		if(dec->variant)
+			compiledShader->variantDeclarations.insert(dec_name);
+	}
+
+
 	std::map<int,const Function *> ordered_fns;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
-		ordered_fns[(*u)->main_linenumber]=*u;
+		// Add only the called functions, not the main one. That goes at the end.
+		if(*u!=&sh.function)
+			ordered_fns[(*u)->main_linenumber]=*u;
 	}
 	for(auto u=ordered_fns.begin();u!=ordered_fns.end();u++)
 	{
@@ -693,7 +759,7 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		{
 		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
 			shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
-			shaderCode<<it->storage<<' '<<type<<' '<<it->identifier<<';\n'<<endl;
+			shaderCode<<it->storage<<" "<<type<<" "<<it->identifier<<";\n"<<endl;
 		}
 	}
 	// Add the return variable.
@@ -797,7 +863,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	shaderCode<<shaderContent<<"\n"<<finalCode.str()<<"\n}\n";
 
 	compiledShader->source=shaderCode.str();
-
 	// now we must put a #line directive in the shared code, because we've just snipped out a bunch of what was there:
 }
 
@@ -825,7 +890,7 @@ string Effect::GetDeclaredType(std::string name) const
 		return "SamplerState";
 	auto i=m_declaredTextures.find(name);
 	if(i!=m_declaredTextures.end())
-		return i->second.type;
+		return i->second->type;
 	return "unknown";
 }
 
@@ -836,9 +901,9 @@ void Effect::SetFilenameList(const vector<string> &filenamesUtf8)
 
 void Effect::AccumulateFunctionsUsed(const Function *f,std::set<const Function *> &s) const
 {	
+	s.insert(f);
 	for(auto u=f->functionsCalled.begin();u!=f->functionsCalled.end();u++)
 	{
-		s.insert(*u);
 		AccumulateFunctionsUsed(*u,s);
 	}
 }
@@ -863,7 +928,7 @@ void Effect::PopulateProgramList()
 	ostringstream decl;
 	for(auto i=additionalTextureDeclarations.begin();i!=gEffect->additionalTextureDeclarations.end();i++)
 	{
-		decl << "uniform " << i->second.type << " " << i->first << ";\n";
+		decl << "uniform " << i->second->type << " " << i->first << ";\n";
 	}
 	m_sharedCode=(decl.str()+m_sharedCode);
 
@@ -927,7 +992,8 @@ void Effect::Apply(unsigned pass)
 	glUseProgram(pass);
 	GLFX_ERROR_CHECK
 	current_pass=pass;
-	ApplyPassTextures(pass);
+	current_pass=ApplyPassTextures(pass);
+	glUseProgram(current_pass);
 	GLFX_ERROR_CHECK
 	if (PassHasTransformFeedback(pass))
 	{
@@ -1001,24 +1067,46 @@ void Effect::Unapply()
 	current_pass=0;
 }
 
-void Effect::ApplyPassTextures(unsigned pass)
+unsigned Effect::ApplyPassTextures(unsigned pass)
 {
 	if(!pass)
-		return;
+		return 0;
 	GLFX_ERROR_CHECK
+	auto p=passProgramMap.find(pass);
+	// The variant is chosen by 
+	std::map<string,GLenum> variableFormats;
+	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
+	{
+		int main_texture_number		=i->second;
+		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
+		if(main_texture_number<1000)
+			continue;
+		GLenum f=ta.format;
+		variableFormats[i->first]=f;
+	}
+	int variantNumber=p->second->GetVariantNumber(variableFormats);
+	 current_pass=pass;
+	if(variantNumber)
+		current_pass=p->second->GetVariantPass(variantNumber);
 	std::map<unsigned,PassState>::iterator j=passStates.find(pass);
 	for(auto i=textureNumberMap.begin();i!=textureNumberMap.end();i++)
 	{
 	GLFX_ERROR_CHECK
 		int main_texture_number		=i->second;
+	if(textureDimensions.find(main_texture_number)==textureDimensions.end())
+	{
+		GLFX_CERR<<"No dimension for texture "<<main_texture_number<<std::endl;
+		continue;
+	}
+	int dim	=textureDimensions[main_texture_number];
 		int texture_number			=main_texture_number;
 		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
 		GLint loc					=glGetUniformLocation(current_pass,i->first.c_str());
 	GLFX_ERROR_CHECK
 		if(loc>=0)
 		{
-			SetTex(texture_number,ta,loc);
-			if(!ta.write)
+			SetTex(texture_number,dim,ta,loc);
+			if(texture_number<1000)
 				glBindSampler(texture_number,0);
 	GLFX_ERROR_CHECK
 		}
@@ -1045,17 +1133,17 @@ void Effect::ApplyPassTextures(unsigned pass)
 						{
 							GLuint sampler_state =b->second;
 							glBindSampler(texture_number, sampler_state);
-							SetTex(texture_number, ta, loc2);
+							SetTex(texture_number,dim, ta, loc2);
 						}
 						else if (c != glSamplerStates.end())
 						{
 							GLuint sampler_state =c->second;
 							glBindSampler(texture_number, sampler_state);
-							SetTex(texture_number, ta, loc2);
+							SetTex(texture_number,dim,ta, loc2);
 						}
 						else
 						{
-							SetTex(main_texture_number, ta, loc2);
+							SetTex(main_texture_number,dim,ta, loc2);
 						}
 					}
 					texture_number++;
@@ -1063,6 +1151,7 @@ void Effect::ApplyPassTextures(unsigned pass)
 			}
 		}
 	}
+	return current_pass;
 }
 
 void Effect::ApplyPassState(unsigned pass)
@@ -1151,7 +1240,6 @@ void Effect::ApplyPassState(unsigned pass)
 void Effect::SaveToCache(const std::string &filename)
 {
 	std::ofstream ofs(filename);
-//	string												m_dir;
 	ofs<<"source: "<<m_filename<<endl;
 	for(map<string,TechniqueGroup*>::const_iterator i=m_techniqueGroups.begin();i!=m_techniqueGroups.end();i++)
 	{
