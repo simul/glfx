@@ -546,7 +546,7 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	// Put together the source.
 	string shaderContent;
 	std::set<const Function *> fns;
-	AccumulateFunctionsUsed(&sh.function,fns);
+	AccumulateFunctionsUsed(sh.function,fns);
 	// Insert the textures declared that the functions use.
 	std::set<string> declarationNames;
 	for(auto u=fns.begin();u!=fns.end();u++)
@@ -578,16 +578,21 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
 		// Add only the called functions, not the main one. That goes at the end.
-		if(*u!=&sh.function)
+		if(*u!=sh.function)
 			ordered_fns[(*u)->main_linenumber]=*u;
 	}
+	
 	for(auto u=ordered_fns.begin();u!=ordered_fns.end();u++)
 	{
-		shaderCode<<(u->second)->source;
+		const Function *F=(u->second);
+		WriteLineNumber(shaderCode,F->current_filenumber,F->content_linenumber);
+		shaderCode<< F->returnType<<" "<<F->name<<"("<<F->params<<")"<<"\n{\n"<<F->content<<"\n}\n";
 	}
-	shaderContent+=sh.function.content;
+	WriteLineNumber(shaderCode,sh.function->current_filenumber,sh.function->content_linenumber);
+	shaderCode<< sh.function->returnType<<" "<< sh.function->name<<"("<<sh.function->params<<")"<<"\n{\n"<<sh.function->content<<"\n}\n";
+	
 	// Add shader parameters
-	for(vector<glfxstype::variable>::const_iterator it=sh.function.parameters.begin();it!=sh.function.parameters.end();++it)
+	for(vector<glfxstype::variable>::const_iterator it=sh.function->parameters.begin();it!=sh.function->parameters.end();++it)
 	{
 		bool as_interface=(shaderType!=VERTEX_SHADER);
 		string outBlockNamespace=it->identifier;
@@ -605,7 +610,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 				stringReplaceAll(output_type,"PointStream","points");
 				stringReplaceAll(output_type,"LineStream","line_strip");
 				stringReplaceAll(output_type,"TriangleStream","triangle_strip");
-				//shaderCode<<"layout("<<output_type<<") out;\n";
 			}
 		}
 		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(type);
@@ -641,9 +645,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 					stringReplaceAll(output_type,"LineStream","line_strip");
 					stringReplaceAll(output_type,"TriangleStream","triangle_strip");
 					shaderCode<<"layout("<<output_type<<",max_vertices="<<sh.maxGSVertexCount<<") out;\n";
-	//if(shaderType==GEOMETRY_SHADER)
-	
-		//shaderCode<<"layout(max_vertices="<<sh.maxGSVertexCount<<")\n";
 	
 				}
 				// In the actual shader code, convert HLSL-style member function calls to GLSL type
@@ -743,7 +744,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 					}
 					else
 					{
-						//shaderCode<<"#line "<<main_linenumber<<" "<<current_filenumber<<endl;
 						shaderCode<<storage<<' '<<m.type<<' '<<sem<<";"<<endl;
 					}
 					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
@@ -763,14 +763,14 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		}
 	}
 	// Add the return variable.
-	if(sh.function.returnType!=string("void"))
+	if(sh.function->returnType!=string("void"))
 	{
-		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(sh.function.returnType);
+		map<string,Struct*>::const_iterator u=gEffect->GetStructs().find(sh.function->returnType);
 		if(u==gEffect->GetStructs().end())
 		{
 			string returnVariable="returnVariable";
 			// if we're returning a simple type, we declare it as an output.
-			shaderCode<<"out "<<sh.function.returnType<<" "<<returnVariable<<";\n";
+			shaderCode<<"out "<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			finalCode<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 		}
 		else
@@ -780,7 +780,7 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 			string outBlockNamespace="outBlockNamespace";
 			if(as_interface)
 			{
-				string output_name=sh.function.returnType+"IO";
+				string output_name=sh.function->returnType+"IO";
 				shaderCode<<"out "<<output_name<<"\n{\n";
 				for(int i=0;i<(int)s->m_structMembers.size();i++)
 				{
@@ -795,20 +795,20 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 				shaderCode<<"} "<<outBlockNamespace<<";"<<endl;
 				if(shaderType==VERTEX_SHADER)
 				{
-					compiledShader->outputStruct=sh.function.returnType;
-					compiledShader->outputStructName=sh.function.returnType+"IO";
+					compiledShader->outputStruct=sh.function->returnType;
+					compiledShader->outputStructName=sh.function->returnType+"IO";
 				}
 			}
 			string returnVariable=sh.returnable;
 			if(returnVariable.find("(")<returnVariable.length())
 			{
 				returnVariable="returnVariable";
-				finalCode<<sh.function.returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+				finalCode<<sh.function->returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 			}
 			for(int i=0;i<(int)s->m_structMembers.size();i++)
 			{
 				const StructMember &m=s->m_structMembers[i];
-				string sem=(sh.function.returnType+"_")+m.name;
+				string sem=(sh.function->returnType+"_")+m.name;
 				if(m.semantic.length())
 					sem=(sem+"_")+m.semantic;
 				// Special outputs:

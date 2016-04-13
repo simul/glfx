@@ -287,11 +287,12 @@ struct Function
 	}
 	void operator=(const Function &f)
 	{
+		name				=f.name;
 		declarations		=f.declarations;
 		functionsCalled		=f.functionsCalled;
 		returnType			=f.returnType;
 		content				=f.content;
-		source				=f.source;
+		params				=f.params;
 		main_linenumber		=f.main_linenumber;
 		content_linenumber	=f.content_linenumber;
 		current_filenumber	=f.current_filenumber;
@@ -311,10 +312,11 @@ struct Function
 	}
 	std::set<Function*> functionsCalled;
 	std::string returnType;
+	std::string name;
 	// The content inside the braces.
 	std::string content;
-	// Not very efficient, but here's the whole function, including declarations
-	std::string source;
+	// parameter text
+	std::string params;
 	int main_linenumber;
 	int content_linenumber;
 	int current_filenumber;
@@ -355,7 +357,7 @@ struct ComputeLayout
 struct CompilableShader
 {
 	std::string shaderName;
-	Function function;
+	Function *function;
 	ComputeLayout csLayout;
 	std::string returnable;
 	int main_linenumber;

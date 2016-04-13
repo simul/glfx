@@ -90,7 +90,8 @@ the last is C code to be copied verbatim to the output.
 	std::string accw;
 	extern void gSkip();
 	extern bool write_line_number_next;
-	extern std::string LineNumberFromYYLine(int yylineno);
+	extern int LineNumberFromYYLine(int yylineno);
+	extern int CurrentFilenumber();
 	void accumulateWhitespace(const char *w)
 	{
 		accw+=w;
@@ -155,29 +156,29 @@ warning
 												glfxPushState(IN_UNDEFINE);
 												stdReturn(UNDEF);
 											}
-<INITIAL>"maxvertexcount"		{
+<INITIAL>"maxvertexcount"					{
 												stdReturn(SA_MAXVERTEXCOUNT);
 											}
-<INITIAL>"numthreads"			{
+<INITIAL>"numthreads"						{
 												stdReturn(SA_NUMTHREADS);
 											}
 <INITIAL>"["									{stdReturn('[');}
 <INITIAL>"]"									{stdReturn(']');}
-<IN_DEFINE>[^\n]+							{
-													if(gLexPassthrough)
-														glfxWrite(yytext); 
-													stdReturn(MACRO_DEFINITION);
-											}
+<IN_DEFINE>[^\n]+									{
+														if(gLexPassthrough)
+															glfxWrite(yytext); 
+														stdReturn(MACRO_DEFINITION);
+													}
 <IN_DEFINE,IN_UNDEFINE,IN_PRAGMA,IN_LINE>\n			{
-												if(gLexPassthrough)
-													glfxWrite(yytext); 
-												glfxPopState();
-												stdReturn(EOL);
-											}
-<INITIAL>"uniform"							{
-												glfxPushState(IN_UNIFORM_DECL);
-												stdReturn(UNIFORM);
-											}
+														if(gLexPassthrough)
+															glfxWrite(yytext); 
+														glfxPopState();
+														stdReturn(EOL);
+													}
+<INITIAL>"uniform"									{
+														glfxPushState(IN_UNIFORM_DECL);
+														stdReturn(UNIFORM);
+													}
 <INITIAL,IN_UNIFORM_DECL>"sampler1D"|"Texture1D"	{
 														modReturn(TEXTURE3D,"sampler1D");
 													}
@@ -1030,13 +1031,12 @@ int modReturn_(int u, const char *txt)
 		if (YYSTATE != IN_LINE)		// No point in stacking these
 		{
 			std::string str = txt;
+			glfxlval.strs[0] =  "\n#line ";
 			ostringstream line_txt;
-			line_txt << "\n#line ";
-			glfxlval.strs[0] = line_txt.str();
-			//line_txt << "\n";
+			line_txt<<" "<<LineNumberFromYYLine(glfxlval.lineno)<<" "<<CurrentFilenumber()<<"\n";
 			// put the next token back onto the stack:
 			yypush(str);
-			yypush(string(" ") + LineNumberFromYYLine(glfxlval.lineno) + "\n");
+			yypush(line_txt.str());
 			recent += glfxlval.strs[0] + " ";
 			glfxPushState(IN_LINE);
 			return (LINE);
@@ -1061,9 +1061,10 @@ int modReturn_(int u, const char *txt)
 		}
 		brace++;
 	}
-	glfxlval.strs[0] = (accw + txt);
+	string tot = (accw + txt);
+	glfxlval.strs[0] = txt;
 	accw.clear();
-	recent += glfxlval.strs[0] + " ";
+	recent += tot;
 	while (recent.length()>100)
 		recent.erase(0, 1);
 	return (u);
