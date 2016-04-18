@@ -213,11 +213,132 @@ void Effect::AddTechnique(const std::string &techname,const std::string &tg,Tech
 	TechniqueGroup *g=m_techniqueGroups[tg];
 	g->m_techniques[techname] = t;
 }
+	string GetTypeOfParameter(const vector<glfxstype::variable> &parameters,const string &name)
+	{
+		for(vector<glfxstype::variable>::const_iterator j=parameters.begin();j!=parameters.end();j++)
+		{
+			if(name==j->identifier)
+				return j->type;
+		}
+		return "";
+	}
 
 Function *Effect::DeclareFunction(const std::string &functionName, Function &buildFunction)
 {
 	Function *f				=new Function;
+
+	
+		ostringstream params;
+		bool start=true;
+		set<string> usedSamplerStates;
+		std::map<std::string,TextureSampler*> nonParameterTextureSamplers=buildFunction.textureSamplers;
+		for(vector<glfxstype::variable>::iterator j=buildFunction.parameters.begin();j!=buildFunction.parameters.end();j++)
+		{
+			string type=j->type;
+			// We SHOULD check the type but don't yet.
+			string name=j->identifier;
+			// Is the paramater in our declarations list?
+			auto a=buildFunction.declarations.find(name);
+			if(a!=buildFunction.declarations.end())
+			{
+				buildFunction.declarations.erase(a);
+			}
+			// Is this one of the textures in the textureSampler list?
+			auto u=buildFunction.textureSamplersByTexture.find(name);
+			if(u!=buildFunction.textureSamplersByTexture.end())
+			{
+				// the type remains the same.
+				for(auto v=u->second.begin();v!=u->second.end();v++)
+				{
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					TextureSampler *ts=*v;
+					usedSamplerStates.insert(ts->samplerStateName);
+					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
+				
+					glfxstype::variable p;
+					p.storage		=j->storage;
+					p.type			=j->type;
+					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
+					p.template_		=j->template_;
+					buildFunction.expanded_parameters.push_back(p);
+					nonParameterTextureSamplers.erase(ts->textureSamplerName());
+				}
+			}
+			else
+			{
+				auto a=usedSamplerStates.find(name);
+				if(a!=usedSamplerStates.end())
+					continue;
+				u=buildFunction.textureSamplersBySampler.find(name);
+				if(u!=buildFunction.textureSamplersBySampler.end())
+				{
+					// the type must become sampler2D, sampler3D etc. EITHER
+					// the type is declared for the texture in the vars list, OR it is
+					// in m_declaredTextures.
+					for(auto v=u->second.begin();v!=u->second.end();v++)
+					{
+						if(start)
+							start=false;
+						else
+							params<<", ";
+						TextureSampler *ts=*v;
+						string type=GetTypeOfParameter(buildFunction.parameters,ts->textureName);
+						if(type.length()==0)
+						{
+							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second->type;
+						}
+						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
+						
+						glfxstype::variable p;
+						p.storage			=j->storage;
+						p.type				=type;
+						p.identifier		=ts->textureSamplerName();
+						p.template_			=j->template_;
+						buildFunction.expanded_parameters.push_back(p);
+					
+						nonParameterTextureSamplers.erase(ts->textureSamplerName());
+					}
+				}
+				else
+				{
+					buildFunction.expanded_parameters.push_back(*j);
+					if(start)
+						start=false;
+					else
+						params<<", ";
+					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
+				}
+			}
+		}
+		// Any textureSamplers not passed up the line are added to the effect's list of global textureSamplers.
+		// Note: This is only temporary until we stop including unused functions in the shared code.
+		for(std::map<std::string,TextureSampler*>::const_iterator i=nonParameterTextureSamplers.begin();i!=nonParameterTextureSamplers.end();i++)
+		{
+			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
+			TextureSampler *ts=nonParameterTextureSamplers[i->first];
+			ts->global=true;
+			//if(!gEffect->DeclareTextureSampler(i->second))
+			//	errSem(string("Can't find texture declaration for ")+i->first);
+		}
+
+
+		
+		buildFunction.params=params.str();
+
 	*f						=buildFunction;
+
+
+
+
+
+
+
+
+
+
 	gEffect->functions[functionName].push_back(f);
 	for(auto p=f->textureSamplersByTexture.begin();p!=f->textureSamplersByTexture.end();p++)
 	{
@@ -573,7 +694,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 			compiledShader->variantDeclarations.insert(dec_name);
 	}
 
-
 	std::map<int,const Function *> ordered_fns;
 	for(auto u=fns.begin();u!=fns.end();u++)
 	{
@@ -588,9 +708,20 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		WriteLineNumber(shaderCode,F->current_filenumber,F->content_linenumber);
 		shaderCode<< F->returnType<<" "<<F->name<<"("<<F->params<<")"<<"\n{\n"<<F->content<<"\n}\n";
 	}
-	WriteLineNumber(shaderCode,sh.function->current_filenumber,sh.function->content_linenumber);
-	shaderCode<< sh.function->returnType<<" "<< sh.function->name<<"("<<sh.function->params<<")"<<"\n{\n"<<sh.function->content<<"\n}\n";
-	
+	// main function
+	if(shaderType!=GEOMETRY_SHADER)
+	{
+		WriteLineNumber(shaderCode,sh.function->current_filenumber,sh.function->content_linenumber);
+		shaderCode<<sh.function->returnType<<" "<< sh.function->name<<"("<<sh.function->params<<")"<<"\n{\n"<<sh.function->content<<"\n}\n";
+		shaderContent=sh.function->returnType+" ";
+		shaderContent+="retval=";
+		shaderContent+=sh.function->name;
+		shaderContent+="(";
+	}
+	else
+	{
+		shaderContent=sh.function->content;
+	}
 	// Add shader parameters
 	for(vector<glfxstype::variable>::const_iterator it=sh.function->parameters.begin();it!=sh.function->parameters.end();++it)
 	{
@@ -749,7 +880,17 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
 				}
 			}
+			if(shaderType!=GEOMETRY_SHADER)
+			{
+				if(it!=sh.function->parameters.begin())
+					shaderContent+=",";
+				shaderContent+=outBlockNamespace;
+			}
 			continue;
+		}
+		if(shaderType!=GEOMETRY_SHADER)
+		{
+			shaderContent+=");\n";
 		}
 		if(it->template_.length()>0)
 		{
@@ -769,12 +910,15 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		if(u==gEffect->GetStructs().end())
 		{
 			string returnVariable="returnVariable";
+			finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			// if we're returning a simple type, we declare it as an output.
 			shaderCode<<"out "<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			finalCode<<returnVariable<<"="<<sh.returnable<<";"<<endl;
 		}
 		else
 		{
+			string returnVariable=sh.returnable;
+			finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			bool as_interface=(shaderType!=FRAGMENT_SHADER);
 			const Struct *s=u->second;
 			string outBlockNamespace="outBlockNamespace";
@@ -799,7 +943,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 					compiledShader->outputStructName=sh.function->returnType+"IO";
 				}
 			}
-			string returnVariable=sh.returnable;
 			if(returnVariable.find("(")<returnVariable.length())
 			{
 				returnVariable="returnVariable";
