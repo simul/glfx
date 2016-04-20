@@ -569,8 +569,8 @@ prog : prog tok
 		
 			//WriteLineNumber(sharedCode,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
 		buildFunction.current_filenumber	=current_filenumber;
-		buildFunction.main_linenumber=$1.lineno;
-		buildFunction.content_linenumber=$1.lineno+(last_linenumber-global_linenumber);
+		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.content_linenumber	=$1.lineno+(last_linenumber-global_linenumber);
 	buildFunction.name=functionName;
 //		buildFunction.source				=str.str();
 		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
@@ -584,16 +584,20 @@ prog : prog tok
 		sh.shaderName			=$3.strs[0];
 		sh.maxGSVertexCount		=maxVertexCount;
 
-		buildFunction.returnType	=$2.strs[0];
-		buildFunction.content		=$8.strs[0];
+		buildFunction.returnType			=$2.strs[0];
+		buildFunction.content				=$8.strs[0];
+		buildFunction.parameters			=*$5.vars;
+		buildFunction.current_filenumber	=current_filenumber;
+		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.content_linenumber	=$1.lineno+line_number;
+
 		sh.returnable			=$8.strs[1];
-		sh.main_linenumber		=$1.lineno+line_number;
-		sh.content_linenumber	=$8.lineno+(line_number);
+		sh.main_linenumber		=buildFunction.content_linenumber;
+		sh.content_linenumber	=$8.lineno+line_number;
 		sh.current_filenumber	=current_filenumber;
 		sh.csLayout				=currentCsLayout;
 		
-		buildFunction.parameters	=*$5.vars;
-	buildFunction.name=sh.shaderName;
+		buildFunction.name=sh.shaderName;
 
 		Function *f				=gEffect->DeclareFunction(sh.shaderName,buildFunction);
 		sh.function=f;

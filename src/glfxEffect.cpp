@@ -708,13 +708,16 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		WriteLineNumber(shaderCode,F->current_filenumber,F->content_linenumber);
 		shaderCode<< F->returnType<<" "<<F->name<<"("<<F->params<<")"<<"\n{\n"<<F->content<<"\n}\n";
 	}
-	// main function
+	// main function. If it's not a GS, we include the function itself, then call it from main().
 	if(shaderType!=GEOMETRY_SHADER)
 	{
 		WriteLineNumber(shaderCode,sh.function->current_filenumber,sh.function->content_linenumber);
 		shaderCode<<sh.function->returnType<<" "<< sh.function->name<<"("<<sh.function->params<<")"<<"\n{\n"<<sh.function->content<<"\n}\n";
-		shaderContent=sh.function->returnType+" ";
-		shaderContent+="retval=";
+		if(sh.function->returnType!=string("void"))
+		{
+			shaderContent=sh.function->returnType+" ";
+			shaderContent+="retval=";
+		}
 		shaderContent+=sh.function->name;
 		shaderContent+="(";
 	}
@@ -880,28 +883,30 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 					extraDeclarations<<outBlockNamespace<<"."<<m.name<<"="<<sem<<";\n";
 				}
 			}
-			if(shaderType!=GEOMETRY_SHADER)
+		}
+		else 
+		{
+			if(it->template_.length()>0)
 			{
-				if(it!=sh.function->parameters.begin())
-					shaderContent+=",";
-				shaderContent+=outBlockNamespace;
+				extraDeclarations<<it->type<<" "<<outBlockNamespace<<"="<<it->template_<<";\n"<<endl;
 			}
-			continue;
+			else
+			{
+			// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
+				shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
+				shaderCode<<it->storage<<" "<<type<<" "<<it->identifier<<";\n"<<endl;
+			}
 		}
 		if(shaderType!=GEOMETRY_SHADER)
 		{
-			shaderContent+=");\n";
+			if(it!=sh.function->parameters.begin())
+				shaderContent+=",";
+			shaderContent+=outBlockNamespace;
 		}
-		if(it->template_.length()>0)
-		{
-			extraDeclarations<<it->type<<" "<<outBlockNamespace<<"="<<it->template_<<";\n"<<endl;
-		}
-		else
-		{
-		// First put #line in to make sure that all our definitions produce correct-looking warnings/errors.
-			shaderCode<<"#line "<<sh.main_linenumber<<" "<<sh.current_filenumber<<endl;
-			shaderCode<<it->storage<<" "<<type<<" "<<it->identifier<<";\n"<<endl;
-		}
+	}
+	if(shaderType!=GEOMETRY_SHADER)
+	{
+		shaderContent+=");\n";
 	}
 	// Add the return variable.
 	if(sh.function->returnType!=string("void"))
