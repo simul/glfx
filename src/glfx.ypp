@@ -603,7 +603,7 @@ prog : prog tok
 		sh.function=f;
 		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
 
-		for(std::map<std::string,TextureSampler*>::const_iterator i=buildFunction.textureSamplers.begin();i!=buildFunction.textureSamplers.end();i++)
+		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function->textureSamplers.begin();i!=sh.function->textureSamplers.end();i++)
 		{
 			if(!gEffect->DeclareTextureSampler(i->second))
 				errSem(string("Can't find texture declaration for ")+i->first);
