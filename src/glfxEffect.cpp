@@ -915,7 +915,6 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 		if(u==gEffect->GetStructs().end())
 		{
 			string returnVariable="returnVariable";
-			finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			// if we're returning a simple type, we declare it as an output.
 			shaderCode<<"out "<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			finalCode<<returnVariable<<"="<<"retval"<<";"<<endl;
