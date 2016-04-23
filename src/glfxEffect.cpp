@@ -918,12 +918,12 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 			finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			// if we're returning a simple type, we declare it as an output.
 			shaderCode<<"out "<<sh.function->returnType<<" "<<returnVariable<<";\n";
-			finalCode<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+			finalCode<<returnVariable<<"="<<"retval"<<";"<<endl;
 		}
 		else
 		{
-			string returnVariable=sh.returnable;
-			finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
+			string returnVariable="retval";
+			//finalCode<<sh.function->returnType<<" "<<returnVariable<<";\n";
 			bool as_interface=(shaderType!=FRAGMENT_SHADER);
 			const Struct *s=u->second;
 			string outBlockNamespace="outBlockNamespace";
@@ -951,7 +951,7 @@ void Effect::Compile(glfxParser::ShaderType shaderType,const CompilableShader &s
 			if(returnVariable.find("(")<returnVariable.length())
 			{
 				returnVariable="returnVariable";
-				finalCode<<sh.function->returnType<<" "<<returnVariable<<"="<<sh.returnable<<";"<<endl;
+				finalCode<<sh.function->returnType<<" "<<returnVariable<<"="<<"retval"<<";"<<endl;
 			}
 			for(int i=0;i<(int)s->m_structMembers.size();i++)
 			{
