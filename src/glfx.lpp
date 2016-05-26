@@ -67,7 +67,7 @@ the last is C code to be copied verbatim to the output.
 		va_list ap;
 		int n=-1;
 		while(n<0||n>=size)
-		{
+		{ 
 			str.resize(size);
 			va_start(ap, format_str);
 			//n = vsnprintf_s((char *)str.c_str(), size, size,format_str, ap);
@@ -1025,7 +1025,7 @@ int modReturn_(int u, const char *txt)
 {
 	glfxlval.token = u;
 	glfxlval.lineno = yylineno;
-	if (write_line_number_next)
+	if(write_line_number_next)
 	{
 		write_line_number_next = false;
 		if (YYSTATE != IN_LINE)		// No point in stacking these
