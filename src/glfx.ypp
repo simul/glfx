@@ -79,23 +79,21 @@
 	{
 		return (float)atof(str.c_str());
 	}
-	std::string LineNumber( int fileno, int lineno)
-	{
-		std::ostringstream str;
-		str << lineno << " " << fileno;
-		return str.str();
-	}
 	void WriteLineNumber(std::ostringstream &str,int fileno,int lineno)
 	{
-		str<<"#line "<< LineNumber(lineno,fileno)<<endl;
+		str<<"#line "<< lineno << " " << fileno<<endl;
 	}
 	void WriteLineNumber(std::ostringstream &str,int lineno)
 	{
 		WriteLineNumber(str,current_filenumber,lineno);//.c_str()<<"\""<<endl;
 	}
-	std::string LineNumberFromYYLine(int yylineno)
+	int CurrentFilenumber()
 	{
-		return LineNumber(current_filenumber,yylineno+last_linenumber-global_linenumber);
+		return current_filenumber;
+	}
+	int LineNumberFromYYLine(int yylineno)
+	{
+		return yylineno+last_linenumber-global_linenumber;
 	}
 	bool write_line_number_next=false;
 	void gSkip()
@@ -137,15 +135,6 @@
 			texture_type=string("i")+texture_type;
 		}
 		return texture_type;
-	}
-	string GetTypeOfParameter(const vector<glfxstype::variable> &parameters,const string &name)
-	{
-		for(vector<glfxstype::variable>::const_iterator j=parameters.begin();j!=parameters.end();j++)
-		{
-			if(name==j->identifier)
-				return j->type;
-		}
-		return "";
 	}
 	int GetIndexOfParameter(const vector<glfxstype::variable> &parameters,const string &name)
 	{
@@ -341,17 +330,17 @@ prog : prog tok
 						"{"
 						"	return clamp(x,0.0,1.0);"
 						"}"
-						""
+						"\n"
 						"vec2 saturate(vec2 x)"
 						"{"
 						"	return clamp(x,vec2(0.0,0.0),vec2(1.0,1.0));"
 						"}"
-						""
+						"\n"
 						"vec3 saturate(vec3 x)"
 						"{"
 						"	return clamp(x,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));"
 						"}"
-						""
+						"\n"
 						"vec4 saturate(vec4 x)"
 						"{"
 						"	return clamp(x,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));"
@@ -578,114 +567,12 @@ prog : prog tok
 		buildFunction.parameters			=*$4.vars;
 		delete $4.vars;
 		
-		ostringstream params;
-		bool start=true;
-		set<string> usedSamplerStates;
-		std::map<std::string,TextureSampler*> nonParameterTextureSamplers=buildFunction.textureSamplers;
-		for(vector<glfxstype::variable>::iterator j=buildFunction.parameters.begin();j!=buildFunction.parameters.end();j++)
-		{
-			string type=j->type;
-			// We SHOULD check the type but don't yet.
-			string name=j->identifier;
-			// Is the paramater in our declarations list?
-			auto a=buildFunction.declarations.find(name);
-			if(a!=buildFunction.declarations.end())
-			{
-				buildFunction.declarations.erase(a);
-			}
-			// Is this one of the textures in the textureSampler list?
-			auto u=buildFunction.textureSamplersByTexture.find(name);
-			if(u!=buildFunction.textureSamplersByTexture.end())
-			{
-				// the type remains the same.
-				for(auto v=u->second.begin();v!=u->second.end();v++)
-				{
-					if(start)
-						start=false;
-					else
-						params<<", ";
-					TextureSampler *ts=*v;
-					usedSamplerStates.insert(ts->samplerStateName);
-					params<<j->storage<<" "<<j->type<<" "<<ts->textureSamplerName();
-				
-					
-					glfxstype::variable p;
-					p.storage		=j->storage;
-					p.type			=j->type;
-					p.identifier	=(ts->textureName+"_")+ts->samplerStateName;
-					p.template_		=j->template_;
-					buildFunction.expanded_parameters.push_back(p);
-					nonParameterTextureSamplers.erase(ts->textureSamplerName());
-				}
-			}
-			else
-			{
-				auto a=usedSamplerStates.find(name);
-				if(a!=usedSamplerStates.end())
-					continue;
-				u=buildFunction.textureSamplersBySampler.find(name);
-				if(u!=buildFunction.textureSamplersBySampler.end())
-				{
-					// the type must become sampler2D, sampler3D etc. EITHER
-					// the type is declared for the texture in the vars list, OR it is
-					// in m_declaredTextures.
-					for(auto v=u->second.begin();v!=u->second.end();v++)
-					{
-						if(start)
-							start=false;
-						else
-							params<<", ";
-						TextureSampler *ts=*v;
-						string type=GetTypeOfParameter(buildFunction.parameters,ts->textureName);
-						if(type.length()==0)
-						{
-							type = gEffect->GetDeclaredTextures().find(ts->textureName)->second->type;
-						}
-						params<<j->storage<<" "<<type<<" "<<ts->textureName<<"_"<<ts->samplerStateName;
-						//if(j->semantic.size())
-						//	params<<": "<<j->semantic;
-						glfxstype::variable p;
-						p.storage			=j->storage;
-						p.type				=type;
-						p.identifier		=ts->textureSamplerName();
-						p.template_			=j->template_;
-						buildFunction.expanded_parameters.push_back(p);
-						//buildFunction.removeTextureSampler(ts->textureSamplerName());
-						nonParameterTextureSamplers.erase(ts->textureSamplerName());
-					}
-				}
-				else
-				{
-					buildFunction.expanded_parameters.push_back(*j);
-					if(start)
-						start=false;
-					else
-						params<<", ";
-					params<<j->storage<<" "<<j->type<<" "<<j->identifier;
-					//if(j->semantic.size())
-					//	params<<": "<<j->semantic;
-				}
-			}
-		}
-		ostringstream str;
-		// Any textureSamplers not passed up the line are added to the effect's list of global textureSamplers.
-		// Note: This is only temporary until we stop including unused functions in the shared code.
-		for(std::map<std::string,TextureSampler*>::const_iterator i=nonParameterTextureSamplers.begin();i!=nonParameterTextureSamplers.end();i++)
-		{
-			// use the one in the stored function, which is permanent, not buildFunction, which is temporary.
-			TextureSampler *ts=nonParameterTextureSamplers[i->first];
-			ts->global=true;
-			if(!gEffect->DeclareTextureSampler(i->second))
-				errSem(string("Can't find texture declaration for ")+i->first);
-		}
-		
-		buildFunction.content_linenumber=$1.lineno+(last_linenumber-global_linenumber);
-		WriteLineNumber(str,current_filenumber,buildFunction.content_linenumber);
-		str<< buildFunction.returnType<<" "<<functionName<<"("<<params.str()<<")"<<"\n{\n"<<buildFunction.content<<"\n}\n";
-		WriteLineNumber(sharedCode,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
-		buildFunction.main_linenumber=$1.lineno;
-		//glfxWrite(str.str().c_str());
-		buildFunction.source				=str.str();
+			//WriteLineNumber(sharedCode,current_filenumber,glfxget_lineno()+(last_linenumber-global_linenumber));
+		buildFunction.current_filenumber	=current_filenumber;
+		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.content_linenumber	=$1.lineno+(last_linenumber-global_linenumber);
+	buildFunction.name=functionName;
+//		buildFunction.source				=str.str();
 		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		buildFunction.clear();
 	}
@@ -693,29 +580,30 @@ prog : prog tok
     | shader_and_layout IDENTIFIER IDENTIFIER '(' param_declaration_list ')' optional_return_semantic function_content lex_passthrough
 	{
 		CompilableShader &sh=*(compilableShaders[$3.strs[0]]=new CompilableShader);
+		int line_number			=last_linenumber-global_linenumber;
 		sh.shaderName			=$3.strs[0];
 		sh.maxGSVertexCount		=maxVertexCount;
 
-		sh.function.returnType	=$2.strs[0];
-		sh.function.content		=$8.strs[0];
+		buildFunction.returnType			=$2.strs[0];
+		buildFunction.content				=$8.strs[0];
+		buildFunction.parameters			=*$5.vars;
+		buildFunction.current_filenumber	=current_filenumber;
+		buildFunction.main_linenumber		=$1.lineno;
+		buildFunction.content_linenumber	=$1.lineno+line_number;
+
 		sh.returnable			=$8.strs[1];
-		sh.main_linenumber		=$1.lineno+(last_linenumber-global_linenumber);
-		sh.content_linenumber	=$8.lineno+(last_linenumber-global_linenumber);
+		sh.main_linenumber		=buildFunction.content_linenumber;
+		sh.content_linenumber	=$8.lineno+line_number;
 		sh.current_filenumber	=current_filenumber;
 		sh.csLayout				=currentCsLayout;
-		ostringstream shaderCode;
-		ostringstream extraDeclarations;
-		ostringstream finalCode;
-		sh.function.parameters	=*$5.vars;
+		
+		buildFunction.name=sh.shaderName;
 
-		sh.function.declarations					=buildFunction.declarations;
-		sh.function.textureSamplers					=buildFunction.textureSamplers;
-		sh.function.textureSamplersByTexture		=buildFunction.textureSamplersByTexture;
-		sh.function.textureSamplersBySampler		=buildFunction.textureSamplersBySampler;
-		sh.function.functionsCalled					=buildFunction.functionsCalled;
+		Function *f				=gEffect->DeclareFunction(sh.shaderName,buildFunction);
+		sh.function=f;
 		buildFunction.textureSamplers.clear();	// so the pointers won't be freed later.
 
-		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function.textureSamplers.begin();i!=sh.function.textureSamplers.end();i++)
+		for(std::map<std::string,TextureSampler*>::const_iterator i=sh.function->textureSamplers.begin();i!=sh.function->textureSamplers.end();i++)
 		{
 			if(!gEffect->DeclareTextureSampler(i->second))
 				errSem(string("Can't find texture declaration for ")+i->first);
@@ -723,8 +611,7 @@ prog : prog tok
 
 		buildFunction.clear();
 		delete $5.vars;
-		
-		sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
+	//	sharedCode<<"#line "<<(glfxget_lineno()+(last_linenumber-global_linenumber))<<" "<<current_filenumber<<endl;
 	}
     | PROGRAM lex_fx IDENTIFIER '{' prog_def '}' lex_passthrough
 	{
@@ -751,6 +638,7 @@ prog : prog tok
 		last_linenumber		=$2.num;
 		current_filenumber	=$3.num;
 		global_linenumber	=$1.lineno;
+	  $$.strs[0]	="";
 	}
 	shader_and_layout: SHADER shader_fx
 	{
@@ -931,6 +819,7 @@ ignore_line_statement
 {
 	$$.lineno = $1.lineno;
 	$$.num = -1;
+    $$.strs[0]	="";
 }
 | COMMENT
 {
@@ -1472,7 +1361,7 @@ shader_compile: IDENTIFIER
 				CompilableShader &sh=*(u->second);
 				gEffect->AddComputeLayout(shaderName,sh.csLayout);
 
-				gEffect->MergeTextureSamplers(sh.function.textureSamplers,shaderName);
+				gEffect->MergeTextureSamplers(sh.function->textureSamplers,shaderName);
 
 				const CompiledShader *cs=gEffect->AddCompiledShader(compiledShaderName,$5.strs[0],$1.sType,version_num);
 				$$.num=version_num;
@@ -2548,6 +2437,7 @@ render_state_command : render_state_identifier '=' render_state_rvalue ';'
 						{
 							$$.lineno	=$1.lineno;
 							$$.num		=-1;
+						  $$.strs[0]	="";
 						};
 render_state_identifier : IDENTIFIER optional_index
 						{
@@ -2916,7 +2806,10 @@ void errSyn(const char* e)
     ostringstream errMsg;
 	int lex_linenumber=glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
-    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx syntax error: \""<<glfxget_text()<<"\" "<<e<<" in "<<glfxGetStateText();
+	char txt[500];
+	strcpy_s(txt,499,glfxget_text());
+	txt[499]=0;
+    errMsg<<current_filenumber<<"("<< true_linenumber<<") : glfx syntax error: \""<<txt<<"\" "<<e<<" in "<<glfxGetStateText();
     throw std::runtime_error(errMsg.str());
 }
 
@@ -2927,6 +2820,9 @@ void errSem(const string& str, int lex_linenumber)
     if(lex_linenumber==-1)
         lex_linenumber= glfxget_lineno();
 	int true_linenumber=lex_linenumber+last_linenumber-global_linenumber;
+	char txt[500];
+	strcpy_s(txt,499,glfxget_text());
+	txt[499]=0;
     errMsg<<current_filenumber<<"("<<true_linenumber<<") : glfx error: "<<str<<" in "<<glfxGetStateText();
     throw std::runtime_error(errMsg.str());
 }

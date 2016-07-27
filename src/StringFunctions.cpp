@@ -109,7 +109,7 @@ string GetDirectoryFromFilename(const string &str)
 
 std::string stringFormat(std::string fmt, ...)
 {
-	int size=fmt.size()+100;
+	int size=(int)fmt.size()+100;
 	std::string str;
 	va_list ap;
 	int n=-1;
@@ -135,7 +135,7 @@ std::string stringFormat(std::string fmt, ...)
 }
 const char *QuickFormat(const char *format_str,...)
 {
-	int size=strlen(format_str)+100;
+	int size=(int)strlen(format_str)+100;
 	static std::string str;
 	va_list ap;
 	int n=-1;
@@ -175,7 +175,7 @@ vector<string> split(const string& source, char separator)
 	{
 		int nextpos=(int)source.find(separator,pos);
 		if(nextpos<0)
-			nextpos=source.length();
+			nextpos=(int)source.length();
 		if(nextpos>=0)
 			vec.push_back(source.substr(pos,nextpos-pos));
 		pos=nextpos+1;
