@@ -197,6 +197,9 @@ warning
 <INITIAL,IN_UNIFORM_DECL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
 														modReturn(TEXTURECUBE,"samplerCube");
 													}
+<INITIAL,IN_UNIFORM_DECL>"TextureCubeArray"			{
+														modReturn(TEXTURECUBEARRAY, "samplerCubeArray");
+													}
 <INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"	{
 														modReturn(TEXTURE2DMS,"sampler2DMS");
 													}
@@ -568,6 +571,10 @@ warning
 												}
 <INITIAL,IN_SHADER>"frac"						{
 													modReturn(IDENTIFIER,"fract");
+												}
+<INITIAL,IN_SHADER>"pow"						{
+													glfxlval.strs[0] = yytext;
+													stdReturn(POW);
 												}
 <IN_SHADER>"GetDimensions"						{
 													stdReturn(GET_DIMS);
