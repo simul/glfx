@@ -548,25 +548,25 @@ warning
 <INITIAL,IN_SHADER>"atan2"						{
 													modReturn(IDENTIFIER,"atan");
 												}
-<INITIAL,IN_SHADER>"int2"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"int2"				{
 													modReturn(IDENTIFIER,"ivec2");
 												}
-<INITIAL,IN_SHADER>"int3"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"int3"				{
 													modReturn(IDENTIFIER,"ivec3");
 												}
-<INITIAL,IN_SHADER>"int4"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"int4"				{
 													modReturn(IDENTIFIER,"ivec4");
 												}
-<INITIAL,IN_SHADER>"uint2"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"uint2"			{
 													modReturn(IDENTIFIER,"uvec2");
 												}
-<INITIAL,IN_SHADER>"uint3"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"uint3"			{
 													modReturn(IDENTIFIER,"uvec3");
 												}
-<INITIAL,IN_SHADER>"uvec3"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"uvec3"			{
 													modReturn(IDENTIFIER,"uvec3");
 												}
-<INITIAL,IN_SHADER>"uint4"						{
+<INITIAL,IN_SHADER,IN_STRUCT>"uint4"			{
 													modReturn(IDENTIFIER,"uvec4");
 												}
 <INITIAL,IN_SHADER>"frac"						{

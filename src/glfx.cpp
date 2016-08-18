@@ -707,7 +707,7 @@ bool GLFX_APIENTRY glfxParseEffectFromFile(int effect, const char* file, const c
 	retVal&=glfxParseEffectFromMemory(effect,src.c_str(),file);
 	auto time = chrono::high_resolution_clock::now();
 	buildtime=chrono::duration_cast<chrono::milliseconds>(time - start_time).count() ;
-	GLFX_CERR <<"file: preprocess "<<pptime<<"ms, parse from memory "<<buildtime<<"ms"<<endl;
+	GLFX_CERR <<"file:"<< string(file) <<" preprocess "<<pptime<<"ms, parse from memory "<<buildtime<<"ms"<<endl;
 	start_time=time;
 	GLFX_ERRNO_CHECK
     return retVal;

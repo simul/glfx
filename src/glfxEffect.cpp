@@ -1210,7 +1210,9 @@ void Effect::Unapply()
 		glEndTransformFeedback();
 		glDisable(GL_RASTERIZER_DISCARD);
 	}
+	
 	glUseProgram(0);
+	GLFX_ERROR_CHECK
 	current_pass=0;
 }
 
@@ -1240,12 +1242,12 @@ unsigned Effect::ApplyPassTextures(unsigned pass)
 	{
 	GLFX_ERROR_CHECK
 		int main_texture_number		=i->second;
-	if(textureDimensions.find(main_texture_number)==textureDimensions.end())
-	{
-		GLFX_CERR<<"No dimension for texture "<<main_texture_number<<std::endl;
-		continue;
-	}
-	int dim	=textureDimensions[main_texture_number];
+		if(textureDimensions.find(main_texture_number)==textureDimensions.end())
+		{
+			GLFX_CERR<<"No dimension for texture "<<main_texture_number<<std::endl;
+			continue;
+		}
+		int dim						=textureDimensions[main_texture_number];
 		int texture_number			=main_texture_number;
 		const TextureAssignment &ta	=textureAssignmentMap[main_texture_number];
 		GLint loc					=glGetUniformLocation(current_pass,i->first.c_str());

@@ -113,7 +113,7 @@
 	}
 	static string GetLayoutForTemplateType(string s,string textureName)
 	{
-		// In HLSL,   and float textures are "adaptable" and the actual texture might be a different format.
+		// In HLSL, vec4 and float textures are "adaptable" and the actual texture might be a different format.
 		//if(s==string("vec4")||s==string("float"))
 		{
 			// We want to be able to write both, so we will add in a #define rgba16_or_32f rgba32f or rgba16f
@@ -1966,7 +1966,7 @@ postfix_exp		: primary_exp
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
-						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
+						$$.strs[0]=GetSizeFunction( textureName, x, y, z);
 						buildFunction.declarations.insert(textureName);
 					}
 					| tex_load_exp '(' argument_exp_list ')'
@@ -2308,7 +2308,8 @@ optional_semantic: ':' IDENTIFIER
 optional_render_state_list:	'{' render_state_list '}'
 					{
 						$$.lineno		=$2.lineno;
-					}|
+					}
+					|
 					{
 					}
 // render_state_list must pass up an array of commands. Each command has a name, a number, and a value.
