@@ -197,9 +197,6 @@ warning
 <INITIAL,IN_UNIFORM_DECL>"TextureCUBE"|"TextureCube"|"samplerCube"			{
 														modReturn(TEXTURECUBE,"samplerCube");
 													}
-<INITIAL,IN_UNIFORM_DECL>"TextureCubeArray"			{
-														modReturn(TEXTURECUBEARRAY, "samplerCubeArray");
-													}
 <INITIAL,IN_UNIFORM_DECL>"Texture2DMS"|"sampler2DMS"	{
 														modReturn(TEXTURE2DMS,"sampler2DMS");
 													}
@@ -548,33 +545,29 @@ warning
 <INITIAL,IN_SHADER>"atan2"						{
 													modReturn(IDENTIFIER,"atan");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"int2"				{
+<INITIAL,IN_SHADER>"int2"						{
 													modReturn(IDENTIFIER,"ivec2");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"int3"				{
+<INITIAL,IN_SHADER>"int3"						{
 													modReturn(IDENTIFIER,"ivec3");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"int4"				{
+<INITIAL,IN_SHADER>"int4"						{
 													modReturn(IDENTIFIER,"ivec4");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"uint2"			{
+<INITIAL,IN_SHADER>"uint2"						{
 													modReturn(IDENTIFIER,"uvec2");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"uint3"			{
+<INITIAL,IN_SHADER>"uint3"						{
 													modReturn(IDENTIFIER,"uvec3");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"uvec3"			{
+<INITIAL,IN_SHADER>"uvec3"						{
 													modReturn(IDENTIFIER,"uvec3");
 												}
-<INITIAL,IN_SHADER,IN_STRUCT>"uint4"			{
+<INITIAL,IN_SHADER>"uint4"						{
 													modReturn(IDENTIFIER,"uvec4");
 												}
 <INITIAL,IN_SHADER>"frac"						{
 													modReturn(IDENTIFIER,"fract");
-												}
-<INITIAL,IN_SHADER>"pow"						{
-													glfxlval.strs[0] = yytext;
-													stdReturn(POW);
 												}
 <IN_SHADER>"GetDimensions"						{
 													stdReturn(GET_DIMS);
@@ -747,9 +740,6 @@ warning
 						}    
 <IN_SHADER>"|"			{
 							stdReturn('|');
-						}
-<IN_SHADER>"^"			{
-							stdReturn('^');
 						}
 <IN_SHADER_COMPILE,IN_RENDER_STATE,IN_SHADER>[ \t\n]*	{
 													accumulateWhitespace(yytext);

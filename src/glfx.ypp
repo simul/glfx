@@ -299,7 +299,7 @@
 %token LAYOUT LINE TECHNIQUE PASS GROUP RENDER_STATE_DECL QUOTED_STRING SHADER_LINE SHADER_TYPE COMPILE_SHADER CONSTRUCT_GS_WITH_SO STRUCT
 %token PRAGMA DEFINE UNDEF MACRO_DEFINITION EOL DECL_SHADER PROFILE  
 %token WARNING DEF MESSAGE PACK_MATRIX
-%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE2DARRAY TEXTURE3D TEXTURECUBE TEXTURECUBEARRAY IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
+%token RW_TEXTURE2D RW_TEXTURE3D RW_TEXTURE2DARRAY RW_TEXTURE3D_FLOAT4 TEXTURE2DMS TEXTURE2D TEXTURE2DARRAY TEXTURE3D TEXTURECUBE IMAGE3D KNOWN_TYPE STRUCTUREDBUFFER RW_STRUCTUREDBUFFER
 %token RETURN BREAK CONTINUE DO FOR GOTO IF WHILE ELSE 
 %token TIMES_EQUALS OVER_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS LEFT_SHIFT_EQUALS RIGHT_SHIFT_EQUALS AND_EQUALS XOR_EQUALS OR_EQUALS
 %token AND OR LESS_EQ GRTR_EQ LEFT_SHIFT RIGHT_SHIFT PLUS_PLUS MINUS_MINUS EQ_EQ NOT_EQ
@@ -316,7 +316,6 @@
 %token FILL_MODE_SOLID FILL_MODE_WIREFRAME
 %token DEPTH_PASS_ALWAYS DEPTH_PASS_NEVER DEPTH_PASS_LESS DEPTH_PASS_GREATER DEPTH_PASS_LESS_EQUAL DEPTH_PASS_GREATER_EQUAL
 %token TEXTURE_WRAP TEXTURE_MIRROR TEXTURE_CLAMP
-%token POW
 %%
 
 prog : prog tok
@@ -412,6 +411,7 @@ prog : prog tok
 		ostringstream decl;
 
 	}
+
 	| optional_uniform buffer_type optional_templateval IDENTIFIER ';'
 	{
 		//string buffer_type=$2.strs[0];
@@ -571,7 +571,7 @@ prog : prog tok
 		buildFunction.current_filenumber	=current_filenumber;
 		buildFunction.main_linenumber		=$1.lineno;
 		buildFunction.content_linenumber	=$1.lineno+(last_linenumber-global_linenumber);
-		buildFunction.name					=functionName;
+	buildFunction.name=functionName;
 //		buildFunction.source				=str.str();
 		Function *f							=gEffect->DeclareFunction(functionName,buildFunction);
 		buildFunction.clear();
@@ -645,7 +645,7 @@ prog : prog tok
 		$$.strs[0]	=$1.strs[0];
 		$$.lineno	=$1.lineno;
 	}
-	texture_type: TEXTURE2D|TEXTURE3D|TEXTURE2DMS|TEXTURE2DARRAY|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY|TEXTURECUBE|TEXTURECUBEARRAY
+	texture_type: TEXTURE2D|TEXTURE3D|TEXTURE2DMS|TEXTURE2DARRAY|IMAGE3D|RW_TEXTURE2D|RW_TEXTURE3D|RW_TEXTURE2DARRAY|TEXTURECUBE
 	{
 		$$.strs[0]	=$1.strs[0];
 		$$.num		=$1.num;
@@ -1718,7 +1718,7 @@ assignment_operator: '='
 		$$.strs[0]=$1.strs[0];
 		$$.token=$1.token;
 	}
-conditional_exp: logical_or_exp
+	conditional_exp		: logical_or_exp
 	{
 		$$.strs[0]=$1.strs[0];
 	}
@@ -1918,38 +1918,32 @@ postfix_exp		: primary_exp
 					}
 					| postfix_exp '[' expression ']'
 					{
-						string varName = $1.strs[0];
-						string index = $3.strs[0];
-						$$.strs[1] = varName;
-						$$.strs[3] = index;
-						$$.strs[2] = $1.strs[2];			//Command
+						string varName=$1.strs[0];
+						string index=$3.strs[0];
+						$$.strs[1]=varName;
+						$$.strs[3]=index;
+						$$.strs[2]=$1.strs[2];			//Command
 
 						// Is it actually a texture we're indexing?
-						GLTextureType glTextureType = GetTextureType(buildFunction, varName);
-						if (glTextureType == 0)
+						GLTextureType glTextureType			=GetTextureType(buildFunction,varName);
+						if(glTextureType==0)
 						{
-							$$.strs[0] = varName + $2.strs[0] + index + $4.strs[0];
+							$$.strs[0]=varName+$2.strs[0]+index+$4.strs[0];
 						}
 						else
 						{
 							buildFunction.declarations.insert(varName);
 							ostringstream str;
-							if (IsRWTexture(glTextureType))
+							if(IsRWTexture(glTextureType))
 							{
-								str << "imageLoad(" << varName << ",ivec" << GetTextureDimension(glTextureType) << "(" << index << "))";
+								str<<"imageLoad("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"))";
 							}
 							else
 							{
-								str << "texelFetch(" << varName << ",ivec" << GetTextureDimension(glTextureType) << "(" << index << "),0)";
+								str<<"texelFetch("<<varName<<",ivec"<<GetTextureDimension(glTextureType)<<"("<<index<<"),0)";
 							}
-							$$.strs[0] = str.str();
+							$$.strs[0]=str.str();
 						}
-					}
-					| POW '(' assignment_exp ',' assignment_exp ')'
-					{
-						//Potential base for a fix, as is this is not doing anything different than the normal function
-						string exp = $5.strs[0];
-						$$.strs[0] = $1.strs[0]+$2.strs[0]+$3.strs[0]+$4.strs[0]+exp +$6.strs[0];
 					}
 					| get_dims_exp '(' assignment_exp ',' assignment_exp ')'
 					{
@@ -1966,7 +1960,7 @@ postfix_exp		: primary_exp
 						string x			=$3.strs[0];
 						string y			=$5.strs[0];
 						string z			=$7.strs[0];
-						$$.strs[0]=GetSizeFunction( textureName, x, y, z);
+						$$.strs[0]=GetSizeFunction( textureName, x, y,z);
 						buildFunction.declarations.insert(textureName);
 					}
 					| tex_load_exp '(' argument_exp_list ')'
@@ -2080,7 +2074,7 @@ postfix_exp		: primary_exp
 						string expr4		=$4.strs[0];
 						// ok this could be a function call.(((std::basic_string<char,std::char_traits<char>,std::allocator<char> >*)(&(command)))->_Bx._Buf)[0]=='d'
 						string command		=$1.strs[2];
-						const std::map<std::string,std::vector<Function*>> &functions=gEffect->GetFunctions();
+						const std::map<std::string,std::vector<Function*> > &functions=gEffect->GetFunctions();
 						auto j=functions.find(command);
 						if(j==functions.end())
 						{
@@ -2308,8 +2302,7 @@ optional_semantic: ':' IDENTIFIER
 optional_render_state_list:	'{' render_state_list '}'
 					{
 						$$.lineno		=$2.lineno;
-					}
-					|
+					}|
 					{
 					}
 // render_state_list must pass up an array of commands. Each command has a name, a number, and a value.
@@ -2751,8 +2744,6 @@ type_spec: IDENTIFIER
 			return gsampler3D;
 		case TEXTURECUBE:
 			return gsamplerCube;
-		case TEXTURECUBEARRAY:
-			return gsamplerCubeArray;
 		case TEXTURE2DARRAY:
 			return gsampler2DArray;
 		case RW_TEXTURE2D:
