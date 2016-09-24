@@ -16,7 +16,7 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
