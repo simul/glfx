@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)/</OutDir>
-    <IntDir>$(Platform)/VC11/$(Configuration)/</IntDir>
+    <OutDir>$(SIMUL)/exe/$(Platform)/$(PlatformToolset)/$(Configuration)/</OutDir>
+    <IntDir>$(Platform)/$(PlatformToolset)/$(Configuration)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -15,7 +15,7 @@
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <Link>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
