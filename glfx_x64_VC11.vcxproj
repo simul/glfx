@@ -216,8 +216,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glew32d.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/Static $(Configuration);$(SIMUL)/External/glew/lib/$(PlatformToolset)/Debug/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/Static $(Configuration);$(SIMUL)/External/glew/lib/VC11/Debug/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">
@@ -261,9 +261,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/Static $(Configuration);$(SIMUL)/External/glew/lib/$(PlatformToolset)/Release/$(Platform);$(SIMUL)/lib/$(PlatformToolset)/$(Configuration)/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/lib/$(Platform)/VC11/Static $(Configuration);$(SIMUL)/External/glew/lib/VC11/Release/$(Platform);$(SIMUL)/lib/VC11/$(Configuration)/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <NoEntryPoint>false</NoEntryPoint>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <Lib>
       <AdditionalDependencies>../glew/x64/lib/glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
