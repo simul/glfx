@@ -1,4 +1,5 @@
 
+link_directories( "${LIB_DESTINATION}/${CMAKE_CONFIGURATION}" )
 link_libraries(glfx)
 
 include_directories("${GLFX_SOURCE_DIR}/include")
