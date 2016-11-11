@@ -140,24 +140,6 @@
     <None Include="test\shaders\geometry_pass.glsl" />
     <None Include="test\shaders\simple_technique.glsl" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\glew\build\vc11\glew_shared.vcxproj">
-      <Project>{55ae3d72-7de6-f19f-aef2-9ae8ca26cf3d}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\glew\build\vc11\glew_static.vcxproj">
-      <Project>{664e6f0d-6784-4760-9565-d54f8eb1edf4}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3C16E3F9-BA50-45A0-A7FF-C985C7721BEB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -181,13 +163,13 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -208,14 +190,14 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -246,35 +228,33 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
-    <OutDir>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
-    <OutDir>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/exe/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
-    <OutDir>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
-    <OutDir>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
+    <OutDir>$(SIMUL)/exe/$(Platform)/$(PlatformToolset)/$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -290,8 +270,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glew32d.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/SPIRV/$(Configuration);$(SIMUL)/External/glew/lib/VC11/Debug/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/SPIRV/$(Configuration);$(SIMUL)/External/glew/lib/$(PlatformToolset)/Debug/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
@@ -322,8 +302,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glew32d.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glew/lib/VC11/Debug/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/Static $(Configuration);$(SIMUL)/External/glew/lib/$(PlatformName)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/$(PlatformToolset)/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
@@ -333,7 +313,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLEW_STATIC;GLFX_GLSLANG;GLFX_STATIC;_DEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -366,8 +346,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glew/lib/VC11/Release/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glew/lib/$(PlatformToolset)/Release/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
@@ -423,9 +403,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/SPIRV/$(Configuration);$(SIMUL)/External/glew/lib/VC11/Release/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/External/OpenGL/lib/$(Platform);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/OGLCompilersDLL/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/glslang/OSDependent/Windows/$(Configuration);$(SIMUL)/External/glslang/build/$(Platform)/$(PlatformToolset)/SPIRV/$(Configuration);$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/Static $(Configuration);$(SIMUL)/External/glew/lib/$(PlatformName)/$(PlatformToolset)/$(Configuration);$(SIMUL)/External/glew/build/$(Platform)/$(PlatformToolset)/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <NoEntryPoint>false</NoEntryPoint>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/$(PlatformToolset)/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <Lib>
       <AdditionalDependencies>../glew/Win32/lib/glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -439,7 +420,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLFX_GLSLANG;GLFX_STATIC;NDEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLFX_BUILD;GLEW_STATIC;GLFX_GLSLANG;GLFX_STATIC;NDEBUG;_LIB;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/glew/include;$(SIMUL)/External/glslang/glslang/Public;include;.;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
