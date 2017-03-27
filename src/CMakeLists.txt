@@ -4,6 +4,7 @@ project(glfx)
 
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../include" )
+include_directories( "${CMAKE_CURRENT_BINARY_DIR}" )
 
 include_directories("${OPENGL_INCLUDE_DIR}")
 
@@ -89,7 +90,8 @@ add_library( glfx SHARED ${GRAMMAR_FILES} ${PP_LEXED} ${PP_PARSED} ${GLFX_LEXED}
 add_library( glfx_static STATIC ${GRAMMAR_FILES} ${PP_LEXED} ${PP_PARSED} ${GLFX_LEXED} ${GLFX_PARSED} ${HEADER_FILES} ${SOURCE_FILES} )
 
 IF(WIN32)
-target_link_libraries( glfx "glew32d")
+target_link_libraries( glfx debug "glew32d")
+target_link_libraries( glfx optimized "glew32")
 target_link_libraries( glfx "opengl32")
 set_target_properties( glfx PROPERTIES COMPILE_FLAGS "-DWIN32 -DUNICODE -D_UNICODE -DGLFX_BUILD" )
 set_target_properties( glfx_static PROPERTIES COMPILE_FLAGS "-DWIN32 -DUNICODE -D_UNICODE -DGLFX_BUILD -DGLFX_STATIC -DGLEW_STATIC" )

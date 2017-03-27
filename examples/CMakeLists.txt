@@ -1,10 +1,11 @@
 
+link_directories( "${LIB_DESTINATION}/${CMAKE_CONFIGURATION}" )
 link_libraries(glfx)
 
 include_directories("${GLFX_SOURCE_DIR}/include")
 
 SET (GLFW_DIR "${CMAKE_SOURCE_DIR}/../glfw" CACHE PATH "")
-SET (GLFW_LIB_DIR "${CMAKE_SOURCE_DIR}/../glfw/build/x64/src/Release" CACHE PATH "")
+SET (GLFW_LIB_DIR "${CMAKE_SOURCE_DIR}/../glfw/build" CACHE PATH "")
 
 SET (GLEW_BIN_DIR "${CMAKE_SOURCE_DIR}/../glew/bin" CACHE PATH "")
 
