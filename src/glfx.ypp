@@ -2555,7 +2555,7 @@ filter_mode: MIN_MAG_MIP_POINT
 				| ANISOTROPIC
 					{
 						$$.lineno = $1.lineno;
-						$$.token =$1.token
+						$$.token =$1.token;
 					}
 blend_mode: SRC_ALPHA
 					{
